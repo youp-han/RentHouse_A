@@ -13,6 +13,7 @@ class Property with _$Property {
     required String type,
     required int totalFloors,
     required int totalUnits,
+    @Default(0) int rent,
     @Default([]) List<Unit> units,
   }) = _Property;
 

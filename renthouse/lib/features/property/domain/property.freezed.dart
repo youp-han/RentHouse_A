@@ -27,6 +27,7 @@ mixin _$Property {
   String get type => throw _privateConstructorUsedError;
   int get totalFloors => throw _privateConstructorUsedError;
   int get totalUnits => throw _privateConstructorUsedError;
+  int get rent => throw _privateConstructorUsedError;
   List<Unit> get units => throw _privateConstructorUsedError;
 
   /// Serializes this Property to a JSON map.
@@ -51,6 +52,7 @@ abstract class $PropertyCopyWith<$Res> {
     String type,
     int totalFloors,
     int totalUnits,
+    int rent,
     List<Unit> units,
   });
 }
@@ -76,6 +78,7 @@ class _$PropertyCopyWithImpl<$Res, $Val extends Property>
     Object? type = null,
     Object? totalFloors = null,
     Object? totalUnits = null,
+    Object? rent = null,
     Object? units = null,
   }) {
     return _then(
@@ -104,6 +107,10 @@ class _$PropertyCopyWithImpl<$Res, $Val extends Property>
                 ? _value.totalUnits
                 : totalUnits // ignore: cast_nullable_to_non_nullable
                       as int,
+            rent: null == rent
+                ? _value.rent
+                : rent // ignore: cast_nullable_to_non_nullable
+                      as int,
             units: null == units
                 ? _value.units
                 : units // ignore: cast_nullable_to_non_nullable
@@ -130,6 +137,7 @@ abstract class _$$PropertyImplCopyWith<$Res>
     String type,
     int totalFloors,
     int totalUnits,
+    int rent,
     List<Unit> units,
   });
 }
@@ -154,6 +162,7 @@ class __$$PropertyImplCopyWithImpl<$Res>
     Object? type = null,
     Object? totalFloors = null,
     Object? totalUnits = null,
+    Object? rent = null,
     Object? units = null,
   }) {
     return _then(
@@ -182,6 +191,10 @@ class __$$PropertyImplCopyWithImpl<$Res>
             ? _value.totalUnits
             : totalUnits // ignore: cast_nullable_to_non_nullable
                   as int,
+        rent: null == rent
+            ? _value.rent
+            : rent // ignore: cast_nullable_to_non_nullable
+                  as int,
         units: null == units
             ? _value._units
             : units // ignore: cast_nullable_to_non_nullable
@@ -201,6 +214,7 @@ class _$PropertyImpl implements _Property {
     required this.type,
     required this.totalFloors,
     required this.totalUnits,
+    this.rent = 0,
     final List<Unit> units = const [],
   }) : _units = units;
 
@@ -219,6 +233,9 @@ class _$PropertyImpl implements _Property {
   final int totalFloors;
   @override
   final int totalUnits;
+  @override
+  @JsonKey()
+  final int rent;
   final List<Unit> _units;
   @override
   @JsonKey()
@@ -230,7 +247,7 @@ class _$PropertyImpl implements _Property {
 
   @override
   String toString() {
-    return 'Property(id: $id, name: $name, address: $address, type: $type, totalFloors: $totalFloors, totalUnits: $totalUnits, units: $units)';
+    return 'Property(id: $id, name: $name, address: $address, type: $type, totalFloors: $totalFloors, totalUnits: $totalUnits, rent: $rent, units: $units)';
   }
 
   @override
@@ -246,6 +263,7 @@ class _$PropertyImpl implements _Property {
                 other.totalFloors == totalFloors) &&
             (identical(other.totalUnits, totalUnits) ||
                 other.totalUnits == totalUnits) &&
+            (identical(other.rent, rent) || other.rent == rent) &&
             const DeepCollectionEquality().equals(other._units, _units));
   }
 
@@ -259,6 +277,7 @@ class _$PropertyImpl implements _Property {
     type,
     totalFloors,
     totalUnits,
+    rent,
     const DeepCollectionEquality().hash(_units),
   );
 
@@ -284,6 +303,7 @@ abstract class _Property implements Property {
     required final String type,
     required final int totalFloors,
     required final int totalUnits,
+    final int rent,
     final List<Unit> units,
   }) = _$PropertyImpl;
 
@@ -302,6 +322,8 @@ abstract class _Property implements Property {
   int get totalFloors;
   @override
   int get totalUnits;
+  @override
+  int get rent;
   @override
   List<Unit> get units;
 

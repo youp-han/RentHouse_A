@@ -14,6 +14,7 @@ _$PropertyImpl _$$PropertyImplFromJson(Map<String, dynamic> json) =>
       type: json['type'] as String,
       totalFloors: (json['totalFloors'] as num).toInt(),
       totalUnits: (json['totalUnits'] as num).toInt(),
+      rent: (json['rent'] as num?)?.toInt() ?? 0,
       units:
           (json['units'] as List<dynamic>?)
               ?.map((e) => Unit.fromJson(e as Map<String, dynamic>))
@@ -29,5 +30,6 @@ Map<String, dynamic> _$$PropertyImplToJson(_$PropertyImpl instance) =>
       'type': instance.type,
       'totalFloors': instance.totalFloors,
       'totalUnits': instance.totalUnits,
+      'rent': instance.rent,
       'units': instance.units,
     };

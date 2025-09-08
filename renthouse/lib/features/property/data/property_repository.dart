@@ -1,91 +1,119 @@
-import 'package:dio/dio.dart';
-import 'package:renthouse/core/network/dio_client.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:renthouse/core/database/app_database.dart' as app_db;
+import 'package:renthouse/core/database/database_provider.dart';
 import 'package:renthouse/features/property/domain/property.dart';
+import 'package:renthouse/features/property/domain/unit.dart';
+import 'package:drift/drift.dart';
 
 class PropertyRepository {
-  final DioClient _dioClient;
-  // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED DATABASE
-  final List<Property> _properties = [];
-  // TODO: REMOVE AFTER BACKEND INTEGRATION - END SIMULATED DATABASE
+  final app_db.AppDatabase _appDatabase;
 
-  PropertyRepository(this._dioClient);
+  PropertyRepository(this._appDatabase);
 
   Future<List<Property>> getProperties() async {
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED DATABASE
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-    return _properties;
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - END SIMULATED DATABASE
-
-    /*
-    try {
-      // TODO: 실제 API 엔드포인트 및 응답 구조에 맞게 수정
-      final response = await _dioClient.dio.get('/properties');
-      // return (response.data as List).map((json) => Property.fromJson(json)).toList();
-      return []; // Return an empty list
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? '자산 목록 불러오기 실패');
-    }
-    */
+    final properties = await _appDatabase.getAllProperties();
+    return Future.wait(properties.map((property) async {
+      final units = await _appDatabase.getUnitsForProperty(property.id);
+      return Property(
+        id: property.id,
+        name: property.name,
+        address: property.address,
+        type: property.type,
+        rent: property.rent,
+        totalFloors: property.totalFloors,
+        totalUnits: property.totalUnits,
+        units: units.map((unit) => Unit(
+          id: unit.id,
+          propertyId: unit.propertyId,
+          unitNumber: unit.unitNumber,
+          rentStatus: unit.rentStatus,
+          sizeMeter: unit.sizeMeter,
+          sizeKorea: unit.sizeKorea,
+          useType: unit.useType,
+          description: unit.description,
+        )).toList(),
+      );
+    }).toList());
   }
 
   Future<Property> createProperty(Property property) async {
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED DATABASE
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-    _properties.add(property);
-    return property;
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - END SIMULATED DATABASE
-
-    /*
-    try {
-      // TODO: 실제 API 엔드포인트 및 응답 구조에 맞게 수정
-      final response = await _dioClient.dio.post(
-        '/properties',
-        data: property.toJson(),
-      );
-      return Property.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? '자산 생성 실패');
+    await _appDatabase.insertProperty(app_db.PropertiesCompanion.insert(
+      id: property.id,
+      name: property.name,
+      address: property.address,
+      type: property.type,
+      rent: property.rent,
+      totalFloors: property.totalFloors,
+      totalUnits: property.totalUnits,
+    ));
+    for (var unit in property.units) {
+      await _appDatabase.insertUnit(app_db.UnitsCompanion.insert(
+        id: unit.id,
+        propertyId: unit.propertyId,
+        unitNumber: unit.unitNumber,
+        rentStatus: unit.rentStatus,
+        sizeMeter: unit.sizeMeter,
+        sizeKorea: unit.sizeKorea,
+        useType: unit.useType,
+        description: Value(unit.description),
+      ));
     }
-    */
+    return property;
   }
 
   Future<Property> updateProperty(Property property) async {
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED DATABASE
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-    final index = _properties.indexWhere((p) => p.id == property.id);
-    if (index != -1) {
-      _properties[index] = property;
+    await _appDatabase.updateProperty(app_db.PropertiesCompanion(
+      id: Value(property.id),
+      name: Value(property.name),
+      address: Value(property.address),
+      type: Value(property.type),
+      rent: Value(property.rent),
+      totalFloors: Value(property.totalFloors),
+      totalUnits: Value(property.totalUnits),
+    ));
+
+    // Delete existing units and insert new ones for simplicity
+    await _appDatabase.deleteUnitsForProperty(property.id);
+    for (var unit in property.units) {
+      await _appDatabase.insertUnit(app_db.UnitsCompanion.insert(
+        id: unit.id,
+        propertyId: unit.propertyId,
+        unitNumber: unit.unitNumber,
+        rentStatus: unit.rentStatus,
+        sizeMeter: unit.sizeMeter,
+        sizeKorea: unit.sizeKorea,
+        useType: unit.useType,
+        description: Value(unit.description),
+      ));
     }
     return property;
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - END SIMULATED DATABASE
-
-    /*
-    try {
-      // TODO: 실제 API 엔드포인트 및 응답 구조에 맞게 수정
-      final response = await _dioClient.dio.put(
-        '/properties/${property.id}',
-        data: property.toJson(),
-      );
-      return Property.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? '자산 업데이트 실패');
-    }
-    */
   }
 
   Future<void> deleteProperty(String id) async {
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED DATABASE
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-    _properties.removeWhere((p) => p.id == id);
-    // TODO: REMOVE AFTER BACKEND INTEGRATION - END SIMULATED DATABASE
+    await _appDatabase.deleteProperty(id);
+  }
 
-    /*
-    try {
-      // TODO: 실제 API 엔드포인트 및 응답 구조에 맞게 수정
-      await _dioClient.dio.delete('/properties/$id');
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? '자산 삭제 실패');
-    }
-    */
+  Future<List<Unit>> getAllUnits() async {
+    final units = await _appDatabase.getAllUnits();
+    return units.map((unit) => Unit(
+      id: unit.id,
+      propertyId: unit.propertyId,
+      unitNumber: unit.unitNumber,
+      rentStatus: unit.rentStatus,
+      sizeMeter: unit.sizeMeter,
+      sizeKorea: unit.sizeKorea,
+      useType: unit.useType,
+      description: unit.description,
+    )).toList();
   }
 }
+
+final propertyRepositoryProvider = Provider<PropertyRepository>((ref) {
+  final appDatabase = ref.watch(appDatabaseProvider);
+  return PropertyRepository(appDatabase);
+});
+
+final allUnitsProvider = FutureProvider<List<Unit>>((ref) {
+  final repository = ref.watch(propertyRepositoryProvider);
+  return repository.getAllUnits();
+});

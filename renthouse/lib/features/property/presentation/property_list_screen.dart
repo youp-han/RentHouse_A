@@ -21,7 +21,7 @@ class PropertyListScreen extends ConsumerWidget {
               children: [
                 Expanded(child: TextField(decoration: const InputDecoration(hintText: '검색'))),
                 const SizedBox(width: 12),
-                ElevatedButton(onPressed: () {}, child: const Text('필터적용')),
+                ElevatedButton(onPressed: null, child: const Text('필터적용')),
                 const Spacer(),
                 FilledButton(
                   onPressed: () {
@@ -39,18 +39,36 @@ class PropertyListScreen extends ConsumerWidget {
                 : propertyListState == PropertyListState.error
                     ? Center(child: Text('오류: ${propertyListController.errorMessage}'))
                     : propertyListController.properties.isEmpty
-                        ? const Center(child: Text('등록된 자산이 없습니다.'))
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.business_outlined, size: 64, color: Colors.grey),
+                                SizedBox(height: 16),
+                                Text(
+                                  '아직 등록된 자산이 없습니다.',
+                                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  '새로운 자산을 등록하여 시작해보세요!',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: propertyListController.properties.length,
                             itemBuilder: (_, i) {
                               final property = propertyListController.properties[i];
-                              return ListTile(
-                                title: Text(property.name),
-                                subtitle: Text(property.address),
-                                trailing: Wrap(spacing: 8, children: [
-                                  TextButton(onPressed: () {}, child: const Text('상세')),
-                                  TextButton(onPressed: () {}, child: const Text('수정')),
-                                ]),
+                              return InkWell(
+                                onTap: () {
+                                  context.go('/property/\${property.id}');
+                                },
+                                child: ListTile(
+                                  title: Text(property.name),
+                                  subtitle: Text(property.address),
+                                ),
                               );
                             },
                           ),

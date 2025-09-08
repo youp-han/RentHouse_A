@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:renthouse/core/network/dio_client.dart';
+import 'package:renthouse/core/database/app_database.dart' as app_db;
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/property/domain/property.dart';
 
@@ -32,8 +32,10 @@ class PropertyListController extends StateNotifier<PropertyListState> {
   Future<void> refreshProperties() => _loadProperties();
 }
 
+final appDatabaseProvider = Provider((ref) => app_db.AppDatabase());
+
 final propertyRepositoryProvider = Provider((ref) => PropertyRepository(
-      ref.read(dioClientProvider),
+      ref.read(appDatabaseProvider),
     ));
 
 final propertyListControllerProvider = StateNotifierProvider<PropertyListController, PropertyListState>((ref) {
