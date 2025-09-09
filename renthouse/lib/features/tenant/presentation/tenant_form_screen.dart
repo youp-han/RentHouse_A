@@ -4,6 +4,7 @@ import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/domain/tenant.dart';
 import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
+import 'package:renthouse/features/lease/data/lease_repository.dart';
 
 class TenantFormScreen extends ConsumerStatefulWidget {
   final Tenant? tenant;
@@ -97,17 +98,39 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
                 );
 
                 if (confirmed == true) {
-                  try {
-                    await ref.read(tenantControllerProvider.notifier).deleteTenant(widget.tenant!.id);
-                    ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
-                    messenger.showSnackBar( // Use the captured messenger
-                      const SnackBar(content: Text('임차인이 삭제되었습니다.')),
+                  final hasLeases = await ref.read(leaseRepositoryProvider).hasLeasesForTenant(widget.tenant!.id);
+                  if (hasLeases) {
+                    await showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('삭제 불가'),
+                        content: const Text('임차인에게 연결된 계약이 있어 삭제할 수 없습니다.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('확인'),
+                          ),
+                        ],
+                      ),
                     );
-                    Navigator.of(context).pop(); // Go back after deletion
-                  } catch (e) {
-                    messenger.showSnackBar( // Use the captured messenger
-                      SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
-                    );
+                    // Do not proceed with deletion or navigation. User remains on the form screen.
+                  } else {
+                    try {
+                      await ref.read(tenantControllerProvider.notifier).deleteTenant(widget.tenant!.id);
+                      ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
+                      messenger.showSnackBar( // Use the captured messenger
+                        const SnackBar(content: Text('임차인이 삭제되었습니다.')),
+                      );
+                      context.pop(); // Go back to the previous screen after deletion
+                    } catch (e) {
+                      print('Tenant deletion error: ${e.toString()}'); // Debug print
+                      // For other errors, show a SnackBar
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
+                      );
+                      // For other errors, still pop back to the list
+                      Navigator.of(context).pop();
+                    }
                   }
                 }
               },

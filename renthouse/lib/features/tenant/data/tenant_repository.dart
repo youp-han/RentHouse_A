@@ -49,6 +49,11 @@ class TenantRepository {
   }
 
   Future<void> deleteTenant(String id) async {
+    // Check for associated leases before deleting the tenant
+    final hasLeases = await _appDatabase.hasLeasesForTenant(id);
+    if (hasLeases) {
+      throw Exception('Tenant has associated leases and cannot be deleted.');
+    }
     await _appDatabase.deleteTenant(id);
   }
 }

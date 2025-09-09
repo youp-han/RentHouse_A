@@ -144,109 +144,131 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
       body: tenantsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('임차인 목록 로딩 오류: $err')),
-        data: (tenants) => unitsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('유닛 목록 로딩 오류: $err')),
-          data: (units) => Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                DropdownButtonFormField<String>(
-                  value: _selectedTenantId,
-                  decoration: const InputDecoration(labelText: '임차인'),
-                  items: tenants.map((Tenant tenant) {
-                    return DropdownMenuItem<String>(
-                      value: tenant.id,
-                      child: Text(tenant.name),
-                    );
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedTenantId = value),
-                  validator: (value) => value == null ? '임차인을 선택하세요' : null,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedUnitId,
-                  decoration: const InputDecoration(labelText: '유닛 (호실)'),
-                  items: units.map((Unit unit) {
-                    return DropdownMenuItem<String>(
-                      value: unit.id,
-                      child: Text(unit.unitNumber),
-                    );
-                  }).toList(),
-                  onChanged: (value) => setState(() => _selectedUnitId = value),
-                  validator: (value) => value == null ? '유닛을 선택하세요' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _depositController,
-                  decoration: const InputDecoration(labelText: '보증금'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => (value == null || value.isEmpty) ? '보증금을 입력하세요' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _monthlyRentController,
-                  decoration: const InputDecoration(labelText: '월세'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => (value == null || value.isEmpty) ? '월세를 입력하세요' : null,
-                ),
-                const SizedBox(height: 16),
-                Row(
+        data: (tenants) {
+          // Ensure _selectedTenantId is valid
+          if (_isEditing && _selectedTenantId != null && !tenants.any((t) => t.id == _selectedTenantId)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              setState(() {
+                _selectedTenantId = null;
+              });
+            });
+          }
+
+          return unitsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('유닛 목록 로딩 오류: $err')),
+            data: (units) {
+              // Ensure _selectedUnitId is valid
+              if (_isEditing && _selectedUnitId != null && !units.any((u) => u.id == _selectedUnitId)) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  setState(() {
+                    _selectedUnitId = null;
+                  });
+                });
+              }
+
+              return Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16.0),
                   children: [
-                    Expanded(
-                      child: Text('시작일: ${_startDate == null ? '선택 안함' : DateFormat.yMd().format(_startDate!)}'),
+                    DropdownButtonFormField<String>(
+                      value: _selectedTenantId,
+                      decoration: const InputDecoration(labelText: '임차인'),
+                      items: tenants.map((Tenant tenant) {
+                        return DropdownMenuItem<String>(
+                          value: tenant.id,
+                          child: Text(tenant.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedTenantId = value),
+                      validator: (value) => value == null ? '임차인을 선택하세요' : null,
                     ),
-                    TextButton(onPressed: () async {
-                      final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
-                      if(date != null) setState(() => _startDate = date);
-                    }, child: const Text('선택')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('종료일: ${_endDate == null ? '선택 안함' : DateFormat.yMd().format(_endDate!)}'),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedUnitId,
+                      decoration: const InputDecoration(labelText: '유닛 (호실)'),
+                      items: units.map((Unit unit) {
+                        return DropdownMenuItem<String>(
+                          value: unit.id,
+                          child: Text(unit.unitNumber),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedUnitId = value),
+                      validator: (value) => value == null ? '유닛을 선택하세요' : null,
                     ),
-                    TextButton(onPressed: () async {
-                      final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
-                      if(date != null) setState(() => _endDate = date);
-                    }, child: const Text('선택')),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _depositController,
+                      decoration: const InputDecoration(labelText: '보증금'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => (value == null || value.isEmpty) ? '보증금을 입력하세요' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _monthlyRentController,
+                      decoration: const InputDecoration(labelText: '월세'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) => (value == null || value.isEmpty) ? '월세를 입력하세요' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('시작일: ${_startDate == null ? '선택 안함' : DateFormat.yMd().format(_startDate!)}'),
+                        ),
+                        TextButton(onPressed: () async {
+                          final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+                          if(date != null) setState(() => _startDate = date);
+                        }, child: const Text('선택')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('종료일: ${_endDate == null ? '선택 안함' : DateFormat.yMd().format(_endDate!)}'),
+                        ),
+                        TextButton(onPressed: () async {
+                          final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
+                          if(date != null) setState(() => _endDate = date);
+                        }, child: const Text('선택')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<LeaseType>(
+                      value: _leaseType,
+                      decoration: const InputDecoration(labelText: '계약 종류'),
+                      items: LeaseType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.name))).toList(),
+                      onChanged: (value) => setState(() => _leaseType = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<LeaseStatus>(
+                      value: _leaseStatus,
+                      decoration: const InputDecoration(labelText: '계약 상태'),
+                      items: LeaseStatus.values.map((status) => DropdownMenuItem(value: status, child: Text(status.name))).toList(),
+                      onChanged: (value) => setState(() => _leaseStatus = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(labelText: '계약 메모'),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        FilledButton(onPressed: _submit, child: const Text('저장')),
+                        const SizedBox(width: 12),
+                        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
+                      ],
+                    )
                   ],
                 ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<LeaseType>(
-                  value: _leaseType,
-                  decoration: const InputDecoration(labelText: '계약 종류'),
-                  items: LeaseType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.name))).toList(),
-                  onChanged: (value) => setState(() => _leaseType = value!),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<LeaseStatus>(
-                  value: _leaseStatus,
-                  decoration: const InputDecoration(labelText: '계약 상태'),
-                  items: LeaseStatus.values.map((status) => DropdownMenuItem(value: status, child: Text(status.name))).toList(),
-                  onChanged: (value) => setState(() => _leaseStatus = value!),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(labelText: '계약 메모'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    FilledButton(onPressed: _submit, child: const Text('저장')),
-                    const SizedBox(width: 12),
-                    TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
-                  ],
-                )
-              ],
-            ),
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }

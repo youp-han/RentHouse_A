@@ -60,6 +60,10 @@ class LeaseRepository {
   Future<void> deleteLease(String id) async {
     await _appDatabase.deleteLease(id);
   }
+
+  Future<bool> hasLeasesForTenant(String tenantId) async {
+    return _appDatabase.hasLeasesForTenant(tenantId);
+  }
 }
 
 final leaseRepositoryProvider = Provider<LeaseRepository>((ref) {

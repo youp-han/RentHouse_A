@@ -146,6 +146,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> insertLease(LeasesCompanion lease) => into(leases).insert(lease);
   Future<bool> updateLease(LeasesCompanion lease) => update(leases).replace(lease);
   Future<void> deleteLease(String id) => (delete(leases)..where((tbl) => tbl.id.equals(id))).go();
+  Future<bool> hasLeasesForTenant(String tenantId) async {
+    final count = await (select(leases)..where((tbl) => tbl.tenantId.equals(tenantId))).get().then((list) => list.length);
+    return count > 0;
+  }
 
   // DAO for bill templates
   Future<List<BillTemplate>> getAllBillTemplates() => select(billTemplates).get();
