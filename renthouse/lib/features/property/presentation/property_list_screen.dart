@@ -63,7 +63,7 @@ class PropertyListScreen extends ConsumerWidget {
                               final property = propertyListController.properties[i];
                               return InkWell(
                                 onTap: () {
-                                  context.go('/property/\${property.id}');
+                                  context.go('/property/${property.id}');
                                 },
                                 child: ListTile(
                                   title: Text(property.name),

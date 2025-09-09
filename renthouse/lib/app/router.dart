@@ -12,8 +12,10 @@ import 'package:renthouse/features/billing/presentation/billing_list_screen.dart
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/presentation/lease_form_screen.dart';
 import 'package:renthouse/features/lease/presentation/lease_list_screen.dart';
-import 'package:renthouse/features/property/application/property_controller.dart';
+import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/property/presentation/property_detail_screen.dart';
+import 'package:renthouse/features/property/presentation/unit_form_screen.dart';
+import 'package:renthouse/features/property/presentation/unit_management_screen.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_form_screen.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_list_screen.dart';
@@ -43,119 +45,152 @@ final router = GoRouter(
       routes: [
         GoRoute(path: '/', redirect: (_, __) => '/admin/dashboard'),
         GoRoute(path: '/admin/dashboard', builder: (c, s) => const DashboardScreen()),
-        GoRoute(path: '/property', builder: (c, s) => const PropertyListScreen()),
-        GoRoute(path: '/tenants', builder: (c, s) => const TenantListScreen()),
-        GoRoute(path: '/leases', builder: (c, s) => const LeaseListScreen()),
-        GoRoute(path: '/billing', builder: (c, s) => const BillingListScreen()),
+        
+        // Property Routes
+        GoRoute(
+          path: '/property',
+          builder: (c, s) => const PropertyListScreen(),
+          routes: [
+            GoRoute(path: 'new', builder: (c, s) => const PropertyFormScreen()),
+            GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  return PropertyDetailScreen(propertyId: propertyId);
+                }),
+            GoRoute(
+                path: 'edit/:id',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  return Consumer(builder: (context, ref, child) {
+                    final propertyAsync = ref.watch(propertyDetailProvider(propertyId));
+                    return propertyAsync.when(
+                      data: (property) {
+                        if (property == null) {
+                          return const Scaffold(body: Center(child: Text('Property not found')));
+                        }
+                        return PropertyFormScreen(property: property);
+                      },
+                      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+                      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+                    );
+                  });
+                }),
+            GoRoute(
+                path: ':id/units',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  return UnitManagementScreen(propertyId: propertyId);
+                }),
+            GoRoute(
+                path: ':id/units/add',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  return UnitFormScreen(propertyId: propertyId);
+                }),
+            GoRoute(
+                path: ':id/units/edit/:unitId',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  final unitId = state.pathParameters['unitId']!;
+                  return UnitFormScreen(propertyId: propertyId, unitId: unitId);
+                }),
+          ]
+        ),
+
+        // Tenant Routes
+        GoRoute(
+          path: '/tenants',
+          builder: (c, s) => const TenantListScreen(),
+          routes: [
+            GoRoute(path: 'new', builder: (c, s) => const TenantFormScreen()),
+            GoRoute(
+                path: 'edit/:id',
+                builder: (context, state) {
+                  final tenantId = state.pathParameters['id']!;
+                  return Consumer(builder: (context, ref, child) {
+                    final tenant = ref.watch(tenantControllerProvider).value?.firstWhereOrNull((t) => t.id == tenantId);
+                    if (tenant == null) {
+                      return const Scaffold(
+                        body: Center(
+                          child: Text('Tenant not found'),
+                        ),
+                      );
+                    }
+                    return TenantFormScreen(tenant: tenant);
+                  });
+                }),
+          ]
+        ),
+
+        // Lease Routes
+        GoRoute(
+          path: '/leases',
+          builder: (c, s) => const LeaseListScreen(),
+          routes: [
+            GoRoute(path: 'new', builder: (c, s) => const LeaseFormScreen()),
+            GoRoute(
+                path: '/leases/edit/:id',
+                builder: (context, state) {
+                  final leaseId = state.pathParameters['id']!;
+                  return Consumer(builder: (context, ref, child) {
+                    final lease = ref.watch(leaseControllerProvider).value?.firstWhereOrNull((l) => l.id == leaseId);
+                    if (lease == null) {
+                      return const Scaffold(
+                        body: Center(
+                          child: Text('Lease not found'),
+                        ),
+                      );
+                    }
+                    return LeaseFormScreen(lease: lease);
+                  });
+                }),
+          ]
+        ),
+
+        // Billing Routes
+        GoRoute(
+          path: '/billing',
+          builder: (c, s) => const BillingListScreen(),
+          routes: [
+            GoRoute(path: 'new', builder: (c, s) => const BillingFormScreen()),
+            GoRoute(
+                path: 'edit/:id',
+                builder: (context, state) {
+                  final billingId = state.pathParameters['id']!;
+                  return Consumer(builder: (context, ref, child) {
+                    final billing = ref.watch(billingControllerProvider).value?.firstWhereOrNull((b) => b.id == billingId);
+                    if (billing == null) {
+                      return const Scaffold(
+                        body: Center(
+                          child: Text('Billing not found'),
+                        ),
+                      );
+                    }
+                    return BillingFormScreen(billing: billing);
+                  });
+                }),
+            GoRoute(path: 'templates', builder: (c, s) => const BillTemplateListScreen()),
+            GoRoute(path: 'templates/new', builder: (c, s) => const BillTemplateFormScreen()),
+            GoRoute(
+                path: 'templates/edit/:id',
+                builder: (context, state) {
+                  final templateId = state.pathParameters['id']!;
+                  return Consumer(builder: (context, ref, child) {
+                    final template = ref.watch(billTemplateControllerProvider).value?.firstWhereOrNull((t) => t.id == templateId);
+                    if (template == null) {
+                      return const Scaffold(
+                        body: Center(
+                          child: Text('Template not found'),
+                        ),
+                      );
+                    }
+                    return BillTemplateFormScreen(template: template);
+                  });
+                }),
+          ]
+        ),
       ],
     ),
-    GoRoute(path: '/property/new', builder: (c, s) => const PropertyFormScreen()),
-    GoRoute(
-        path: '/property/:id',
-        builder: (context, state) {
-          final propertyId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final property =
-              container.read(propertyListControllerProvider.notifier).properties.firstWhereOrNull((p) => p.id == propertyId);
-
-          if (property == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Property not found'),
-              ),
-            );
-          }
-          return PropertyDetailScreen(property: property);
-        }),
-    GoRoute(
-        path: '/property/edit/:id',
-        builder: (context, state) {
-          final propertyId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final property =
-              container.read(propertyListControllerProvider.notifier).properties.firstWhereOrNull((p) => p.id == propertyId);
-
-          if (property == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Property not found'),
-              ),
-            );
-          }
-          return PropertyFormScreen(property: property);
-        }),
-    GoRoute(path: '/tenants/new', builder: (c, s) => const TenantFormScreen()),
-    GoRoute(
-        path: '/tenants/edit/:id',
-        builder: (context, state) {
-          final tenantId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final tenant = 
-              container.read(tenantControllerProvider).value?.firstWhereOrNull((t) => t.id == tenantId);
-
-          if (tenant == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Tenant not found'),
-              ),
-            );
-          }
-          return TenantFormScreen(tenant: tenant);
-        }),
-    GoRoute(path: '/leases/new', builder: (c, s) => const LeaseFormScreen()),
-    GoRoute(
-        path: '/leases/edit/:id',
-        builder: (context, state) {
-          final leaseId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final lease = 
-              container.read(leaseControllerProvider).value?.firstWhereOrNull((l) => l.id == leaseId);
-
-          if (lease == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Lease not found'),
-              ),
-            );
-          }
-          return LeaseFormScreen(lease: lease);
-        }),
-    GoRoute(path: '/billing/templates', builder: (c, s) => const BillTemplateListScreen()),
-    GoRoute(path: '/billing/templates/new', builder: (c, s) => const BillTemplateFormScreen()),
-    GoRoute(
-        path: '/billing/templates/edit/:id',
-        builder: (context, state) {
-          final templateId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final template = 
-              container.read(billTemplateControllerProvider).value?.firstWhereOrNull((t) => t.id == templateId);
-
-          if (template == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Template not found'),
-              ),
-            );
-          }
-          return BillTemplateFormScreen(template: template);
-        }),
-    GoRoute(path: '/billing/new', builder: (c, s) => const BillingFormScreen()),
-    GoRoute(
-        path: '/billing/edit/:id',
-        builder: (context, state) {
-          final billingId = state.pathParameters['id']!;
-          final container = ProviderScope.containerOf(context);
-          final billing = 
-              container.read(billingControllerProvider).value?.firstWhereOrNull((b) => b.id == billingId);
-
-          if (billing == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Billing not found'),
-              ),
-            );
-          }
-          return BillingFormScreen(billing: billing);
-        }),
   ],
 );

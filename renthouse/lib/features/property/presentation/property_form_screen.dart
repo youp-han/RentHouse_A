@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/property/application/property_controller.dart';
 import 'package:renthouse/features/property/domain/property.dart';
+import 'package:renthouse/features/property/data/property_repository.dart';
+import 'package:uuid/uuid.dart';
 
 class PropertyFormScreen extends ConsumerStatefulWidget {
   final Property? property;
@@ -16,9 +18,11 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _typeController = TextEditingController();
-  final _rentController = TextEditingController(); // rent 추가
+  final _rentController = TextEditingController();
   final _totalFloorsController = TextEditingController();
   final _totalUnitsController = TextEditingController();
+
+  final Uuid _uuid = const Uuid();
 
   bool get _isEditMode => widget.property != null;
 
@@ -30,7 +34,7 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
       _nameController.text = p.name;
       _addressController.text = p.address;
       _typeController.text = p.type;
-      _rentController.text = p.rent.toString(); // rent 추가
+      _rentController.text = p.rent.toString();
       _totalFloorsController.text = p.totalFloors.toString();
       _totalUnitsController.text = p.totalUnits.toString();
     }
@@ -41,10 +45,39 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
     _nameController.dispose();
     _addressController.dispose();
     _typeController.dispose();
-    _rentController.dispose(); // rent 추가
+    _rentController.dispose();
     _totalFloorsController.dispose();
     _totalUnitsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showAddUnitsDialog(String propertyId) async {
+    final wantsToAddUnits = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('자산 저장 완료'),
+        content: const Text('자산 정보가 저장되었습니다. 이어서 유닛을 등록하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('나중에'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('지금 등록'),
+          ),
+        ],
+      ),
+    );
+
+    if (mounted) { // Check if the widget is still in the tree
+      if (wantsToAddUnits == true) {
+        context.go('/property/$propertyId/units');
+      } else {
+        context.go('/property');
+      }
+    }
   }
 
   @override
@@ -104,7 +137,9 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
+                      String propertyId;
                       if (_isEditMode) {
+                        propertyId = widget.property!.id;
                         final updatedProperty = widget.property!.copyWith(
                           name: _nameController.text,
                           address: _addressController.text,
@@ -112,27 +147,36 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                           rent: int.parse(_rentController.text),
                           totalFloors: int.parse(_totalFloorsController.text),
                           totalUnits: int.parse(_totalUnitsController.text),
+                          // units list is not modified here
                         );
                         await propertyRepository.updateProperty(updatedProperty);
                       } else {
+                        propertyId = _uuid.v4();
                         final newProperty = Property(
-                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          id: propertyId,
                           name: _nameController.text,
                           address: _addressController.text,
                           type: _typeController.text,
                           rent: int.parse(_rentController.text),
                           totalFloors: int.parse(_totalFloorsController.text),
                           totalUnits: int.parse(_totalUnitsController.text),
-                          units: [],
+                          units: [], // Always create with empty units
                         );
                         await propertyRepository.createProperty(newProperty);
                       }
 
                       await propertyListController.refreshProperties();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('자산이 성공적으로 저장되었습니다.')),
-                      );
-                      context.go('/property');
+                      
+                      final totalUnits = int.tryParse(_totalUnitsController.text) ?? 0;
+                      if (totalUnits > 0) {
+                        await _showAddUnitsDialog(propertyId);
+                      } else {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('자산이 성공적으로 저장되었습니다.')),
+                        );
+                        context.go('/property');
+                      }
+
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('자산 저장 실패: ${e.toString()}')),

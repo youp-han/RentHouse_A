@@ -16,6 +16,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // TODO: Remove these default values before production
+    _emailController.text = 'test@example.com';
+    _passwordController.text = 'password';
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();

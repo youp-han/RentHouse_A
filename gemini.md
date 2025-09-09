@@ -43,3 +43,20 @@
 - **청구(Billing) 기능 구현**: 청구서 및 청구 항목 관리 기능을 구현합니다.
 - **백엔드 연동**: (보류) 실제 백엔드 서버가 준비되면 다시 진행합니다.
 - **단위 테스트 및 통합 테스트 작성**: (보류) 코드 안정성 및 품질 향상을 위해 테스트 코드를 추가합니다.
+
+## 최종 업데이트: 2025-09-09
+
+### 현재 상태
+- **자산 및 유닛 관리 기능 개선**:
+  - 자산 상세 화면에서 'property not found' 오류 및 문자열 보간 오류 수정.
+  - 로그인 화면에 개발용 기본 계정(test@example.com / password) 자동 입력 기능 추가.
+  - 유닛 등록/수정 시 'there's nothing to pop' 오류 수정 (go_router push/pop 문제 해결).
+  - 라우팅 구조 전면 개편: 모든 상세/폼 화면이 `MainLayout` 내에서 동작하도록 변경하여 일관된 내비게이션 및 뒤로가기 버튼 제공.
+  - 유닛 등록 방식 변경: 자산 저장 후 유닛을 별도로 순차 등록하는 워크플로우 구현.
+
+### 다음 단계
+- **유닛 상세 화면 구현**:
+  - `unitDetailProvider`를 `property_repository.dart`에 추가 (진행 중).
+  - `router.dart`에 유닛 상세 화면(`unit_detail_screen.dart`) 라우트 추가.
+  - `unit_detail_screen.dart` 파일 생성 및 유닛 정보 표시 기능 구현.
+  - `property_detail_screen.dart`에서 유닛 목록 클릭 시 `unit_detail_screen.dart`로 이동하도록 연결.

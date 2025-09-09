@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/core/database/app_database.dart' as app_db;
 import 'package:renthouse/core/database/database_provider.dart';
@@ -14,26 +15,15 @@ class PropertyRepository {
     final properties = await _appDatabase.getAllProperties();
     return Future.wait(properties.map((property) async {
       final units = await _appDatabase.getUnitsForProperty(property.id);
-      return Property(
-        id: property.id,
-        name: property.name,
-        address: property.address,
-        type: property.type,
-        rent: property.rent,
-        totalFloors: property.totalFloors,
-        totalUnits: property.totalUnits,
-        units: units.map((unit) => Unit(
-          id: unit.id,
-          propertyId: unit.propertyId,
-          unitNumber: unit.unitNumber,
-          rentStatus: unit.rentStatus,
-          sizeMeter: unit.sizeMeter,
-          sizeKorea: unit.sizeKorea,
-          useType: unit.useType,
-          description: unit.description,
-        )).toList(),
-      );
+      return _mapProperty(property, units);
     }).toList());
+  }
+
+  Future<Property?> getPropertyById(String id) async {
+    // Inefficient: Fetches all properties and filters in memory.
+    // TODO: Replace with a direct database query for a single property by ID.
+    final allProperties = await getProperties();
+    return allProperties.firstWhereOrNull((p) => p.id == id);
   }
 
   Future<Property> createProperty(Property property) async {
@@ -47,16 +37,7 @@ class PropertyRepository {
       totalUnits: property.totalUnits,
     ));
     for (var unit in property.units) {
-      await _appDatabase.insertUnit(app_db.UnitsCompanion.insert(
-        id: unit.id,
-        propertyId: unit.propertyId,
-        unitNumber: unit.unitNumber,
-        rentStatus: unit.rentStatus,
-        sizeMeter: unit.sizeMeter,
-        sizeKorea: unit.sizeKorea,
-        useType: unit.useType,
-        description: Value(unit.description),
-      ));
+      await addUnit(unit);
     }
     return property;
   }
@@ -71,21 +52,6 @@ class PropertyRepository {
       totalFloors: Value(property.totalFloors),
       totalUnits: Value(property.totalUnits),
     ));
-
-    // Delete existing units and insert new ones for simplicity
-    await _appDatabase.deleteUnitsForProperty(property.id);
-    for (var unit in property.units) {
-      await _appDatabase.insertUnit(app_db.UnitsCompanion.insert(
-        id: unit.id,
-        propertyId: unit.propertyId,
-        unitNumber: unit.unitNumber,
-        rentStatus: unit.rentStatus,
-        sizeMeter: unit.sizeMeter,
-        sizeKorea: unit.sizeKorea,
-        useType: unit.useType,
-        description: Value(unit.description),
-      ));
-    }
     return property;
   }
 
@@ -93,9 +59,58 @@ class PropertyRepository {
     await _appDatabase.deleteProperty(id);
   }
 
+  Future<Unit> addUnit(Unit unit) async {
+    await _appDatabase.insertUnit(app_db.UnitsCompanion.insert(
+      id: unit.id,
+      propertyId: unit.propertyId,
+      unitNumber: unit.unitNumber,
+      rentStatus: unit.rentStatus,
+      sizeMeter: unit.sizeMeter,
+      sizeKorea: unit.sizeKorea,
+      useType: unit.useType,
+      description: Value(unit.description),
+    ));
+    return unit;
+  }
+
+  Future<Unit> updateUnit(Unit unit) async {
+    await _appDatabase.updateUnit(app_db.UnitsCompanion(
+      id: Value(unit.id),
+      propertyId: Value(unit.propertyId),
+      unitNumber: Value(unit.unitNumber),
+      rentStatus: Value(unit.rentStatus),
+      sizeMeter: Value(unit.sizeMeter),
+      sizeKorea: Value(unit.sizeKorea),
+      useType: Value(unit.useType),
+      description: Value(unit.description),
+    ));
+    return unit;
+  }
+
+  Future<void> deleteUnit(String id) async {
+    await _appDatabase.deleteUnit(id);
+  }
+
   Future<List<Unit>> getAllUnits() async {
     final units = await _appDatabase.getAllUnits();
-    return units.map((unit) => Unit(
+    return units.map((unit) => _mapUnit(unit)).toList();
+  }
+
+  Property _mapProperty(app_db.Property property, List<app_db.Unit> units) {
+    return Property(
+      id: property.id,
+      name: property.name,
+      address: property.address,
+      type: property.type,
+      rent: property.rent,
+      totalFloors: property.totalFloors,
+      totalUnits: property.totalUnits,
+      units: units.map((unit) => _mapUnit(unit)).toList(),
+    );
+  }
+
+  Unit _mapUnit(app_db.Unit unit) {
+    return Unit(
       id: unit.id,
       propertyId: unit.propertyId,
       unitNumber: unit.unitNumber,
@@ -104,13 +119,18 @@ class PropertyRepository {
       sizeKorea: unit.sizeKorea,
       useType: unit.useType,
       description: unit.description,
-    )).toList();
+    );
   }
 }
 
 final propertyRepositoryProvider = Provider<PropertyRepository>((ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
   return PropertyRepository(appDatabase);
+});
+
+final propertyDetailProvider = FutureProvider.autoDispose.family<Property?, String>((ref, id) async {
+  final repository = ref.watch(propertyRepositoryProvider);
+  return repository.getPropertyById(id);
 });
 
 final allUnitsProvider = FutureProvider<List<Unit>>((ref) {
