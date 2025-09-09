@@ -7,8 +7,8 @@ part 'billing_controller.g.dart';
 @riverpod
 class BillingController extends _$BillingController {
   @override
-  Future<List<Billing>> build() async {
-    return ref.watch(billingRepositoryProvider).getBillings();
+  Future<List<Billing>> build({String? searchQuery}) async {
+    return ref.watch(billingRepositoryProvider).getBillings(searchQuery: searchQuery);
   }
 
   Future<void> addBilling(Billing billing) async {

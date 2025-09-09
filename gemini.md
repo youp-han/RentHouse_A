@@ -38,9 +38,9 @@
 - **UI/UX 개선**: 테마 일관성, 반응형 내비게이션, 폼 유효성 검사 및 사용자 피드백, 빈 상태 디자인 개선 완료.
 - **임차인(Tenant) 기능 구현**: 임차인 정보(CRUD) 관리 기능을 구현했습니다. (Domain, Data, Application, Presentation 계층 포함)
 - **임대 계약(Lease) 기능 구현**: 임대 계약 정보(CRUD) 관리 기능을 구현했습니다. (Domain, Data, Application, Presentation 계층 포함)
+- **청구(Billing) 기능 구현**: 청구서 및 청구 항목 관리 기능의 기본 구조(모델, 리포지토리, 컨트롤러, 화면)가 구현되었으며, 날짜 선택기, 임대 및 청구 항목 표시 개선, 검색/필터 및 삭제 기능이 추가되었습니다.
 
 ### 다음 단계
-- **청구(Billing) 기능 구현**: 청구서 및 청구 항목 관리 기능을 구현합니다.
 - **백엔드 연동**: (보류) 실제 백엔드 서버가 준비되면 다시 진행합니다.
 - **단위 테스트 및 통합 테스트 작성**: (보류) 코드 안정성 및 품질 향상을 위해 테스트 코드를 추가합니다.
 
@@ -54,9 +54,7 @@
   - 라우팅 구조 전면 개편: 모든 상세/폼 화면이 `MainLayout` 내에서 동작하도록 변경하여 일관된 내비게이션 및 뒤로가기 버튼 제공.
   - 유닛 등록 방식 변경: 자산 저장 후 유닛을 별도로 순차 등록하는 워크플로우 구현.
 
+        ### 완료된 단계
+        - **유닛 상세 화면 구현**: `unitDetailProvider` 추가, 라우트 추가, `unit_detail_screen.dart` 구현 및 내비게이션 연결 완료.
+
 ### 다음 단계
-- **유닛 상세 화면 구현**:
-  - `unitDetailProvider`를 `property_repository.dart`에 추가 (진행 중).
-  - `router.dart`에 유닛 상세 화면(`unit_detail_screen.dart`) 라우트 추가.
-  - `unit_detail_screen.dart` 파일 생성 및 유닛 정보 표시 기능 구현.
-  - `property_detail_screen.dart`에서 유닛 목록 클릭 시 `unit_detail_screen.dart`로 이동하도록 연결.

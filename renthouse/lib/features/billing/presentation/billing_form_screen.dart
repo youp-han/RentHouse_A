@@ -84,9 +84,9 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       );
 
       if (_isEditing) {
-        ref.read(billingControllerProvider.notifier).updateBilling(billing);
+        ref.read(billingControllerProvider().notifier).updateBilling(billing);
       } else {
-        ref.read(billingControllerProvider.notifier).addBilling(billing);
+        ref.read(billingControllerProvider().notifier).addBilling(billing);
       }
 
       Navigator.of(context).pop();
@@ -101,6 +101,45 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? '청구서 수정' : '청구서 생성'),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('청구서 삭제'),
+                    content: const Text('정말로 이 청구서를 삭제하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    await ref.read(billingControllerProvider().notifier).deleteBilling(widget.billing!.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('청구서가 삭제되었습니다.')),
+                    );
+                    Navigator.of(context).pop(); // Go back after deletion
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('청구서 삭제 실패: ${e.toString()}')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       body: leasesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -116,23 +155,82 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 items: availableLeases.map((Lease lease) {
                   return DropdownMenuItem<String>(
                     value: lease.id,
-                    child: Text("계약: \n${lease.id.substring(0, 8)}..."),
+                    child: Text(
+                      '${lease.leaseType.name.toUpperCase()} - ${DateFormat('yyyy-MM-dd').format(lease.startDate)} ~ ${DateFormat('yyyy-MM-dd').format(lease.endDate)}',
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedLeaseId = value),
                 validator: (value) => value == null ? '계약을 선택하세요' : null,
               ),
               const SizedBox(height: 16),
-              // Date selectors, etc.
-              // ... (Simplified for brevity)
+              TextFormField(
+                controller: TextEditingController(
+                  text: _issueDate == null ? '' : DateFormat('yyyy-MM-dd').format(_issueDate!),
+                ),
+                decoration: const InputDecoration(
+                  labelText: '발행일',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _issueDate ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (selectedDate != null) {
+                    setState(() {
+                      _issueDate = selectedDate;
+                    });
+                  }
+                },
+                validator: (value) => value == null || value.isEmpty ? '발행일을 선택하세요' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: TextEditingController(
+                  text: _dueDate == null ? '' : DateFormat('yyyy-MM-dd').format(_dueDate!),
+                ),
+                decoration: const InputDecoration(
+                  labelText: '납부 기한',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: _dueDate ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (selectedDate != null) {
+                    setState(() {
+                      _dueDate = selectedDate;
+                    });
+                  }
+                },
+                validator: (value) => value == null || value.isEmpty ? '납부 기한을 선택하세요' : null,
+              ),
+              const SizedBox(height: 16),
 
               const Divider(height: 32),
               Text('청구 항목', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               ..._items.map((item) {
+                BillTemplate? template;
+                if (templatesAsync.value != null) {
+                  for (var t in templatesAsync.value!) {
+                    if (t.id == item.billTemplateId) {
+                      template = t;
+                      break;
+                    }
+                  }
+                }
                 return ListTile(
-                  title: Text("항목 ID: \n${item.billTemplateId.substring(0,8)}..."),
-                  trailing: Text('${item.amount}'),
+                  title: Text(template?.name ?? '알 수 없는 항목'),
+                  trailing: Text('${item.amount}원'),
                 );
               }),
               const SizedBox(height: 8),

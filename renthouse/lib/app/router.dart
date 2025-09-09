@@ -175,7 +175,7 @@ final router = GoRouter(
                 builder: (context, state) {
                   final billingId = state.pathParameters['id']!;
                   return Consumer(builder: (context, ref, child) {
-                    final billing = ref.watch(billingControllerProvider).value?.firstWhereOrNull((b) => b.id == billingId);
+                    final billing = ref.watch(billingControllerProvider()).value?.firstWhereOrNull((b) => b.id == billingId);
                     if (billing == null) {
                       return const Scaffold(
                         body: Center(

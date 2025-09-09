@@ -39,9 +39,9 @@ class BillingRepository {
   Future<void> deleteBillTemplate(String id) => _appDatabase.deleteBillTemplate(id);
 
   // Billing Aggregate CRUD
-  Future<List<Billing>> getBillings() async {
+  Future<List<Billing>> getBillings({String? searchQuery}) async {
     final billings = await _appDatabase.getAllBillings();
-    return Future.wait(billings.map((billing) async {
+    final mappedBillings = await Future.wait(billings.map((billing) async {
       final items = await _appDatabase.getBillingItemsForBilling(billing.id);
       return Billing(
         id: billing.id,
@@ -60,6 +60,16 @@ class BillingRepository {
         )).toList(),
       );
     }).toList());
+
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final lowerCaseQuery = searchQuery.toLowerCase();
+      return mappedBillings.where((billing) {
+        return billing.leaseId.toLowerCase().contains(lowerCaseQuery) ||
+               billing.yearMonth.toLowerCase().contains(lowerCaseQuery);
+      }).toList();
+    }
+
+    return mappedBillings;
   }
 
   Future<Billing> createBilling(Billing billing) async {

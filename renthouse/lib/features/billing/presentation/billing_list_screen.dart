@@ -3,12 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/billing/application/billing_controller.dart';
 
-class BillingListScreen extends ConsumerWidget {
+final _searchQueryProvider = StateProvider<String>((ref) => '');
+
+class BillingListScreen extends ConsumerStatefulWidget {
   const BillingListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final billingsAsync = ref.watch(billingControllerProvider);
+  ConsumerState<BillingListScreen> createState() => _BillingListScreenState();
+}
+
+class _BillingListScreenState extends ConsumerState<BillingListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      ref.read(_searchQueryProvider.notifier).state = _searchController.text;
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final searchQuery = ref.watch(_searchQueryProvider);
+    final billingsAsync = ref.watch(billingControllerProvider(searchQuery: searchQuery));
 
     return Scaffold(
       appBar: AppBar(
@@ -29,9 +53,24 @@ class BillingListScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                const Expanded(child: TextField(decoration: InputDecoration(hintText: '검색'))),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(hintText: '검색'),
+                    onSubmitted: (value) {
+                      // Optional: Trigger search on submit if not using onChanged
+                      // ref.read(_searchQueryProvider.notifier).state = value;
+                    },
+                  ),
+                ),
                 const SizedBox(width: 12),
-                ElevatedButton(onPressed: null, child: const Text('필터적용')),
+                ElevatedButton(
+                  onPressed: () {
+                    // Trigger search explicitly if needed, otherwise onChanged handles it
+                    ref.read(_searchQueryProvider.notifier).state = _searchController.text;
+                  },
+                  child: const Text('필터적용'),
+                ),
                 const Spacer(),
                 FilledButton(
                   onPressed: () {
