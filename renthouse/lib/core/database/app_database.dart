@@ -1,19 +1,7 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Import the new connection setup
 import 'package:renthouse/core/database/connection.dart';
-
-import 'package:renthouse/features/billing/domain/bill_template.dart';
-import 'package:renthouse/features/billing/domain/billing.dart';
-import 'package:renthouse/features/billing/domain/billing_item.dart';
-import 'package:renthouse/features/lease/domain/lease.dart';
-import 'package:renthouse/features/property/domain/property.dart';
-import 'package:renthouse/features/property/domain/unit.dart';
-import 'package:renthouse/features/tenant/domain/tenant.dart';
 
 part 'app_database.g.dart';
 

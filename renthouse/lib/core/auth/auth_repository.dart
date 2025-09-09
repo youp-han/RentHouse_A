@@ -1,13 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:renthouse/core/network/dio_client.dart';
 
 class AuthRepository {
-  final DioClient _dioClient;
   final FlutterSecureStorage _secureStorage;
 
-  AuthRepository(this._dioClient, this._secureStorage);
+  AuthRepository(this._secureStorage);
 
   Future<String> login(String email, String password) async {
     // TODO: REMOVE AFTER BACKEND INTEGRATION - START SIMULATED LOGIN
@@ -33,9 +30,9 @@ class AuthRepository {
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
+  // final dioClient = ref.watch(dioClientProvider); // Re-enable when backend is integrated
   final secureStorage = ref.watch(secureStorageProvider);
-  return AuthRepository(dioClient, secureStorage);
+  return AuthRepository(secureStorage);
 });
 
 final secureStorageProvider = Provider((ref) => const FlutterSecureStorage());

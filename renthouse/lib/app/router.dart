@@ -11,7 +11,6 @@ import 'package:renthouse/features/billing/presentation/billing_form_screen.dart
 import 'package:renthouse/features/billing/presentation/billing_list_screen.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/presentation/lease_form_screen.dart';
-import 'package:renthouse/features/lease/presentation/lease_detail_screen.dart';
 import 'package:renthouse/features/lease/presentation/lease_list_screen.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/property/presentation/property_detail_screen.dart';
@@ -19,7 +18,6 @@ import 'package:renthouse/features/property/presentation/unit_detail_screen.dart
 import 'package:renthouse/features/property/presentation/unit_form_screen.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_form_screen.dart';
-import 'package:renthouse/features/tenant/presentation/tenant_detail_screen.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_list_screen.dart';
 import 'package:renthouse/features/tenant/domain/tenant.dart';
 import '../core/auth/auth_state.dart';
