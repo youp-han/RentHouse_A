@@ -91,6 +91,15 @@ class PropertyRepository {
     await _appDatabase.deleteUnit(id);
   }
 
+  Future<Unit?> getUnitById(String id) async {
+    try {
+      final unit = await _appDatabase.getUnitById(id);
+      return _mapUnit(unit);
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<List<Unit>> getAllUnits() async {
     final units = await _appDatabase.getAllUnits();
     return units.map((unit) => _mapUnit(unit)).toList();
@@ -136,4 +145,10 @@ final propertyDetailProvider = FutureProvider.autoDispose.family<Property?, Stri
 final allUnitsProvider = FutureProvider<List<Unit>>((ref) {
   final repository = ref.watch(propertyRepositoryProvider);
   return repository.getAllUnits();
+});
+
+final unitDetailProvider =
+    FutureProvider.autoDispose.family<Unit?, String>((ref, id) async {
+  final repository = ref.watch(propertyRepositoryProvider);
+  return repository.getUnitById(id);
 });

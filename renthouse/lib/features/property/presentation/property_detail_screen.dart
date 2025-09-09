@@ -19,8 +19,6 @@ class PropertyDetailScreen extends ConsumerWidget {
           return const Scaffold(body: Center(child: Text('Property not found')));
         }
 
-        final canAddMoreUnits = property.units.length < property.totalUnits;
-
         return Scaffold(
           appBar: AppBar(
             title: Text(property.name),
@@ -29,7 +27,7 @@ class PropertyDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.edit),
                 onPressed: () {
                   // Navigate to edit screen, ensuring it can handle the async property
-                  context.go('/property/edit/${property.id}');
+                  context.push('/property/edit/${property.id}');
                 },
               ),
               IconButton(
@@ -82,18 +80,7 @@ class PropertyDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text('총 유닛: ${property.totalUnits}개', style: Theme.of(context).textTheme.bodyLarge),
                 const Divider(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('유닛 목록 (${property.units.length}개 등록됨)', style: Theme.of(context).textTheme.titleLarge),
-                    if (canAddMoreUnits)
-                      FilledButton.icon(
-                        icon: const Icon(Icons.add),
-                        label: const Text('유닛 관리'),
-                        onPressed: () => context.go('/property/${property.id}/units'),
-                      ),
-                  ],
-                ),
+                Text('유닛 목록 (${property.units.length}개 등록됨)', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 16),
                 Expanded(
                   child: ListView.builder(
@@ -106,6 +93,7 @@ class PropertyDetailScreen extends ConsumerWidget {
                           title: Text(unit.unitNumber),
                           subtitle: Text('${unit.useType} / ${unit.rentStatus}'),
                           trailing: Text('${unit.sizeKorea}평'),
+                          onTap: () => context.go('/property/${property.id}/units/${unit.id}'),
                         ),
                       );
                     },

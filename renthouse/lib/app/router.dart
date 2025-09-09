@@ -11,13 +11,15 @@ import 'package:renthouse/features/billing/presentation/billing_form_screen.dart
 import 'package:renthouse/features/billing/presentation/billing_list_screen.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/presentation/lease_form_screen.dart';
+import 'package:renthouse/features/lease/presentation/lease_detail_screen.dart';
 import 'package:renthouse/features/lease/presentation/lease_list_screen.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/property/presentation/property_detail_screen.dart';
+import 'package:renthouse/features/property/presentation/unit_detail_screen.dart';
 import 'package:renthouse/features/property/presentation/unit_form_screen.dart';
-import 'package:renthouse/features/property/presentation/unit_management_screen.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_form_screen.dart';
+import 'package:renthouse/features/tenant/presentation/tenant_detail_screen.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_list_screen.dart';
 import '../core/auth/auth_state.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
@@ -77,12 +79,6 @@ final router = GoRouter(
                   });
                 }),
             GoRoute(
-                path: ':id/units',
-                builder: (context, state) {
-                  final propertyId = state.pathParameters['id']!;
-                  return UnitManagementScreen(propertyId: propertyId);
-                }),
-            GoRoute(
                 path: ':id/units/add',
                 builder: (context, state) {
                   final propertyId = state.pathParameters['id']!;
@@ -95,6 +91,14 @@ final router = GoRouter(
                   final unitId = state.pathParameters['unitId']!;
                   return UnitFormScreen(propertyId: propertyId, unitId: unitId);
                 }),
+            GoRoute(
+                path: ':id/units/:unitId',
+                builder: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  final unitId = state.pathParameters['unitId']!;
+                  return UnitDetailScreen(
+                      propertyId: propertyId, unitId: unitId);
+                }),
           ]
         ),
 
@@ -104,6 +108,12 @@ final router = GoRouter(
           builder: (c, s) => const TenantListScreen(),
           routes: [
             GoRoute(path: 'new', builder: (c, s) => const TenantFormScreen()),
+            GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final tenantId = state.pathParameters['id']!;
+                  return TenantDetailScreen(tenantId: tenantId);
+                }),
             GoRoute(
                 path: 'edit/:id',
                 builder: (context, state) {
@@ -130,7 +140,13 @@ final router = GoRouter(
           routes: [
             GoRoute(path: 'new', builder: (c, s) => const LeaseFormScreen()),
             GoRoute(
-                path: '/leases/edit/:id',
+                path: ':id',
+                builder: (context, state) {
+                  final leaseId = state.pathParameters['id']!;
+                  return LeaseDetailScreen(leaseId: leaseId);
+                }),
+            GoRoute(
+                path: 'edit/:id',
                 builder: (context, state) {
                   final leaseId = state.pathParameters['id']!;
                   return Consumer(builder: (context, ref, child) {

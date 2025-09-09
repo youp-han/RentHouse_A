@@ -24,7 +24,7 @@ class TenantListScreen extends ConsumerWidget {
                 const Spacer(),
                 FilledButton(
                   onPressed: () {
-                    context.go('/tenants/new');
+                    context.push('/tenants/new');
                   },
                   child: const Text('+ 신규 등록'),
                 ),

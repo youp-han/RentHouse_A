@@ -126,6 +126,7 @@ class AppDatabase extends _$AppDatabase {
 
   // DAO for units
   Future<List<Unit>> getAllUnits() => select(units).get();
+  Future<Unit> getUnitById(String id) => (select(units)..where((tbl) => tbl.id.equals(id))).getSingle();
   Future<List<Unit>> getUnitsForProperty(String propertyId) => (select(units)..where((tbl) => tbl.propertyId.equals(propertyId))).get();
   Future<void> insertUnit(UnitsCompanion unit) => into(units).insert(unit);
   Future<bool> updateUnit(UnitsCompanion unit) => update(units).replace(unit);
