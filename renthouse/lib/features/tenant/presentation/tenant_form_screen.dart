@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/domain/tenant.dart';
 import 'package:uuid/uuid.dart';
+import 'package:go_router/go_router.dart';
 
 class TenantFormScreen extends ConsumerStatefulWidget {
   final Tenant? tenant;
@@ -61,6 +62,7 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
         ref.read(tenantControllerProvider.notifier).addTenant(tenant);
       }
 
+      ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
       Navigator.of(context).pop();
     }
   }
@@ -70,6 +72,47 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? '임차인 수정' : '임차인 등록'),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context); // Get messenger before async operations
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('임차인 삭제'),
+                    content: const Text('정말로 이 임차인을 삭제하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    await ref.read(tenantControllerProvider.notifier).deleteTenant(widget.tenant!.id);
+                    ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
+                    messenger.showSnackBar( // Use the captured messenger
+                      const SnackBar(content: Text('임차인이 삭제되었습니다.')),
+                    );
+                    Navigator.of(context).pop(); // Go back after deletion
+                  } catch (e) {
+                    messenger.showSnackBar( // Use the captured messenger
+                      SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       body: Form(
         key: _formKey,

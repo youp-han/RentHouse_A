@@ -62,21 +62,20 @@ class TenantListScreen extends ConsumerWidget {
                         return ListTile(
                           title: Text(tenant.name),
                           subtitle: Text(tenant.phone),
+                          onTap: () {
+                            context.go('/tenants/edit/${tenant.id}');
+                          },
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () {
-                                  context.go('/tenants/edit/\${tenant.id}');
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  ref.read(tenantControllerProvider.notifier).deleteTenant(tenant.id);
-                                },
-                              ),
+                              // The edit button is now redundant if onTap handles navigation
+                              // IconButton(
+                              //   icon: const Icon(Icons.edit, color: Colors.blue),
+                              //   onPressed: () {
+                              //     context.go('/tenants/edit/${tenant.id}');
+                              //   },
+                              // ),
+                              
                             ],
                           ),
                         );

@@ -12,7 +12,6 @@ class BillingController extends _$BillingController {
   }
 
   Future<void> addBilling(Billing billing) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(billingRepositoryProvider).createBilling(billing);
       return ref.read(billingRepositoryProvider).getBillings();
@@ -20,7 +19,6 @@ class BillingController extends _$BillingController {
   }
 
   Future<void> updateBilling(Billing billing) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(billingRepositoryProvider).updateBilling(billing);
       return ref.read(billingRepositoryProvider).getBillings();
@@ -28,7 +26,6 @@ class BillingController extends _$BillingController {
   }
 
   Future<void> deleteBilling(String id) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(billingRepositoryProvider).deleteBilling(id);
       return ref.read(billingRepositoryProvider).getBillings();

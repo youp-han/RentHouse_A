@@ -24,6 +24,43 @@ class TenantDetailScreen extends ConsumerWidget {
               context.push('/tenants/edit/$tenantId');
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('임차인 삭제'),
+                  content: const Text('정말로 이 임차인을 삭제하시겠습니까?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('삭제'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                try {
+                  await ref.read(tenantControllerProvider.notifier).deleteTenant(tenantId);
+                  ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('임차인이 삭제되었습니다.')),
+                  );
+                  context.go('/tenants'); // Go back to the list screen
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
+                  );
+                }
+              }
+            },
+          ),
         ],
       ),
       body: tenantsAsync.when(

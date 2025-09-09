@@ -12,7 +12,6 @@ class TenantController extends _$TenantController {
   }
 
   Future<void> addTenant(Tenant tenant) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(tenantRepositoryProvider).createTenant(tenant);
       return ref.read(tenantRepositoryProvider).getTenants();
@@ -20,7 +19,6 @@ class TenantController extends _$TenantController {
   }
 
   Future<void> updateTenant(Tenant tenant) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(tenantRepositoryProvider).updateTenant(tenant);
       return ref.read(tenantRepositoryProvider).getTenants();
@@ -28,7 +26,6 @@ class TenantController extends _$TenantController {
   }
 
   Future<void> deleteTenant(String id) async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       await ref.read(tenantRepositoryProvider).deleteTenant(id);
       return ref.read(tenantRepositoryProvider).getTenants();

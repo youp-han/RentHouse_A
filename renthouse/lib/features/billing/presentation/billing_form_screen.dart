@@ -89,6 +89,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         ref.read(billingControllerProvider().notifier).addBilling(billing);
       }
 
+      ref.invalidate(billingControllerProvider); // Invalidate the provider to refresh the list
       Navigator.of(context).pop();
     }
   }
@@ -130,6 +131,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('청구서가 삭제되었습니다.')),
                     );
+                    ref.invalidate(billingControllerProvider); // Invalidate the provider to refresh the list
                     Navigator.of(context).pop(); // Go back after deletion
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(

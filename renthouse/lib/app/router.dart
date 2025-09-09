@@ -21,6 +21,7 @@ import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_form_screen.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_detail_screen.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_list_screen.dart';
+import 'package:renthouse/features/tenant/domain/tenant.dart';
 import '../core/auth/auth_state.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/property/presentation/property_list_screen.dart';
@@ -108,26 +109,37 @@ final router = GoRouter(
           builder: (c, s) => const TenantListScreen(),
           routes: [
             GoRoute(path: 'new', builder: (c, s) => const TenantFormScreen()),
-            GoRoute(
-                path: ':id',
-                builder: (context, state) {
-                  final tenantId = state.pathParameters['id']!;
-                  return TenantDetailScreen(tenantId: tenantId);
-                }),
+            
             GoRoute(
                 path: 'edit/:id',
                 builder: (context, state) {
                   final tenantId = state.pathParameters['id']!;
                   return Consumer(builder: (context, ref, child) {
-                    final tenant = ref.watch(tenantControllerProvider).value?.firstWhereOrNull((t) => t.id == tenantId);
-                    if (tenant == null) {
-                      return const Scaffold(
-                        body: Center(
-                          child: Text('Tenant not found'),
-                        ),
-                      );
-                    }
-                    return TenantFormScreen(tenant: tenant);
+                    final tenantsFuture = ref.watch(tenantControllerProvider.future);
+                    return FutureBuilder<List<Tenant>>(
+                      future: tenantsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                        } else if (snapshot.hasError) {
+                          return Scaffold(body: Center(child: Text('Error: ${snapshot.error}')));
+                        } else if (snapshot.hasData) {
+                          final tenants = snapshot.data!;
+                          Tenant? tenant;
+                          for (var t in tenants) {
+                            if (t.id == tenantId) {
+                              tenant = t;
+                              break;
+                            }
+                          }
+                          if (tenant == null) {
+                            return const Scaffold(body: Center(child: Text('Tenant not found')));
+                          }
+                          return TenantFormScreen(tenant: tenant);
+                        }
+                        return const Scaffold(body: Center(child: Text('Unknown state')));
+                      },
+                    );
                   });
                 }),
           ]
@@ -139,12 +151,7 @@ final router = GoRouter(
           builder: (c, s) => const LeaseListScreen(),
           routes: [
             GoRoute(path: 'new', builder: (c, s) => const LeaseFormScreen()),
-            GoRoute(
-                path: ':id',
-                builder: (context, state) {
-                  final leaseId = state.pathParameters['id']!;
-                  return LeaseDetailScreen(leaseId: leaseId);
-                }),
+            
             GoRoute(
                 path: 'edit/:id',
                 builder: (context, state) {

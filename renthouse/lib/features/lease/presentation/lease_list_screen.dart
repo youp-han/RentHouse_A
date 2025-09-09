@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
+import 'package:renthouse/features/tenant/application/tenant_controller.dart';
+import 'package:renthouse/features/property/data/property_repository.dart';
+import 'package:collection/collection.dart'; // For firstWhereOrNull
 
 class LeaseListScreen extends ConsumerWidget {
   const LeaseListScreen({super.key});
@@ -9,6 +12,8 @@ class LeaseListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final leasesAsync = ref.watch(leaseControllerProvider);
+    final tenantsAsync = ref.watch(tenantControllerProvider);
+    final unitsAsync = ref.watch(allUnitsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('임대 계약 목록')),
@@ -54,24 +59,31 @@ class LeaseListScreen extends ConsumerWidget {
                       itemCount: leases.length,
                       itemBuilder: (_, i) {
                         final lease = leases[i];
+                        final tenant = tenantsAsync.value?.firstWhereOrNull((t) => t.id == lease.tenantId);
+                        final unit = unitsAsync.value?.firstWhereOrNull((u) => u.id == lease.unitId);
                         return ListTile(
-                          title: Text('계약 ID: \${lease.id}'),
-                          subtitle: Text('임차인 ID: \${lease.tenantId} / 유닛 ID: \${lease.unitId}'),
+                          title: Text('${tenant?.name ?? '알 수 없는 임차인'} - ${unit?.unitNumber ?? '알 수 없는 유닛'}'),
+                          subtitle: Text('계약 ID: ${lease.id.substring(0, 8)}...'),
+                          onTap: () {
+                            context.go('/leases/edit/${lease.id}');
+                          },
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () {
-                                  context.go('/leases/edit/\${lease.id}');
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  ref.read(leaseControllerProvider.notifier).deleteLease(lease.id);
-                                },
-                              ),
+                              // The edit button is now redundant if onTap handles navigation
+                              // IconButton(
+                              //   icon: const Icon(Icons.edit, color: Colors.blue),
+                              //   onPressed: () {
+                              //     context.go('/leases/edit/${lease.id}');
+                              //   },
+                              // ),
+                              // The delete button will be moved to the form screen
+                              // IconButton(
+                              //   icon: const Icon(Icons.delete, color: Colors.red),
+                              //   onPressed: () {
+                              //     ref.read(leaseControllerProvider.notifier).deleteLease(lease.id);
+                              //   },
+                              // ),
                             ],
                           ),
                         );

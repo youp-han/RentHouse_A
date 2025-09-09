@@ -87,6 +87,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
         ref.read(leaseControllerProvider.notifier).addLease(lease);
       }
 
+      ref.invalidate(leaseControllerProvider); // Invalidate the provider to refresh the list
       Navigator.of(context).pop();
     }
   }
@@ -99,6 +100,46 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? '계약 수정' : '계약 등록'),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('계약 삭제'),
+                    content: const Text('정말로 이 계약을 삭제하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    await ref.read(leaseControllerProvider.notifier).deleteLease(widget.lease!.id);
+                    ref.invalidate(leaseControllerProvider); // Invalidate the provider to refresh the list
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('계약이 삭제되었습니다.')),
+                    );
+                    Navigator.of(context).pop(); // Go back after deletion
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('계약 삭제 실패: ${e.toString()}')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       body: tenantsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
