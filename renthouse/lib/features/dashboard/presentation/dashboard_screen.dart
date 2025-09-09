@@ -91,12 +91,16 @@ class DashboardScreen extends StatelessWidget {
                   label: const Text('자산 관리'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.go('/leases/new');
+                  },
                   icon: const Icon(Icons.add_box),
                   label: const Text('신규 계약'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    context.go('/billing/new');
+                  },
                   icon: const Icon(Icons.receipt_long),
                   label: const Text('월 청구 생성'),
                 ),
