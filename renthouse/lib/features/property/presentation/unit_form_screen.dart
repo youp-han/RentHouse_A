@@ -143,15 +143,17 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
                         } else {
                           await repo.addUnit(unit);
                         }
-                        
+
+                        if (!mounted) return;
                         // Invalidate provider to refetch
                         ref.invalidate(propertyDetailProvider(widget.propertyId));
-                        
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('유닛이 저장되었습니다.')),
                         );
                         context.pop(); // Go back to the management screen
                       } catch (e) {
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('저장 실패: ${e.toString()}')),
                         );

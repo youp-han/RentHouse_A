@@ -27,6 +27,10 @@ class TenantDetailScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
+              // Store the context dependent objects before the async gap.
+              final router = GoRouter.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -49,12 +53,12 @@ class TenantDetailScreen extends ConsumerWidget {
                 try {
                   await ref.read(tenantControllerProvider.notifier).deleteTenant(tenantId);
                   ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('임차인이 삭제되었습니다.')),
                   );
-                  context.go('/tenants'); // Go back to the list screen
+                  router.go('/tenants'); // Go back to the list screen
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
                   );
                 }

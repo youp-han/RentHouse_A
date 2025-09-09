@@ -126,12 +126,14 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                 if (confirmed == true) {
                   try {
                     await ref.read(leaseControllerProvider.notifier).deleteLease(widget.lease!.id);
+                    if (!mounted) return;
                     ref.invalidate(leaseControllerProvider); // Invalidate the provider to refresh the list
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('계약이 삭제되었습니다.')),
                     );
                     Navigator.of(context).pop(); // Go back after deletion
                   } catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('계약 삭제 실패: ${e.toString()}')),
                     );
@@ -244,7 +246,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<LeaseStatus>(
-                      value: _leaseStatus,
+                      initialValue: _leaseStatus,
                       decoration: const InputDecoration(labelText: '계약 상태'),
                       items: LeaseStatus.values.map((status) => DropdownMenuItem(value: status, child: Text(status.name))).toList(),
                       onChanged: (value) => setState(() => _leaseStatus = value!),

@@ -166,18 +166,19 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                       }
 
                       await propertyListController.refreshProperties();
-                      
+
+                      if (!mounted) return;
                       final totalUnits = int.tryParse(_totalUnitsController.text) ?? 0;
                       if (totalUnits > 0) {
                         await _showAddUnitsDialog(propertyId);
                       } else {
-                         ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('자산이 성공적으로 저장되었습니다.')),
                         );
                         context.go('/property');
                       }
-
                     } catch (e) {
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('자산 저장 실패: ${e.toString()}')),
                       );

@@ -128,12 +128,14 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 if (confirmed == true) {
                   try {
                     await ref.read(billingControllerProvider().notifier).deleteBilling(widget.billing!.id);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('청구서가 삭제되었습니다.')),
                     );
                     ref.invalidate(billingControllerProvider); // Invalidate the provider to refresh the list
                     Navigator.of(context).pop(); // Go back after deletion
                   } catch (e) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('청구서 삭제 실패: ${e.toString()}')),
                     );
@@ -152,7 +154,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
             padding: const EdgeInsets.all(16.0),
             children: [
               DropdownButtonFormField<String>(
-                value: _selectedLeaseId,
+                initialValue: _selectedLeaseId,
                 decoration: const InputDecoration(labelText: '계약 선택'),
                 items: availableLeases.map((Lease lease) {
                   return DropdownMenuItem<String>(
@@ -232,7 +234,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 }
                 return ListTile(
                   title: Text(template?.name ?? '알 수 없는 항목'),
-                  trailing: Text('${item.amount}원'),
+                  trailing: Text('$item.amount원'),
                 );
               }),
               const SizedBox(height: 8),

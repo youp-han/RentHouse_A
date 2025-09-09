@@ -7,7 +7,7 @@ import 'package:renthouse/features/property/data/property_repository.dart';
 class PropertyDetailScreen extends ConsumerWidget {
   final String propertyId;
 
-  const PropertyDetailScreen({Key? key, required this.propertyId}) : super(key: key);
+  const PropertyDetailScreen({super.key, required this.propertyId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,6 +33,10 @@ class PropertyDetailScreen extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () async {
+                  // Store the context dependent objects before the async gap.
+                  final router = GoRouter.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -55,12 +59,12 @@ class PropertyDetailScreen extends ConsumerWidget {
                     try {
                       await ref.read(propertyRepositoryProvider).deleteProperty(property.id);
                       await ref.read(propertyListControllerProvider.notifier).refreshProperties();
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(content: Text('자산이 삭제되었습니다.')),
                       );
-                      context.go('/property');
+                      router.go('/property');
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(content: Text('자산 삭제 실패: ${e.toString()}')),
                       );
                     }

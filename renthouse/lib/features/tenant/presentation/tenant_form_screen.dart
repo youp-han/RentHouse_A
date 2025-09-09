@@ -98,8 +98,12 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
                 );
 
                 if (confirmed == true) {
+                  if (!mounted) return;
                   final hasLeases = await ref.read(leaseRepositoryProvider).hasLeasesForTenant(widget.tenant!.id);
+                  if (!mounted) return;
+
                   if (hasLeases) {
+                    // Use the captured context to be safe across async gaps.
                     await showDialog<void>(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -117,13 +121,14 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
                   } else {
                     try {
                       await ref.read(tenantControllerProvider.notifier).deleteTenant(widget.tenant!.id);
+                      if (!mounted) return;
                       ref.invalidate(tenantControllerProvider); // Invalidate the provider to refresh the list
                       messenger.showSnackBar( // Use the captured messenger
                         const SnackBar(content: Text('임차인이 삭제되었습니다.')),
                       );
                       context.pop(); // Go back to the previous screen after deletion
                     } catch (e) {
-                      print('Tenant deletion error: ${e.toString()}'); // Debug print
+                      if (!mounted) return;
                       // For other errors, show a SnackBar
                       messenger.showSnackBar(
                         SnackBar(content: Text('임차인 삭제 실패: ${e.toString()}')),
