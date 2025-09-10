@@ -1,9 +1,15 @@
 # RentHouse 프로젝트 진행 상황
 
-## 최종 업데이트: 2025-09-08
+## 최종 업데이트: 2025-09-10
 
 ### 현재 상태
 - **UI/UX 개선 완료**: 테마 일관성, 반응형 내비게이션, 폼 유효성 검사 및 사용자 피드백, 빈 상태 디자인 개선이 완료되었습니다.
+- **코드 리팩토링 및 정적 분석 개선**:
+  - `flutter analyze`를 통한 코드 품질 분석 및 경고(Warning) 수준 문제 해결 완료.
+  - `use_build_context_synchronously` lint 문제 해결 진행 중 (일부 파일 완료, 일부 재수정 필요).
+  - `deprecated_member_use` (DropdownButtonFormField `value` 속성) 문제는 다음 단계로 보류.
+  - `drift` 라이브러리 웹 지원 마이그레이션(`connection.web.dart`)은 다음 단계로 보류.
+  - `unnecessary_brace_in_string_interps`, `use_super_parameters`, `avoid_print` 등 기타 스타일 문제 수정 진행 중 (일부 완료, 일부 재수정 필요).
 
 ### 완료된 단계
 - 프로젝트 문서 검토 (PRD, UI/UX 추가 문서, Kickstart Pack).
