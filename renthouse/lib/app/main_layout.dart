@@ -10,18 +10,41 @@ class MainLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final location = GoRouter.of(context).routeInformationProvider.value.uri.toString();
     final selectedIndex = _calculateSelectedIndex(location);
-    final isLargeScreen = MediaQuery.of(context).size.width >= 600; // Breakpoint for large screens
+    final mediaQuery = MediaQuery.of(context);
+    
+    // 더 정교한 반응형 로직
+    final screenWidth = mediaQuery.size.width;
+    final orientation = mediaQuery.orientation;
+    
+    // 데스크톱 모드: 가로 ≥ 1024px
+    final isDesktop = screenWidth >= 1024;
+    
+    // 태블릿 가로 모드: 가로 768px~1023px이면서 가로 방향
+    final isTabletLandscape = screenWidth >= 768 && screenWidth < 1024 && orientation == Orientation.landscape;
+    
+    // 사이드 네비게이션 사용 조건
+    final useSideNavigation = isDesktop || isTabletLandscape;
+    
+    // 모바일/세로/좁은 화면: 하단 네비게이션 사용
+    final useBottomNavigation = !useSideNavigation;
 
     return Scaffold(
       body: Row(
         children: [
-          if (isLargeScreen)
+          if (useSideNavigation)
             NavigationRail(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) {
                 _onDestinationSelected(context, index);
               },
-              labelType: NavigationRailLabelType.all,
+              labelType: isDesktop 
+                ? NavigationRailLabelType.all 
+                : NavigationRailLabelType.selected,
+              minWidth: isDesktop ? 80 : 60,
+              groupAlignment: isDesktop ? -0.5 : -1.0,
+              leading: isDesktop 
+                ? const SizedBox(height: 8) 
+                : null,
               destinations: const <NavigationRailDestination>[
                 NavigationRailDestination(
                   icon: Icon(Icons.dashboard_outlined),
@@ -60,23 +83,26 @@ class MainLayout extends StatelessWidget {
                 ),
               ],
             ),
-          if (isLargeScreen) const VerticalDivider(thickness: 1, width: 1),
+          if (useSideNavigation) const VerticalDivider(thickness: 1, width: 1),
           Expanded(
             child: child,
           ),
         ],
       ),
-      bottomNavigationBar: !isLargeScreen
+      bottomNavigationBar: useBottomNavigation
           ? BottomNavigationBar(
               currentIndex: selectedIndex,
               onTap: (index) {
                 _onDestinationSelected(context, index);
               },
+              type: BottomNavigationBarType.fixed,
+              selectedFontSize: 11,
+              unselectedFontSize: 10,
               items: const <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard_outlined),
                   activeIcon: Icon(Icons.dashboard),
-                  label: '대시보드',
+                  label: '홈',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.business_outlined),
@@ -101,7 +127,7 @@ class MainLayout extends StatelessWidget {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.trending_up_outlined),
                   activeIcon: Icon(Icons.trending_up),
-                  label: '수익관리',
+                  label: '수익',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings_outlined),
