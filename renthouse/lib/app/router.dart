@@ -14,7 +14,7 @@ import 'package:renthouse/features/lease/presentation/lease_form_screen.dart';
 import 'package:renthouse/features/lease/presentation/lease_list_screen.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/property/presentation/property_detail_screen.dart';
-import 'package:renthouse/features/property/presentation/unit_detail_screen.dart';
+
 import 'package:renthouse/features/property/presentation/unit_form_screen.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/presentation/tenant_form_screen.dart';
@@ -90,14 +90,7 @@ final router = GoRouter(
                   final unitId = state.pathParameters['unitId']!;
                   return UnitFormScreen(propertyId: propertyId, unitId: unitId);
                 }),
-            GoRoute(
-                path: ':id/units/:unitId',
-                builder: (context, state) {
-                  final propertyId = state.pathParameters['id']!;
-                  final unitId = state.pathParameters['unitId']!;
-                  return UnitDetailScreen(
-                      propertyId: propertyId, unitId: unitId);
-                }),
+            
           ]
         ),
 

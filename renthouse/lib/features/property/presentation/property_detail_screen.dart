@@ -97,7 +97,7 @@ class PropertyDetailScreen extends ConsumerWidget {
                           title: Text(unit.unitNumber),
                           subtitle: Text('${unit.useType} / ${unit.rentStatus}'),
                           trailing: Text('${unit.sizeKorea}평'),
-                          onTap: () => context.go('/property/${property.id}/units/${unit.id}'),
+                          onTap: () => context.push('/property/${property.id}/units/edit/${unit.id}'),
                         ),
                       );
                     },

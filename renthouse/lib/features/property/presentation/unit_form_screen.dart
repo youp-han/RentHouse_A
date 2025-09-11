@@ -72,6 +72,48 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditMode ? '유닛 수정' : '유닛 추가'),
+        actions: [
+          if (_isEditMode)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('유닛 삭제'),
+                    content: const Text('정말로 이 유닛을 삭제하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  if (!mounted) return;
+                  try {
+                    await repo.deleteUnit(widget.unitId!);
+                    ref.invalidate(propertyDetailProvider(widget.propertyId));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('유닛이 삭제되었습니다.')),
+                    );
+                    context.pop();
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('유닛 삭제 실패: ${e.toString()}')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
       ),
       body: Form(
         key: _formKey,
