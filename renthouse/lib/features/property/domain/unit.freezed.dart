@@ -24,7 +24,7 @@ mixin _$Unit {
   String get id => throw _privateConstructorUsedError;
   String get propertyId => throw _privateConstructorUsedError;
   String get unitNumber => throw _privateConstructorUsedError;
-  String get rentStatus => throw _privateConstructorUsedError;
+  RentStatus get rentStatus => throw _privateConstructorUsedError;
   double get sizeMeter => throw _privateConstructorUsedError;
   double get sizeKorea => throw _privateConstructorUsedError;
   String get useType => throw _privateConstructorUsedError;
@@ -48,7 +48,7 @@ abstract class $UnitCopyWith<$Res> {
     String id,
     String propertyId,
     String unitNumber,
-    String rentStatus,
+    RentStatus rentStatus,
     double sizeMeter,
     double sizeKorea,
     String useType,
@@ -97,7 +97,7 @@ class _$UnitCopyWithImpl<$Res, $Val extends Unit>
             rentStatus: null == rentStatus
                 ? _value.rentStatus
                 : rentStatus // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as RentStatus,
             sizeMeter: null == sizeMeter
                 ? _value.sizeMeter
                 : sizeMeter // ignore: cast_nullable_to_non_nullable
@@ -132,7 +132,7 @@ abstract class _$$UnitImplCopyWith<$Res> implements $UnitCopyWith<$Res> {
     String id,
     String propertyId,
     String unitNumber,
-    String rentStatus,
+    RentStatus rentStatus,
     double sizeMeter,
     double sizeKorea,
     String useType,
@@ -178,7 +178,7 @@ class __$$UnitImplCopyWithImpl<$Res>
         rentStatus: null == rentStatus
             ? _value.rentStatus
             : rentStatus // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as RentStatus,
         sizeMeter: null == sizeMeter
             ? _value.sizeMeter
             : sizeMeter // ignore: cast_nullable_to_non_nullable
@@ -224,7 +224,7 @@ class _$UnitImpl implements _Unit {
   @override
   final String unitNumber;
   @override
-  final String rentStatus;
+  final RentStatus rentStatus;
   @override
   final double sizeMeter;
   @override
@@ -293,7 +293,7 @@ abstract class _Unit implements Unit {
     required final String id,
     required final String propertyId,
     required final String unitNumber,
-    required final String rentStatus,
+    required final RentStatus rentStatus,
     required final double sizeMeter,
     required final double sizeKorea,
     required final String useType,
@@ -309,7 +309,7 @@ abstract class _Unit implements Unit {
   @override
   String get unitNumber;
   @override
-  String get rentStatus;
+  RentStatus get rentStatus;
   @override
   double get sizeMeter;
   @override

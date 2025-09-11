@@ -64,6 +64,35 @@ class LeaseRepository {
   Future<bool> hasLeasesForTenant(String tenantId) async {
     return _appDatabase.hasLeasesForTenant(tenantId);
   }
+
+  // 임차인이 현재 활성 계약을 가지고 있는지 확인
+  Future<bool> hasActiveLeaseForTenant(String tenantId) async {
+    final leases = await getLeases();
+    final now = DateTime.now();
+    
+    return leases.any((lease) => 
+      lease.tenantId == tenantId && 
+      lease.leaseStatus == LeaseStatus.active &&
+      lease.startDate.isBefore(now) &&
+      lease.endDate.isAfter(now)
+    );
+  }
+
+  // 현재 활성 계약이 없는 임차인 ID 목록 반환
+  Future<List<String>> getAvailableTenantIds() async {
+    final allLeases = await getLeases();
+    final now = DateTime.now();
+    
+    final activeTenantIds = allLeases
+      .where((lease) =>
+        lease.leaseStatus == LeaseStatus.active &&
+        lease.startDate.isBefore(now) &&
+        lease.endDate.isAfter(now))
+      .map((lease) => lease.tenantId)
+      .toSet();
+    
+    return activeTenantIds.toList();
+  }
 }
 
 final leaseRepositoryProvider = Provider<LeaseRepository>((ref) {

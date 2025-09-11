@@ -235,6 +235,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> insertUser(UsersCompanion user) => into(users).insert(user);
   Future<bool> updateUser(UsersCompanion user) => update(users).replace(user);
   Future<void> deleteUser(String id) => (delete(users)..where((tbl) => tbl.id.equals(id))).go();
+  
+  // 비밀번호 업데이트
+  Future<void> updateUserPassword(String userId, String newPasswordHash) async {
+    await (update(users)..where((tbl) => tbl.id.equals(userId)))
+        .write(UsersCompanion(passwordHash: Value(newPasswordHash)));
+  }
+  
+  // 사용자 이름 업데이트
+  Future<void> updateUserName(String userId, String newName) async {
+    await (update(users)..where((tbl) => tbl.id.equals(userId)))
+        .write(UsersCompanion(name: Value(newName)));
+  }
 
   // Phase 2: DAO for payments
   Future<List<Payment>> getAllPayments() => select(payments).get();

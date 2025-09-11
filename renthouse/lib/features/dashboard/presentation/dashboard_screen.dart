@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:renthouse/core/utils/currency_formatter.dart';
+import 'package:renthouse/features/settings/application/currency_controller.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 1024;
+    final selectedCurrency = ref.watch(currencySettingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,11 +43,11 @@ class DashboardScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: isDesktop ? 4 : 2,
               childAspectRatio: isDesktop ? 1.5 : 1.2, // 데스크톱에서 카드 비율 조정
-              children: const [
-                _KPI(title: '이번 달 청구 합계', value: '₩0'),
-                _KPI(title: '이번 달 수납 합계', value: '₩0'),
-                _KPI(title: '미납 건수', value: '0'),
-                _KPI(title: '활성 계약 수', value: '0'),
+              children: [
+                _KPI(title: '이번 달 청구 합계', value: CurrencyFormatter.format(0, selectedCurrency)),
+                _KPI(title: '이번 달 수납 합계', value: CurrencyFormatter.format(0, selectedCurrency)),
+                const _KPI(title: '미납 건수', value: '0'),
+                const _KPI(title: '활성 계약 수', value: '0'),
               ],
             ),
             const SizedBox(height: 24.0),

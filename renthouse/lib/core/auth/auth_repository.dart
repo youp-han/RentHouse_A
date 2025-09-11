@@ -106,6 +106,36 @@ class AuthRepository {
     final token = await getToken();
     return token != null;
   }
+
+  Future<void> updateUserProfile(auth.UpdateUserRequest request) async {
+    final currentUser = await getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
+
+    // 현재 비밀번호가 제공된 경우 (비밀번호 변경)
+    if (request.currentPassword != null && request.newPassword != null) {
+      // 현재 비밀번호 검증
+      final currentPasswordHash = _hashPassword(request.currentPassword!);
+      if (currentUser.passwordHash != currentPasswordHash) {
+        throw Exception('현재 비밀번호가 일치하지 않습니다.');
+      }
+      
+      // 새 비밀번호로 업데이트
+      final newPasswordHash = _hashPassword(request.newPassword!);
+      await _database.updateUserPassword(currentUser.id, newPasswordHash);
+      
+      // 디버깅용 로그
+      print('비밀번호 변경 완료:');
+      print('사용자 ID: ${currentUser.id}');
+      print('새 비밀번호 해시: $newPasswordHash');
+    }
+
+    // 이름 업데이트
+    if (request.name != null) {
+      await _database.updateUserName(currentUser.id, request.name!);
+    }
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

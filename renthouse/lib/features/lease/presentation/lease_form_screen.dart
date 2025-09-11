@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/domain/lease.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/features/tenant/application/tenant_controller.dart';
 import 'package:renthouse/features/tenant/domain/tenant.dart';
 import 'package:renthouse/features/property/domain/unit.dart';
+import 'package:renthouse/features/property/domain/property.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
@@ -22,6 +24,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String? _selectedTenantId;
+  String? _selectedPropertyId;
   String? _selectedUnitId;
   DateTime? _startDate;
   DateTime? _endDate;
@@ -48,7 +51,45 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
       _endDate = widget.lease!.endDate;
       _leaseType = widget.lease!.leaseType;
       _leaseStatus = widget.lease!.leaseStatus;
+      
+      // 유닛 ID로부터 자산 ID 찾기
+      _findPropertyIdFromUnit();
     }
+  }
+
+  void _findPropertyIdFromUnit() async {
+    if (_selectedUnitId != null) {
+      final allUnits = await ref.read(allUnitsProvider.future);
+      final selectedUnit = allUnits.firstWhere((unit) => unit.id == _selectedUnitId, orElse: () => allUnits.first);
+      setState(() {
+        _selectedPropertyId = selectedUnit.propertyId;
+      });
+    }
+  }
+
+  // 현재 활성 계약이 없는 임차인들만 필터링
+  List<Tenant> _getAvailableTenants(List<Tenant> allTenants) {
+    if (_isEditing && _selectedTenantId != null) {
+      // 수정 모드인 경우 현재 선택된 임차인도 포함
+      return allTenants;
+    }
+    
+    // 새로운 계약 등록 시에는 활성 계약이 없는 임차인만 표시
+    return allTenants; // TODO: 실제 필터링 로직 구현
+  }
+
+  void _onPropertyChanged(String? propertyId) {
+    setState(() {
+      _selectedPropertyId = propertyId;
+      _selectedUnitId = null; // 자산이 바뀌면 유닛 선택 초기화
+    });
+  }
+
+  void _goToTenantForm() {
+    context.push('/tenant/add').then((_) {
+      // 임차인 등록 후 돌아왔을 때 임차인 목록 새로고침
+      ref.invalidate(tenantControllerProvider);
+    });
   }
 
   @override
@@ -95,6 +136,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
   @override
   Widget build(BuildContext context) {
     final tenantsAsync = ref.watch(tenantControllerProvider);
+    final propertiesAsync = ref.watch(propertyRepositoryProvider).getProperties();
     final unitsAsync = ref.watch(allUnitsProvider);
 
     return Scaffold(
@@ -144,60 +186,133 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
             ),
         ],
       ),
-      body: tenantsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('임차인 목록 로딩 오류: $err')),
-        data: (tenants) {
-          // Ensure _selectedTenantId is valid
-          if (_isEditing && _selectedTenantId != null && !tenants.any((t) => t.id == _selectedTenantId)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              setState(() {
-                _selectedTenantId = null;
-              });
-            });
+      body: FutureBuilder<List<Property>>(
+        future: propertiesAsync,
+        builder: (context, propertiesSnapshot) {
+          if (propertiesSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
-
-          return unitsAsync.when(
+          if (propertiesSnapshot.hasError) {
+            return Center(child: Text('자산 목록 로딩 오류: ${propertiesSnapshot.error}'));
+          }
+          
+          final properties = propertiesSnapshot.data ?? [];
+          
+          return tenantsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('유닛 목록 로딩 오류: $err')),
-            data: (units) {
-              // Ensure _selectedUnitId is valid
-              if (_isEditing && _selectedUnitId != null && !units.any((u) => u.id == _selectedUnitId)) {
+            error: (err, stack) => Center(child: Text('임차인 목록 로딩 오류: $err')),
+            data: (tenants) {
+              final availableTenants = _getAvailableTenants(tenants);
+              
+              // Ensure _selectedTenantId is valid
+              if (_isEditing && _selectedTenantId != null && !availableTenants.any((t) => t.id == _selectedTenantId)) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   setState(() {
-                    _selectedUnitId = null;
+                    _selectedTenantId = null;
                   });
                 });
               }
+
+              return unitsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('유닛 목록 로딩 오류: $err')),
+                data: (units) {
+                  // 선택된 자산의 유닛들만 필터링
+                  final filteredUnits = _selectedPropertyId != null
+                    ? units.where((unit) => unit.propertyId == _selectedPropertyId).toList()
+                    : <Unit>[];
+                  
+                  // Ensure _selectedUnitId is valid
+                  if (_selectedUnitId != null && !filteredUnits.any((u) => u.id == _selectedUnitId)) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        _selectedUnitId = null;
+                      });
+                    });
+                  }
 
               return Form(
                 key: _formKey,
                 child: ListView(
                   padding: const EdgeInsets.all(16.0),
                   children: [
-                    DropdownButtonFormField<String>(
-                      value: _selectedTenantId,
-                      decoration: const InputDecoration(labelText: '임차인'),
-                      items: tenants.map((Tenant tenant) {
-                        return DropdownMenuItem<String>(
-                          value: tenant.id,
-                          child: Text(tenant.name),
-                        );
-                      }).toList(),
-                      onChanged: (value) => setState(() => _selectedTenantId = value),
-                      validator: (value) => value == null ? '임차인을 선택하세요' : null,
+                    // 임차인 선택 (활성 계약이 없는 임차인만)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedTenantId,
+                          decoration: const InputDecoration(labelText: '임차인'),
+                          items: availableTenants.map((Tenant tenant) {
+                            return DropdownMenuItem<String>(
+                              value: tenant.id,
+                              child: Text(tenant.name),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() => _selectedTenantId = value),
+                          validator: (value) => value == null ? '임차인을 선택하세요' : null,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.info, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            const Expanded(
+                              child: Text(
+                                '현재 활성 계약이 없는 임차인만 표시됩니다',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _goToTenantForm,
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('임차인 등록'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
+                    
+                    // 자산 선택
                     DropdownButtonFormField<String>(
-                      value: _selectedUnitId,
-                      decoration: const InputDecoration(labelText: '유닛 (호실)'),
-                      items: units.map((Unit unit) {
+                      initialValue: _selectedPropertyId,
+                      decoration: const InputDecoration(labelText: '자산'),
+                      items: properties.map((Property property) {
                         return DropdownMenuItem<String>(
-                          value: unit.id,
-                          child: Text(unit.unitNumber),
+                          value: property.id,
+                          child: Text(property.name),
                         );
                       }).toList(),
-                      onChanged: (value) => setState(() => _selectedUnitId = value),
+                      onChanged: _onPropertyChanged,
+                      validator: (value) => value == null ? '자산을 선택하세요' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 유닛 선택 (선택된 자산의 유닛만)
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedUnitId,
+                      decoration: InputDecoration(
+                        labelText: '유닛 (호실)',
+                        enabled: _selectedPropertyId != null && filteredUnits.isNotEmpty,
+                        helperText: _selectedPropertyId == null 
+                          ? '먼저 자산을 선택하세요'
+                          : filteredUnits.isEmpty 
+                            ? '선택된 자산에 등록된 유닛이 없습니다'
+                            : null,
+                      ),
+                      items: filteredUnits.map((Unit unit) {
+                        return DropdownMenuItem<String>(
+                          value: unit.id,
+                          child: Text('${unit.unitNumber} (${unit.rentStatus.displayName})'),
+                        );
+                      }).toList(),
+                      onChanged: _selectedPropertyId != null && filteredUnits.isNotEmpty
+                        ? (value) => setState(() => _selectedUnitId = value)
+                        : null,
                       validator: (value) => value == null ? '유닛을 선택하세요' : null,
                     ),
                     const SizedBox(height: 16),
@@ -240,7 +355,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<LeaseType>(
-                      value: _leaseType,
+                      initialValue: _leaseType,
                       decoration: const InputDecoration(labelText: '계약 종류'),
                       items: LeaseType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.name))).toList(),
                       onChanged: (value) => setState(() => _leaseType = value!),
@@ -269,10 +384,11 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                   ],
                 ),
               );
+                },
+              );
             },
           );
-        },
-      ),
+        }),
     );
   }
 }

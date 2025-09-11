@@ -19,7 +19,6 @@ class UnitFormScreen extends ConsumerStatefulWidget {
 class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _unitNumberController = TextEditingController();
-  final _rentStatusController = TextEditingController();
   final _useTypeController = TextEditingController();
   final _sizeMeterController = TextEditingController();
   final _sizeKoreaController = TextEditingController();
@@ -27,6 +26,7 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
 
   final Uuid _uuid = const Uuid();
   Unit? _existingUnit;
+  RentStatus _selectedRentStatus = RentStatus.vacant;
 
   bool get _isEditMode => widget.unitId != null;
 
@@ -42,7 +42,7 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
             setState(() {
               _existingUnit = unit;
               _unitNumberController.text = unit.unitNumber;
-              _rentStatusController.text = unit.rentStatus;
+              _selectedRentStatus = unit.rentStatus;
               _useTypeController.text = unit.useType;
               _sizeMeterController.text = unit.sizeMeter.toString();
               _sizeKoreaController.text = unit.sizeKorea.toString();
@@ -57,7 +57,6 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
   @override
   void dispose() {
     _unitNumberController.dispose();
-    _rentStatusController.dispose();
     _useTypeController.dispose();
     _sizeMeterController.dispose();
     _sizeKoreaController.dispose();
@@ -126,10 +125,31 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
               validator: (v) => (v == null || v.isEmpty) ? '호수는 필수입니다.' : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _rentStatusController,
-              decoration: const InputDecoration(labelText: '임대 상태'),
-              validator: (v) => (v == null || v.isEmpty) ? '임대 상태는 필수입니다.' : null,
+            DropdownButtonFormField<RentStatus>(
+              value: _selectedRentStatus,
+              decoration: const InputDecoration(
+                labelText: '임대 상태',
+                border: OutlineInputBorder(),
+              ),
+              items: RentStatus.values.map((status) {
+                return DropdownMenuItem(
+                  value: status,
+                  child: Text(status.displayName),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedRentStatus = value;
+                  });
+                }
+              },
+              validator: (value) {
+                if (value == null) {
+                  return '임대 상태를 선택해주세요';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -173,7 +193,7 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
                           id: _isEditMode ? _existingUnit!.id : _uuid.v4(),
                           propertyId: widget.propertyId,
                           unitNumber: _unitNumberController.text,
-                          rentStatus: _rentStatusController.text,
+                          rentStatus: _selectedRentStatus,
                           useType: _useTypeController.text,
                           sizeMeter: double.tryParse(_sizeMeterController.text) ?? 0.0,
                           sizeKorea: double.tryParse(_sizeKoreaController.text) ?? 0.0,

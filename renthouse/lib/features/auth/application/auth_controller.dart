@@ -77,6 +77,19 @@ class AuthController extends _$AuthController {
   }
 
   bool get isLoggedIn => state.value != null;
+
+  Future<void> updateUserProfile(auth.UpdateUserRequest request) async {
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.updateUserProfile(request);
+      
+      // 사용자 정보 새로고침
+      await _checkAuthState();
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
+  }
 }
 
 // 로그인 상태를 감시하는 별도 provider

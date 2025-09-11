@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/property/application/property_controller.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
+import 'package:renthouse/features/property/domain/unit.dart';
 
 class PropertyDetailScreen extends ConsumerWidget {
   final String propertyId;
@@ -95,7 +96,7 @@ class PropertyDetailScreen extends ConsumerWidget {
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         child: ListTile(
                           title: Text(unit.unitNumber),
-                          subtitle: Text('${unit.useType} / ${unit.rentStatus}'),
+                          subtitle: Text('${unit.useType} / ${unit.rentStatus.displayName}'),
                           trailing: Text('${unit.sizeKorea}평'),
                           onTap: () => context.push('/property/${property.id}/units/edit/${unit.id}'),
                         ),
