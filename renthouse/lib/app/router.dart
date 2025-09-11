@@ -24,21 +24,26 @@ import '../core/auth/auth_state.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/property/presentation/property_list_screen.dart';
 import '../features/property/presentation/property_form_screen.dart';
-import '../features/auth/login_screen.dart';
+import 'package:renthouse/features/auth/presentation/login_screen.dart' as new_login;
+import 'package:renthouse/features/auth/presentation/register_screen.dart';
+import 'package:renthouse/features/auth/application/auth_controller.dart';
 
-final authState = AuthState.instance; // 간단 싱글톤(초기 PoC용)
+final authState = AuthState.instance;
 
 final router = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     final loggedIn = authState.isLoggedIn;
     final loggingIn = state.matchedLocation == '/login';
-    if (!loggedIn && !loggingIn) return '/login';
-    if (loggedIn && loggingIn) return '/admin/dashboard';
+    final registering = state.matchedLocation == '/register';
+    
+    if (!loggedIn && !loggingIn && !registering) return '/login';
+    if (loggedIn && (loggingIn || registering)) return '/admin/dashboard';
     return null;
   },
   routes: [
-    GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
+    GoRoute(path: '/login', builder: (c, s) => const new_login.LoginScreen()),
+    GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
     ShellRoute(
       builder: (context, state, child) {
         return MainLayout(child: child);
