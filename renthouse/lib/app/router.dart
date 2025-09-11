@@ -26,7 +26,9 @@ import '../features/property/presentation/property_list_screen.dart';
 import '../features/property/presentation/property_form_screen.dart';
 import 'package:renthouse/features/auth/presentation/login_screen.dart' as new_login;
 import 'package:renthouse/features/auth/presentation/register_screen.dart';
-import 'package:renthouse/features/auth/application/auth_controller.dart';
+import 'package:renthouse/features/settings/presentation/settings_screen.dart';
+import 'package:renthouse/features/settings/presentation/profile_screen.dart';
+import 'package:renthouse/features/settings/presentation/currency_screen.dart';
 
 final authState = AuthState.instance;
 
@@ -208,6 +210,22 @@ final router = GoRouter(
                   });
                 }),
           ]
+        ),
+
+        // Settings Routes
+        GoRoute(
+          path: '/settings',
+          builder: (c, s) => const SettingsScreen(),
+          routes: [
+            GoRoute(
+              path: 'profile',
+              builder: (c, s) => const ProfileScreen(),
+            ),
+            GoRoute(
+              path: 'currency',
+              builder: (c, s) => const CurrencyScreen(),
+            ),
+          ],
         ),
       ],
     ),

@@ -48,6 +48,11 @@ class MainLayout extends StatelessWidget {
                   selectedIcon: Icon(Icons.receipt_long),
                   label: Text('청구'),
                 ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: Text('설정'),
+                ),
               ],
             ),
           if (isLargeScreen) const VerticalDivider(thickness: 1, width: 1),
@@ -88,6 +93,11 @@ class MainLayout extends StatelessWidget {
                   activeIcon: Icon(Icons.receipt_long),
                   label: '청구',
                 ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings_outlined),
+                  activeIcon: Icon(Icons.settings),
+                  label: '설정',
+                ),
               ],
             )
           : null,
@@ -105,6 +115,8 @@ class MainLayout extends StatelessWidget {
       context.go('/leases');
     } else if (index == 4) {
       context.go('/billing');
+    } else if (index == 5) {
+      context.go('/settings');
     }
   }
 
@@ -119,6 +131,8 @@ class MainLayout extends StatelessWidget {
       return 3;
     } else if (location.startsWith('/billing')) {
       return 4;
+    } else if (location.startsWith('/settings')) {
+      return 5;
     }
     return 0;
   }
