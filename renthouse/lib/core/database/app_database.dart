@@ -82,6 +82,8 @@ class Billings extends Table {
   BoolColumn get paid => boolean().withDefault(const Constant(false))();
   DateTimeColumn get paidDate => dateTime().nullable()();
   IntColumn get totalAmount => integer()();
+  // Phase 2: 청구서 상태 추가
+  TextColumn get status => text().withDefault(const Constant('DRAFT'))(); // DRAFT, ISSUED, PARTIALLY_PAID, PAID, OVERDUE, VOID
 
   @override
   Set<Column> get primaryKey => {id};
@@ -97,13 +99,71 @@ class BillingItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-
-@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(connect());
+// Phase 2: 새로운 테이블들
+class Users extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 50)();
+  TextColumn get email => text().withLength(min: 1, max: 255).unique()();
+  TextColumn get name => text().withLength(min: 1, max: 255)();
+  TextColumn get passwordHash => text().withLength(min: 1, max: 255)();
+  DateTimeColumn get createdAt => dateTime()();
 
   @override
-  int get schemaVersion => 4;
+  Set<Column> get primaryKey => {id};
+}
+
+class Payments extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 50)();
+  TextColumn get tenantId => text().withLength(min: 1, max: 50).references(Tenants, #id, onDelete: KeyAction.cascade)();
+  TextColumn get method => text().withLength(min: 1, max: 50)(); // CASH, TRANSFER, CARD
+  IntColumn get amount => integer()();
+  DateTimeColumn get paidDate => dateTime()();
+  TextColumn get memo => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class PaymentAllocations extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 50)();
+  TextColumn get paymentId => text().withLength(min: 1, max: 50).references(Payments, #id, onDelete: KeyAction.cascade)();
+  TextColumn get billingId => text().withLength(min: 1, max: 50).references(Billings, #id, onDelete: KeyAction.cascade)();
+  IntColumn get amount => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+
+@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems, Users, Payments, PaymentAllocations])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase([QueryExecutor? e]) : super(e ?? connect());
+
+  @override
+  int get schemaVersion => 5;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) {
+      return m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 5) {
+        // Phase 2: 새로운 테이블들 생성
+        await m.createTable(users);
+        await m.createTable(payments);
+        await m.createTable(paymentAllocations);
+        
+        // Billings 테이블에 status 컬럼 추가
+        await m.addColumn(billings, billings.status);
+        
+        // (lease_id, yearMonth) 유니크 인덱스 추가
+        await m.createIndex(Index('billing_lease_month_unique', 
+          'CREATE UNIQUE INDEX billing_lease_month_unique ON billings (lease_id, year_month)'));
+      }
+    },
+  );
 
   // DAO for properties
   Future<List<Property>> getAllProperties() => select(properties).get();
@@ -155,4 +215,77 @@ class AppDatabase extends _$AppDatabase {
   Future<List<BillingItem>> getBillingItemsForBilling(String billingId) => (select(billingItems)..where((tbl) => tbl.billingId.equals(billingId))).get();
   Future<void> insertBillingItem(BillingItemsCompanion item) => into(billingItems).insert(item);
   Future<void> deleteBillingItemsForBilling(String billingId) => (delete(billingItems)..where((tbl) => tbl.billingId.equals(billingId))).go();
+
+  // Phase 2: DAO for users
+  Future<List<User>> getAllUsers() => select(users).get();
+  Future<User?> getUserById(String id) async {
+    try {
+      return await (select(users)..where((tbl) => tbl.id.equals(id))).getSingle();
+    } catch (e) {
+      return null;
+    }
+  }
+  Future<User?> getUserByEmail(String email) async {
+    try {
+      return await (select(users)..where((tbl) => tbl.email.equals(email))).getSingle();
+    } catch (e) {
+      return null;
+    }
+  }
+  Future<void> insertUser(UsersCompanion user) => into(users).insert(user);
+  Future<bool> updateUser(UsersCompanion user) => update(users).replace(user);
+  Future<void> deleteUser(String id) => (delete(users)..where((tbl) => tbl.id.equals(id))).go();
+
+  // Phase 2: DAO for payments
+  Future<List<Payment>> getAllPayments() => select(payments).get();
+  Future<Payment?> getPaymentById(String id) async {
+    try {
+      return await (select(payments)..where((tbl) => tbl.id.equals(id))).getSingle();
+    } catch (e) {
+      return null;
+    }
+  }
+  Future<List<Payment>> getPaymentsByTenant(String tenantId) => (select(payments)..where((tbl) => tbl.tenantId.equals(tenantId))).get();
+  Future<void> insertPayment(PaymentsCompanion payment) => into(payments).insert(payment);
+  Future<bool> updatePayment(PaymentsCompanion payment) => update(payments).replace(payment);
+  Future<void> deletePayment(String id) => (delete(payments)..where((tbl) => tbl.id.equals(id))).go();
+
+  // Phase 2: DAO for payment allocations
+  Future<List<PaymentAllocation>> getAllPaymentAllocations() => select(paymentAllocations).get();
+  Future<List<PaymentAllocation>> getPaymentAllocationsByPayment(String paymentId) => 
+    (select(paymentAllocations)..where((tbl) => tbl.paymentId.equals(paymentId))).get();
+  Future<List<PaymentAllocation>> getPaymentAllocationsByBilling(String billingId) => 
+    (select(paymentAllocations)..where((tbl) => tbl.billingId.equals(billingId))).get();
+  Future<void> insertPaymentAllocation(PaymentAllocationsCompanion allocation) => into(paymentAllocations).insert(allocation);
+  Future<void> deletePaymentAllocation(String id) => (delete(paymentAllocations)..where((tbl) => tbl.id.equals(id))).go();
+  Future<void> deletePaymentAllocationsForPayment(String paymentId) => 
+    (delete(paymentAllocations)..where((tbl) => tbl.paymentId.equals(paymentId))).go();
+
+  // Phase 2: 청구서 상태 관련 DAO 메서드들
+  Future<List<Billing>> getBillingsByStatus(String status) => 
+    (select(billings)..where((tbl) => tbl.status.equals(status))).get();
+  Future<List<Billing>> getOverdueBillings() async {
+    final now = DateTime.now();
+    return (select(billings)
+      ..where((tbl) => tbl.dueDate.isSmallerThanValue(now) & tbl.status.isNotValue('PAID'))
+    ).get();
+  }
+  Future<void> updateBillingStatus(String billingId, String status) async {
+    await (update(billings)..where((tbl) => tbl.id.equals(billingId)))
+      .write(BillingsCompanion(status: Value(status)));
+  }
+
+  // Phase 2: 수납 관련 복합 쿼리
+  Future<int> getTotalPaidAmountForBilling(String billingId) async {
+    final allocations = await getPaymentAllocationsByBilling(billingId);
+    return allocations.fold<int>(0, (sum, allocation) => sum + allocation.amount);
+  }
+
+  // Phase 2: 중복 청구 방지 체크
+  Future<bool> hasExistingBilling(String leaseId, String yearMonth) async {
+    final existing = await (select(billings)
+      ..where((tbl) => tbl.leaseId.equals(leaseId) & tbl.yearMonth.equals(yearMonth))
+    ).get();
+    return existing.isNotEmpty;
+  }
 }

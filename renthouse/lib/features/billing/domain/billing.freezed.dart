@@ -29,7 +29,9 @@ mixin _$Billing {
   bool get paid => throw _privateConstructorUsedError;
   DateTime? get paidDate => throw _privateConstructorUsedError;
   int get totalAmount => throw _privateConstructorUsedError;
-  List<BillingItem> get items => throw _privateConstructorUsedError;
+  List<BillingItem> get items =>
+      throw _privateConstructorUsedError; // Phase 2: 새로운 필드들
+  BillingStatus get status => throw _privateConstructorUsedError;
 
   /// Serializes this Billing to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -55,6 +57,7 @@ abstract class $BillingCopyWith<$Res> {
     DateTime? paidDate,
     int totalAmount,
     List<BillingItem> items,
+    BillingStatus status,
   });
 }
 
@@ -82,6 +85,7 @@ class _$BillingCopyWithImpl<$Res, $Val extends Billing>
     Object? paidDate = freezed,
     Object? totalAmount = null,
     Object? items = null,
+    Object? status = null,
   }) {
     return _then(
       _value.copyWith(
@@ -121,6 +125,10 @@ class _$BillingCopyWithImpl<$Res, $Val extends Billing>
                 ? _value.items
                 : items // ignore: cast_nullable_to_non_nullable
                       as List<BillingItem>,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as BillingStatus,
           )
           as $Val,
     );
@@ -145,6 +153,7 @@ abstract class _$$BillingImplCopyWith<$Res> implements $BillingCopyWith<$Res> {
     DateTime? paidDate,
     int totalAmount,
     List<BillingItem> items,
+    BillingStatus status,
   });
 }
 
@@ -171,6 +180,7 @@ class __$$BillingImplCopyWithImpl<$Res>
     Object? paidDate = freezed,
     Object? totalAmount = null,
     Object? items = null,
+    Object? status = null,
   }) {
     return _then(
       _$BillingImpl(
@@ -210,6 +220,10 @@ class __$$BillingImplCopyWithImpl<$Res>
             ? _value._items
             : items // ignore: cast_nullable_to_non_nullable
                   as List<BillingItem>,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as BillingStatus,
       ),
     );
   }
@@ -228,6 +242,7 @@ class _$BillingImpl implements _Billing {
     this.paidDate,
     required this.totalAmount,
     final List<BillingItem> items = const [],
+    this.status = BillingStatus.draft,
   }) : _items = items;
 
   factory _$BillingImpl.fromJson(Map<String, dynamic> json) =>
@@ -259,9 +274,14 @@ class _$BillingImpl implements _Billing {
     return EqualUnmodifiableListView(_items);
   }
 
+  // Phase 2: 새로운 필드들
+  @override
+  @JsonKey()
+  final BillingStatus status;
+
   @override
   String toString() {
-    return 'Billing(id: $id, leaseId: $leaseId, yearMonth: $yearMonth, issueDate: $issueDate, dueDate: $dueDate, paid: $paid, paidDate: $paidDate, totalAmount: $totalAmount, items: $items)';
+    return 'Billing(id: $id, leaseId: $leaseId, yearMonth: $yearMonth, issueDate: $issueDate, dueDate: $dueDate, paid: $paid, paidDate: $paidDate, totalAmount: $totalAmount, items: $items, status: $status)';
   }
 
   @override
@@ -281,7 +301,8 @@ class _$BillingImpl implements _Billing {
                 other.paidDate == paidDate) &&
             (identical(other.totalAmount, totalAmount) ||
                 other.totalAmount == totalAmount) &&
-            const DeepCollectionEquality().equals(other._items, _items));
+            const DeepCollectionEquality().equals(other._items, _items) &&
+            (identical(other.status, status) || other.status == status));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -297,6 +318,7 @@ class _$BillingImpl implements _Billing {
     paidDate,
     totalAmount,
     const DeepCollectionEquality().hash(_items),
+    status,
   );
 
   /// Create a copy of Billing
@@ -324,6 +346,7 @@ abstract class _Billing implements Billing {
     final DateTime? paidDate,
     required final int totalAmount,
     final List<BillingItem> items,
+    final BillingStatus status,
   }) = _$BillingImpl;
 
   factory _Billing.fromJson(Map<String, dynamic> json) = _$BillingImpl.fromJson;
@@ -345,7 +368,9 @@ abstract class _Billing implements Billing {
   @override
   int get totalAmount;
   @override
-  List<BillingItem> get items;
+  List<BillingItem> get items; // Phase 2: 새로운 필드들
+  @override
+  BillingStatus get status;
 
   /// Create a copy of Billing
   /// with the given fields replaced by the non-null parameter values.

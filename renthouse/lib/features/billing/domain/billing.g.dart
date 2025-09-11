@@ -23,6 +23,9 @@ _$BillingImpl _$$BillingImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => BillingItem.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      status:
+          $enumDecodeNullable(_$BillingStatusEnumMap, json['status']) ??
+          BillingStatus.draft,
     );
 
 Map<String, dynamic> _$$BillingImplToJson(_$BillingImpl instance) =>
@@ -36,4 +39,14 @@ Map<String, dynamic> _$$BillingImplToJson(_$BillingImpl instance) =>
       'paidDate': instance.paidDate?.toIso8601String(),
       'totalAmount': instance.totalAmount,
       'items': instance.items,
+      'status': _$BillingStatusEnumMap[instance.status]!,
     };
+
+const _$BillingStatusEnumMap = {
+  BillingStatus.draft: 'draft',
+  BillingStatus.issued: 'issued',
+  BillingStatus.partiallyPaid: 'partiallyPaid',
+  BillingStatus.paid: 'paid',
+  BillingStatus.overdue: 'overdue',
+  BillingStatus.voided: 'voided',
+};
