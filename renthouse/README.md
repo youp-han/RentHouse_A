@@ -2,15 +2,30 @@
 
 A new Flutter project.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Todos
+  [×] Phase 1 테스트 코드 완료 - 전체 테스트 스위트 작성 완료
+  [×] 데이터베이스 마이그레이션 완료 - 스키마 버전 5로 업데이트, Users/Payments/PaymentAllocations 테이블 추가
+  [×] Billing 모델 status 필드 추가 완룼 - DRAFT/ISSUED/PAID/OVERDUE 등 6개 상태 관리
+  [×] Payment 모델 신규 생성 완료 - 수납 정보 관리
+  [×] PaymentAllocation 모델 신규 생성 완료 - 단일 수납 건을 여러 청구서에 배분
+  [×] Windows 환경 빌드 오류 수정 완료 - 컴파일 에러 해결
+  [×] 회원가입 및 로그인 기능 완료 - 강화된 비밀번호 정책, 한글 입력 방지, 실시간 강도 표시, 라우터 연동 수정
+  [×] 데이터베이스 초기화 완료 - 기존 db.sqlite 파일 삭제하여 새로운 정책으로 테스트
+  [ ] 사용자 설정 화면 구현 - 프로필 관리, 암호 변경, 통화 설정
+  [ ] 고객 관리 기능 추가 - 자산 소유자 관리 화면
+  [ ] 반자동 청구 생성 기능 - 중복 방지 로직 포함
+  [ ] 수납 등록 및 자동 배분 기능 - 가장 오래된 미납부터 자동 배분
+  [ ] 영수증 발행 기능 - PDF 영수증 생성
+  [ ] 대시보드 KPI 추가 - 이번 달 미납액, 연체 비중 등
+  [ ] 청구 목록 화면 개선 - 상태별 배지, 연체 필터, 일괄 발행
+  [ ] 수납 화면 UI 구현 - 자동 배분 미리보기, 수동 배분
+  [ ] 보고서 기능 - 월별 수익, 연체, 점유율 보고서
+  [ ] Property 모델 개선 - 자산 유형 드롭다운, 주소 세분화, 소유자 정보 추가
+  [ ] 우편번호 검색 API 연동 - 다음 우편번호 API 활용
+  [ ] Unit 모델 개선 - 임대 상태 드롭다운
+  [ ] Tenant 모델 개선 - 주민등록번호 분리 저장 및 마스킹 처리
+  [ ] Lease 등록 화면 개선 - 임차인 필터링, 자산-유닛 연동, 신규 임차인 추가 버튼
+  [ ] 반응형 내비게이션 개선 - 모바일에서 하단 내비게이션 바
+  [ ] 청구 기본 항목 자동 추가 - 주차비, 관리비, 물세 등
+  [ ] 활동 로그 시스템 구현 - 대시보드에 주요 활동 로그 표시
+  [ ] 로깅 및 크래시 보고 시스템 - logger, sentry_flutter 등 활용
