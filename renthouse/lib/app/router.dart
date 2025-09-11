@@ -29,6 +29,8 @@ import 'package:renthouse/features/auth/presentation/register_screen.dart';
 import 'package:renthouse/features/settings/presentation/settings_screen.dart';
 import 'package:renthouse/features/settings/presentation/profile_screen.dart';
 import 'package:renthouse/features/settings/presentation/currency_screen.dart';
+import 'package:renthouse/features/payment/presentation/revenue_screen.dart';
+import 'package:renthouse/features/payment/presentation/payment_form_screen.dart';
 
 final authState = AuthState.instance;
 
@@ -210,6 +212,18 @@ final router = GoRouter(
                   });
                 }),
           ]
+        ),
+
+        // Revenue Management Routes
+        GoRoute(
+          path: '/revenue',
+          builder: (c, s) => const RevenueScreen(),
+          routes: [
+            GoRoute(
+              path: 'payment/new',
+              builder: (c, s) => const PaymentFormScreen(),
+            ),
+          ],
         ),
 
         // Settings Routes

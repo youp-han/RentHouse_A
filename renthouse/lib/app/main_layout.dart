@@ -49,6 +49,11 @@ class MainLayout extends StatelessWidget {
                   label: Text('청구'),
                 ),
                 NavigationRailDestination(
+                  icon: Icon(Icons.trending_up_outlined),
+                  selectedIcon: Icon(Icons.trending_up),
+                  label: Text('수익관리'),
+                ),
+                NavigationRailDestination(
                   icon: Icon(Icons.settings_outlined),
                   selectedIcon: Icon(Icons.settings),
                   label: Text('설정'),
@@ -94,6 +99,11 @@ class MainLayout extends StatelessWidget {
                   label: '청구',
                 ),
                 BottomNavigationBarItem(
+                  icon: Icon(Icons.trending_up_outlined),
+                  activeIcon: Icon(Icons.trending_up),
+                  label: '수익관리',
+                ),
+                BottomNavigationBarItem(
                   icon: Icon(Icons.settings_outlined),
                   activeIcon: Icon(Icons.settings),
                   label: '설정',
@@ -116,6 +126,8 @@ class MainLayout extends StatelessWidget {
     } else if (index == 4) {
       context.go('/billing');
     } else if (index == 5) {
+      context.go('/revenue');
+    } else if (index == 6) {
       context.go('/settings');
     }
   }
@@ -131,8 +143,10 @@ class MainLayout extends StatelessWidget {
       return 3;
     } else if (location.startsWith('/billing')) {
       return 4;
-    } else if (location.startsWith('/settings')) {
+    } else if (location.startsWith('/revenue')) {
       return 5;
+    } else if (location.startsWith('/settings')) {
+      return 6;
     }
     return 0;
   }
