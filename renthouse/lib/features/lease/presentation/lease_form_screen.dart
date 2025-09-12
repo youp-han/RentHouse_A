@@ -68,14 +68,21 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
   }
 
   // 현재 활성 계약이 없는 임차인들만 필터링
-  List<Tenant> _getAvailableTenants(List<Tenant> allTenants) {
+  List<Tenant> _getAvailableTenants(List<Tenant> allTenants, List<Lease> allLeases) {
     if (_isEditing && _selectedTenantId != null) {
       // 수정 모드인 경우 현재 선택된 임차인도 포함
       return allTenants;
     }
     
     // 새로운 계약 등록 시에는 활성 계약이 없는 임차인만 표시
-    return allTenants; // TODO: 실제 필터링 로직 구현
+    final tenantsWithActiveLeases = allLeases
+        .where((lease) => lease.leaseStatus == LeaseStatus.active)
+        .map((lease) => lease.tenantId)
+        .toSet();
+    
+    return allTenants
+        .where((tenant) => !tenantsWithActiveLeases.contains(tenant.id))
+        .toList();
   }
 
   void _onPropertyChanged(String? propertyId) {
@@ -202,7 +209,11 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => Center(child: Text('임차인 목록 로딩 오류: $err')),
             data: (tenants) {
-              final availableTenants = _getAvailableTenants(tenants);
+              return ref.watch(leaseControllerProvider).when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('계약 목록 로딩 오류: $err')),
+                data: (leases) {
+                  final availableTenants = _getAvailableTenants(tenants, leases);
               
               // Ensure _selectedTenantId is valid
               if (_isEditing && _selectedTenantId != null && !availableTenants.any((t) => t.id == _selectedTenantId)) {
@@ -383,6 +394,8 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                     )
                   ],
                 ),
+              );
+                },
               );
                 },
               );
