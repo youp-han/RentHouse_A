@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CrashReportingService {
   static final Logger _logger = Logger(
@@ -19,13 +20,16 @@ class CrashReportingService {
 
   static const String _consentKey = 'crash_reporting_consent';
   static const String _deviceIdKey = 'anonymous_device_id';
+  static const String _crashLogKey = 'pending_crash_logs';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   
   static bool _isInitialized = false;
   static bool _hasUserConsent = false;
+  static List<Map<String, dynamic>> _pendingCrashLogs = [];
+  static Map<String, dynamic>? _deviceInfo;
 
-  /// Sentry DSN - 실제 프로젝트에서는 환경변수나 설정 파일에서 관리
-  static const String _sentryDsn = 'YOUR_SENTRY_DSN_HERE';
+  /// 개발자 이메일
+  static const String _developerEmail = 'youp.han+uk@gmail.com';
 
   /// 초기화 - 앱 시작 시 호출
   static Future<void> initialize() async {
@@ -37,35 +41,124 @@ class CrashReportingService {
       _hasUserConsent = consentString == 'true';
 
       if (_hasUserConsent) {
-        await _initializeSentry();
+        await _initializeDeviceInfo();
+        await _loadPendingCrashLogs();
+      } else {
+        // 동의하지 않았어도 기존 로그가 있다면 정리
+        await _loadPendingCrashLogs();
       }
 
       _isInitialized = true;
-      _logger.i('CrashReportingService initialized. User consent: $_hasUserConsent');
+      _logger.i('CrashReportingService initialized. User consent: $_hasUserConsent, Pending logs: ${_pendingCrashLogs.length}');
     } catch (e) {
       _logger.e('Failed to initialize CrashReportingService', error: e);
     }
   }
 
-  /// Sentry 초기화
-  static Future<void> _initializeSentry() async {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = _sentryDsn;
-        options.debug = kDebugMode;
-        options.environment = kDebugMode ? 'development' : 'production';
-        options.tracesSampleRate = kDebugMode ? 1.0 : 0.1;
-        
-        // 개인정보 필터링
-        options.beforeSend = _beforeSendFilter;
-        
-        // 릴리스 정보 설정
-        options.release = 'renthouse@1.0.0'; // 실제 버전으로 교체
-      },
-    );
+  /// 디바이스 정보 초기화
+  static Future<void> _initializeDeviceInfo() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      final packageInfo = await PackageInfo.fromPlatform();
+      
+      // 익명 디바이스 ID 생성 또는 조회
+      String? deviceId = await _storage.read(key: _deviceIdKey);
+      if (deviceId == null) {
+        deviceId = DateTime.now().millisecondsSinceEpoch.toString();
+        await _storage.write(key: _deviceIdKey, value: deviceId);
+      }
 
-    // 디바이스 정보 및 사용자 컨텍스트 설정
-    await _setUserContext();
+      // 플랫폼별 디바이스 정보
+      Map<String, dynamic> deviceData = {
+        'device_id': deviceId,
+        'app_version': packageInfo.version,
+        'app_build': packageInfo.buildNumber,
+        'flutter_debug': kDebugMode,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      
+      if (Platform.isWindows) {
+        final windowsInfo = await deviceInfo.windowsInfo;
+        deviceData.addAll({
+          'platform': 'Windows',
+          'version': windowsInfo.displayVersion,
+          'build': windowsInfo.buildNumber.toString(),
+          'machine': windowsInfo.computerName,
+        });
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceData.addAll({
+          'platform': 'Android',
+          'version': androidInfo.version.release,
+          'model': androidInfo.model,
+          'manufacturer': androidInfo.manufacturer,
+        });
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceData.addAll({
+          'platform': 'iOS',
+          'version': iosInfo.systemVersion,
+          'model': iosInfo.model,
+        });
+      }
+
+      _deviceInfo = deviceData;
+    } catch (e) {
+      _logger.e('Failed to initialize device info', error: e);
+    }
+  }
+
+  /// 저장된 크래시 로그 불러오기
+  static Future<void> _loadPendingCrashLogs() async {
+    try {
+      final logsString = await _storage.read(key: _crashLogKey);
+      if (logsString != null) {
+        final List<dynamic> logs = jsonDecode(logsString);
+        _pendingCrashLogs = logs.cast<Map<String, dynamic>>();
+        
+        // 7일 자동 정리 정책 적용
+        await _cleanupOldLogs();
+      }
+    } catch (e) {
+      _logger.e('Failed to load pending crash logs', error: e);
+      _pendingCrashLogs = [];
+    }
+  }
+
+  /// 7일이 지난 오래된 로그 자동 정리
+  static Future<void> _cleanupOldLogs() async {
+    final now = DateTime.now();
+    final cutoffDate = now.subtract(const Duration(days: 7));
+    
+    final originalCount = _pendingCrashLogs.length;
+    
+    _pendingCrashLogs.removeWhere((log) {
+      try {
+        final timestampString = log['timestamp'] as String;
+        final logDate = DateTime.parse(timestampString);
+        return logDate.isBefore(cutoffDate);
+      } catch (e) {
+        // 파싱 실패한 로그는 삭제
+        return true;
+      }
+    });
+    
+    final removedCount = originalCount - _pendingCrashLogs.length;
+    
+    if (removedCount > 0) {
+      await _savePendingCrashLogs();
+      _logger.i('Cleaned up $removedCount old crash logs (older than 7 days)');
+    }
+  }
+
+  /// 크래시 로그 저장
+  static Future<void> _savePendingCrashLogs() async {
+    try {
+      final logsString = jsonEncode(_pendingCrashLogs);
+      await _storage.write(key: _crashLogKey, value: logsString);
+    } catch (e) {
+      _logger.e('Failed to save pending crash logs', error: e);
+    }
   }
 
   /// 사용자 동의 요청 및 저장
@@ -74,9 +167,12 @@ class CrashReportingService {
     await _storage.write(key: _consentKey, value: hasConsent.toString());
 
     if (hasConsent && !_isInitialized) {
-      await _initializeSentry();
+      await _initializeDeviceInfo();
+      await _loadPendingCrashLogs();
     } else if (!hasConsent) {
-      await Sentry.close();
+      // 동의 철회 시 저장된 로그 삭제
+      await _storage.delete(key: _crashLogKey);
+      _pendingCrashLogs.clear();
     }
 
     _logger.i('User consent updated: $hasConsent');
@@ -97,89 +193,6 @@ class CrashReportingService {
     return consentString != null;
   }
 
-  /// 사용자 컨텍스트 설정
-  static Future<void> _setUserContext() async {
-    try {
-      final deviceInfo = DeviceInfoPlugin();
-      final packageInfo = await PackageInfo.fromPlatform();
-      
-      // 익명 디바이스 ID 생성 또는 조회
-      String? deviceId = await _storage.read(key: _deviceIdKey);
-      if (deviceId == null) {
-        deviceId = DateTime.now().millisecondsSinceEpoch.toString();
-        await _storage.write(key: _deviceIdKey, value: deviceId);
-      }
-
-      // 플랫폼별 디바이스 정보
-      Map<String, dynamic> deviceData = {};
-      
-      if (Platform.isWindows) {
-        final windowsInfo = await deviceInfo.windowsInfo;
-        deviceData = {
-          'platform': 'Windows',
-          'version': windowsInfo.displayVersion,
-          'build': windowsInfo.buildNumber.toString(),
-          'machine': windowsInfo.computerName,
-        };
-      } else if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        deviceData = {
-          'platform': 'Android',
-          'version': androidInfo.version.release,
-          'model': androidInfo.model,
-          'manufacturer': androidInfo.manufacturer,
-        };
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        deviceData = {
-          'platform': 'iOS',
-          'version': iosInfo.systemVersion,
-          'model': iosInfo.model,
-        };
-      }
-
-      // Sentry 사용자 컨텍스트 설정
-      Sentry.configureScope((scope) {
-        scope.setUser(SentryUser(
-          id: deviceId,
-          data: deviceData,
-        ));
-        
-        scope.setTag('app.version', packageInfo.version);
-        scope.setTag('app.build', packageInfo.buildNumber);
-        scope.setTag('flutter.debug', kDebugMode.toString());
-      });
-
-    } catch (e) {
-      _logger.e('Failed to set user context', error: e);
-    }
-  }
-
-  /// 개인정보 필터링
-  static SentryEvent? _beforeSendFilter(SentryEvent event, Hint hint) {
-    // 민감한 정보가 포함된 경우 필터링
-    if (event.message?.formatted != null && 
-        (event.message!.formatted!.contains('password') || 
-         event.message!.formatted!.contains('token'))) {
-      return null; // 이벤트를 전송하지 않음
-    }
-
-    // 개발자 이메일 추가
-    event = event.copyWith(
-      contexts: event.contexts?.copyWith(
-        app: event.contexts!.app?.copyWith(
-          name: 'RentHouse',
-        ),
-      ),
-      tags: {
-        ...event.tags ?? {},
-        'developer.email': 'youp.han+uk@gmail.com',
-      },
-    );
-
-    return event;
-  }
-
   /// 로그 레벨별 메서드들
   static void logDebug(String message, [dynamic error, StackTrace? stackTrace]) {
     _logger.d(message, error: error, stackTrace: stackTrace);
@@ -193,11 +206,7 @@ class CrashReportingService {
     _logger.w(message, error: error, stackTrace: stackTrace);
     
     if (_hasUserConsent) {
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: message,
-        level: SentryLevel.warning,
-        timestamp: DateTime.now().toUtc(),
-      ));
+      _addCrashLog('WARNING', message, error, stackTrace);
     }
   }
 
@@ -205,14 +214,7 @@ class CrashReportingService {
     _logger.e(message, error: error, stackTrace: stackTrace);
     
     if (_hasUserConsent && error != null) {
-      Sentry.captureException(
-        error,
-        stackTrace: stackTrace,
-        withScope: (scope) {
-          scope.level = SentryLevel.error;
-          scope.setTag('custom.message', message);
-        },
-      );
+      _addCrashLog('ERROR', message, error, stackTrace);
     }
   }
 
@@ -220,14 +222,7 @@ class CrashReportingService {
     _logger.f(message, error: error, stackTrace: stackTrace);
     
     if (_hasUserConsent) {
-      Sentry.captureException(
-        error ?? Exception(message),
-        stackTrace: stackTrace,
-        withScope: (scope) {
-          scope.level = SentryLevel.fatal;
-          scope.setTag('custom.message', message);
-        },
-      );
+      _addCrashLog('FATAL', message, error ?? Exception(message), stackTrace);
     }
   }
 
@@ -240,44 +235,191 @@ class CrashReportingService {
   }) async {
     if (!_hasUserConsent) return;
 
-    await Sentry.captureException(
-      exception,
-      stackTrace: stackTrace,
-      withScope: (scope) {
-        if (context != null) {
-          scope.setTag('context', context);
-        }
-        if (extra != null) {
-          for (final entry in extra.entries) {
-            scope.setExtra(entry.key, entry.value);
-          }
-        }
-      },
-    );
+    _addCrashLog('EXCEPTION', context ?? 'Manual exception report', exception, stackTrace, extra);
   }
 
   /// 사용자 액션 추적 (Breadcrumb)
   static void recordUserAction(String action, {Map<String, dynamic>? data}) {
     _logger.d('User action: $action', error: data);
-    
-    if (_hasUserConsent) {
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: action,
-        category: 'user_action',
-        data: data,
-        timestamp: DateTime.now().toUtc(),
-      ));
+  }
+
+  /// 크래시 로그 추가
+  static void _addCrashLog(
+    String level, 
+    String message, 
+    dynamic error, 
+    StackTrace? stackTrace, [
+    Map<String, dynamic>? extra,
+  ]) {
+    if (!_hasUserConsent) return;
+
+    final crashLog = {
+      'timestamp': DateTime.now().toIso8601String(),
+      'level': level,
+      'message': message,
+      'error': error?.toString(),
+      'stack_trace': stackTrace?.toString(),
+      'device_info': _deviceInfo,
+      'extra': extra,
+    };
+
+    _pendingCrashLogs.add(crashLog);
+    _savePendingCrashLogs();
+
+    // 즉시 이메일 전송 시도 (중요한 오류의 경우)
+    if (level == 'FATAL' || level == 'ERROR') {
+      _trySendEmail(crashLog);
     }
   }
 
-  /// 앱 성능 측정 시작
-  static ISentrySpan? startTransaction(String operation, String description) {
-    if (!_hasUserConsent) return null;
+  /// 이메일 전송 시도
+  static Future<void> _trySendEmail(Map<String, dynamic> crashLog) async {
+    try {
+      final subject = '🚨 RentHouse 앱 ${crashLog['level']} 리포트';
+      final body = _generateEmailBody(crashLog);
+      
+      // 기본 메일 앱으로 이메일 작성 창 열기
+      final emailUri = Uri(
+        scheme: 'mailto',
+        path: _developerEmail,
+        query: _encodeQueryParameters({
+          'subject': subject,
+          'body': body,
+        }),
+      );
+
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+        _logger.i('Email client opened for crash report');
+      } else {
+        _logger.w('Cannot open email client');
+      }
+    } catch (e) {
+      _logger.e('Failed to send email', error: e);
+    }
+  }
+
+  /// 이메일 본문 생성
+  static String _generateEmailBody(Map<String, dynamic> crashLog) {
+    final buffer = StringBuffer();
     
-    return Sentry.startTransaction(
-      operation,
-      description,
-      autoFinishAfter: const Duration(seconds: 30),
-    );
+    buffer.writeln('RentHouse 앱에서 ${crashLog['level']} 레벨의 오류가 발생했습니다.\n');
+    buffer.writeln('발생 시각: ${crashLog['timestamp']}');
+    buffer.writeln('메시지: ${crashLog['message']}\n');
+    
+    if (crashLog['error'] != null) {
+      buffer.writeln('오류 내용:');
+      buffer.writeln('${crashLog['error']}\n');
+    }
+    
+    if (crashLog['stack_trace'] != null) {
+      buffer.writeln('스택 트레이스:');
+      buffer.writeln('${crashLog['stack_trace']}\n');
+    }
+    
+    if (crashLog['device_info'] != null) {
+      buffer.writeln('디바이스 정보:');
+      final deviceInfo = crashLog['device_info'] as Map<String, dynamic>;
+      deviceInfo.forEach((key, value) {
+        buffer.writeln('- $key: $value');
+      });
+      buffer.writeln();
+    }
+    
+    if (crashLog['extra'] != null) {
+      buffer.writeln('추가 정보:');
+      final extra = crashLog['extra'] as Map<String, dynamic>;
+      extra.forEach((key, value) {
+        buffer.writeln('- $key: $value');
+      });
+    }
+    
+    return buffer.toString();
+  }
+
+  /// URL 쿼리 파라미터 인코딩
+  static String _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
+
+  /// 수동으로 저장된 모든 크래시 로그 이메일 전송
+  static Future<void> sendAllPendingLogs() async {
+    if (!_hasUserConsent || _pendingCrashLogs.isEmpty) return;
+
+    try {
+      final subject = '📋 RentHouse 앱 누적 로그 리포트 (${_pendingCrashLogs.length}건)';
+      final body = _generateAllLogsEmailBody();
+      
+      final emailUri = Uri(
+        scheme: 'mailto',
+        path: _developerEmail,
+        query: _encodeQueryParameters({
+          'subject': subject,
+          'body': body,
+        }),
+      );
+
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+        
+        // 전송 후 로그 클리어
+        _pendingCrashLogs.clear();
+        await _storage.delete(key: _crashLogKey);
+        
+        _logger.i('All pending logs sent via email');
+      } else {
+        _logger.w('Cannot open email client');
+      }
+    } catch (e) {
+      _logger.e('Failed to send all logs', error: e);
+    }
+  }
+
+  /// 모든 로그의 이메일 본문 생성
+  static String _generateAllLogsEmailBody() {
+    final buffer = StringBuffer();
+    
+    buffer.writeln('RentHouse 앱에서 발생한 전체 로그 리포트입니다.\n');
+    buffer.writeln('총 ${_pendingCrashLogs.length}건의 로그가 있습니다.');
+    buffer.writeln('(7일이 지난 오래된 로그는 자동으로 정리되었습니다)\n');
+    buffer.writeln('=' * 50);
+    
+    for (int i = 0; i < _pendingCrashLogs.length; i++) {
+      final log = _pendingCrashLogs[i];
+      buffer.writeln('\n${i + 1}. ${log['level']} - ${log['timestamp']}');
+      buffer.writeln('메시지: ${log['message']}');
+      
+      if (log['error'] != null) {
+        buffer.writeln('오류: ${log['error']}');
+      }
+      
+      if (log['extra'] != null) {
+        buffer.writeln('추가정보: ${log['extra']}');
+      }
+      
+      buffer.writeln('-' * 30);
+    }
+    
+    // 디바이스 정보는 한 번만 추가
+    if (_deviceInfo != null) {
+      buffer.writeln('\n디바이스 정보:');
+      _deviceInfo!.forEach((key, value) {
+        buffer.writeln('- $key: $value');
+      });
+    }
+    
+    return buffer.toString();
+  }
+
+  /// 저장된 로그 개수 확인
+  static int getPendingLogCount() {
+    return _pendingCrashLogs.length;
+  }
+
+  /// 저장된 로그 목록 확인
+  static List<Map<String, dynamic>> getPendingLogs() {
+    return List.unmodifiable(_pendingCrashLogs);
   }
 }
