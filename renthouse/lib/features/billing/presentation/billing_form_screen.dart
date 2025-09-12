@@ -7,6 +7,7 @@ import 'package:renthouse/features/billing/domain/billing.dart';
 import 'package:renthouse/features/billing/domain/billing_item.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/domain/lease.dart';
+import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
@@ -185,11 +186,55 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
     );
   }
 
-  void _showAddDefaultItemsDialog(String leaseId, List<Lease> availableLeases) {
+  Future<void> _showAddDefaultItemsDialog(String leaseId, List<Lease> availableLeases) async {
     final lease = availableLeases.firstWhere((l) => l.id == leaseId);
-    final hasParking = lease.contractNotes?.contains('주차') == true;
     
-    final itemCount = hasParking ? 3 : 2; // 월세, 관리비 + (주차비)
+    // Get unit and property information for preview
+    final unitDetail = await ref.read(unitDetailProvider(lease.unitId).future);
+    final property = unitDetail != null 
+        ? await ref.read(propertyDetailProvider(unitDetail.propertyId).future)
+        : null;
+    
+    // Calculate preview items
+    final previewItems = <Map<String, dynamic>>[];
+    
+    // 1. Monthly rent - always include
+    previewItems.add({
+      'name': '월세',
+      'amount': lease.monthlyRent,
+    });
+    
+    // 2. Property billing items or fallback
+    if (property != null && property.defaultBillingItems.isNotEmpty) {
+      for (final billingItem in property.defaultBillingItems) {
+        if (billingItem.isEnabled) {
+          previewItems.add({
+            'name': billingItem.name,
+            'amount': billingItem.amount,
+          });
+        }
+      }
+    } else {
+      // Fallback to management fee
+      previewItems.add({
+        'name': '관리비',
+        'amount': 50000,
+      });
+    }
+    
+    // 3. Parking fee from contract notes if not in property items
+    final hasParking = lease.contractNotes?.contains('주차') == true;
+    final hasParkingInProperty = property?.defaultBillingItems.any((item) => 
+      item.name.contains('주차') && item.isEnabled) ?? false;
+    
+    if (hasParking && !hasParkingInProperty) {
+      previewItems.add({
+        'name': '주차비',
+        'amount': 50000,
+      });
+    }
+    
+    if (!mounted) return;
     
     showDialog(
       context: context,
@@ -199,6 +244,15 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text('이 계약에 대한 기본 청구 항목을 자동으로 추가하시겠습니까?'),
+            if (property != null && property.defaultBillingItems.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '※ ${property.name} 자산에 설정된 기본 청구 항목이 포함됩니다.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -207,33 +261,16 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
-                children: [
-                  Row(
+                children: previewItems.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
                     children: [
                       const Icon(Icons.check_circle, size: 16, color: Colors.green),
                       const SizedBox(width: 8),
-                      Expanded(child: Text('월세: ${NumberFormat('#,###').format(lease.monthlyRent)}원')),
+                      Expanded(child: Text('${item['name']}: ${NumberFormat('#,###').format(item['amount'])}원')),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Row(
-                    children: [
-                      Icon(Icons.check_circle, size: 16, color: Colors.green),
-                      SizedBox(width: 8),
-                      Expanded(child: Text('관리비: 50,000원')),
-                    ],
-                  ),
-                  if (hasParking) ...[
-                    const SizedBox(height: 4),
-                    const Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 16, color: Colors.green),
-                        SizedBox(width: 8),
-                        Expanded(child: Text('주차비: 50,000원')),
-                      ],
-                    ),
-                  ],
-                ],
+                )).toList(),
               ),
             ),
             const SizedBox(height: 8),
@@ -253,14 +290,14 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
               Navigator.of(context).pop();
               _addDefaultBillingItems(leaseId, availableLeases);
             },
-            child: Text('$itemCount개 항목 추가'),
+            child: Text('${previewItems.length}개 항목 추가'),
           ),
         ],
       ),
     );
   }
 
-  void _addDefaultBillingItems(String leaseId, List<Lease> availableLeases) {
+  Future<void> _addDefaultBillingItems(String leaseId, List<Lease> availableLeases) async {
     final lease = availableLeases.firstWhere((l) => l.id == leaseId);
     final templates = ref.read(billTemplateControllerProvider).value;
     
@@ -276,6 +313,12 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       _itemsChecked.clear();
     });
     
+    // Get unit and property information
+    final unitDetail = await ref.read(unitDetailProvider(lease.unitId).future);
+    final property = unitDetail != null 
+        ? await ref.read(propertyDetailProvider(unitDetail.propertyId).future)
+        : null;
+    
     // Add default items with smart amounts
     final defaultItems = <Map<String, dynamic>>[];
     
@@ -286,20 +329,40 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       'checked': true,
     });
     
-    // 2. Management fee - fixed 50,000 won
-    defaultItems.add({
-      'name': '관리비',
-      'amount': 50000,
-      'checked': true,
-    });
-    
-    // 3. Parking fee - add if "주차" is in contract notes
-    if (lease.contractNotes?.contains('주차') == true) {
+    // 2. Add property's default billing items (자산에서 설정한 기본 청구 항목)
+    if (property != null && property.defaultBillingItems.isNotEmpty) {
+      for (final billingItem in property.defaultBillingItems) {
+        if (billingItem.isEnabled) {
+          defaultItems.add({
+            'name': billingItem.name,
+            'amount': billingItem.amount,
+            'checked': true,
+          });
+        }
+      }
+    } else {
+      // Fallback to hardcoded items if no property billing items
+      // 2. Management fee - fixed 50,000 won
       defaultItems.add({
-        'name': '주차비',
+        'name': '관리비',
         'amount': 50000,
         'checked': true,
       });
+    }
+    
+    // 3. Parking fee - add if "주차" is in contract notes
+    if (lease.contractNotes?.contains('주차') == true) {
+      // Check if parking fee is not already in property billing items
+      final hasParking = property?.defaultBillingItems.any((item) => 
+        item.name.contains('주차') && item.isEnabled) ?? false;
+      
+      if (!hasParking) {
+        defaultItems.add({
+          'name': '주차비',
+          'amount': 50000,
+          'checked': true,
+        });
+      }
     }
     
     // Find and add matching templates
@@ -326,6 +389,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
     _calculateTotal();
     
     // Show notification to user
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${defaultItems.length}개의 기본 청구 항목이 추가되었습니다.'),
