@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/core/auth/auth_repository.dart';
 import 'package:renthouse/features/auth/domain/user.dart' as auth;
 import 'package:renthouse/core/auth/auth_state.dart';
+import 'package:renthouse/core/logging/crash_reporting_service.dart';
 
 part 'auth_controller.g.dart';
 
@@ -26,6 +27,7 @@ class AuthController extends _$AuthController {
 
   Future<void> register(auth.RegisterUserRequest request) async {
     state = const AsyncValue.loading();
+    CrashReportingService.recordUserAction('register_attempt', data: {'email': request.email});
     
     try {
       final authRepository = ref.read(authRepositoryProvider);
@@ -38,7 +40,11 @@ class AuthController extends _$AuthController {
       AuthState.instance.login(roles: ['USER']);
       
       state = AsyncValue.data(user);
+      CrashReportingService.logInfo('User registration successful');
+      CrashReportingService.recordUserAction('register_success', data: {'email': request.email});
     } catch (e) {
+      CrashReportingService.logError('User registration failed', e, StackTrace.current);
+      CrashReportingService.recordUserAction('register_failed', data: {'email': request.email, 'error': e.toString()});
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
     }
@@ -46,6 +52,7 @@ class AuthController extends _$AuthController {
 
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
+    CrashReportingService.recordUserAction('login_attempt', data: {'email': email});
     
     try {
       final authRepository = ref.read(authRepositoryProvider);
@@ -56,7 +63,11 @@ class AuthController extends _$AuthController {
       AuthState.instance.login(roles: ['USER']);
       
       state = AsyncValue.data(user);
+      CrashReportingService.logInfo('User login successful');
+      CrashReportingService.recordUserAction('login_success', data: {'email': email});
     } catch (e) {
+      CrashReportingService.logError('User login failed', e, StackTrace.current);
+      CrashReportingService.recordUserAction('login_failed', data: {'email': email, 'error': e.toString()});
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
     }

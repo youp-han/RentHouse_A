@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:renthouse/core/logging/crash_consent_wrapper.dart';
 import 'theme.dart';
 import 'router.dart';
 
@@ -7,12 +8,14 @@ class RentHouseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'RentHouse',
-      theme: buildLightTheme(),
-      darkTheme: buildDarkTheme(),
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return CrashConsentWrapper(
+      child: MaterialApp.router(
+        title: 'RentHouse',
+        theme: buildLightTheme(),
+        darkTheme: buildDarkTheme(),
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }

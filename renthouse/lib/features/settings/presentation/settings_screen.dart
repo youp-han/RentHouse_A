@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
+import 'package:renthouse/core/logging/crash_reporting_service.dart';
+import 'package:renthouse/core/logging/crash_consent_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -70,6 +73,36 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () => context.go('/settings/currency'),
                   ),
+                  FutureBuilder<bool>(
+                    future: CrashReportingService.getUserConsent(),
+                    builder: (context, snapshot) {
+                      final isEnabled = snapshot.data ?? false;
+                      return ListTile(
+                        leading: const Icon(Icons.bug_report),
+                        title: const Text('오류 보고'),
+                        subtitle: Text(
+                          isEnabled 
+                            ? '앱 개선을 위해 오류 정보를 전송합니다'
+                            : '오류 보고가 비활성화되어 있습니다'
+                        ),
+                        trailing: Switch(
+                          value: isEnabled,
+                          onChanged: (value) => CrashConsentManager.changeConsentFromSettings(context),
+                        ),
+                        onTap: () => CrashConsentManager.changeConsentFromSettings(context),
+                      );
+                    },
+                  ),
+                  // 개발 모드에서만 테스트 크래시 버튼 표시
+                  if (kDebugMode) ...[
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.warning, color: Colors.orange),
+                      title: const Text('테스트 크래시 발생'),
+                      subtitle: const Text('크래시 보고 시스템 테스트용'),
+                      onTap: () => _triggerTestCrash(context),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -149,6 +182,48 @@ class SettingsScreen extends ConsumerWidget {
         );
       }
     }
+  }
+
+  void _triggerTestCrash(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('테스트 크래시'),
+        content: const Text('크래시 보고 시스템을 테스트하기 위해 의도적으로 오류를 발생시킵니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              
+              // 다양한 테스트 크래시 유형
+              CrashReportingService.recordUserAction('test_crash_triggered');
+              
+              // 1초 후 크래시 발생 (UI가 닫힌 후)
+              Future.delayed(const Duration(seconds: 1), () {
+                CrashReportingService.reportException(
+                  Exception('테스트 크래시: 크래시 보고 시스템 검증용'),
+                  StackTrace.current,
+                  context: 'settings_screen_test',
+                  extra: {
+                    'test_type': 'manual_crash',
+                    'timestamp': DateTime.now().toIso8601String(),
+                    'user_triggered': true,
+                  },
+                );
+                
+                // 실제 예외도 발생시켜서 Flutter 오류 핸들러도 테스트
+                throw Exception('테스트용 예외: Sentry 연동 검증');
+              });
+            },
+            child: const Text('크래시 발생'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {

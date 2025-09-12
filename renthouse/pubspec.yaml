@@ -46,6 +46,11 @@ dependencies:
   path: ^1.9.0
   uuid: ^4.4.0
   crypto: ^3.0.3
+  # 로깅 및 크래시 보고 시스템
+  logger: ^2.4.0
+  sentry_flutter: ^8.9.0
+  device_info_plus: ^10.1.2
+  package_info_plus: ^8.0.2
 
 dev_dependencies:
   flutter_test:
