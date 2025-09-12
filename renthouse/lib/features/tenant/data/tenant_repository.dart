@@ -17,6 +17,8 @@ class TenantRepository {
       phone: tenant.phone,
       email: tenant.email,
       socialNo: tenant.socialNo,
+      bday: tenant.bday,
+      personalNo: tenant.personalNo,
       currentAddress: tenant.currentAddress,
       createdAt: tenant.createdAt,
     )).toList();
@@ -29,6 +31,8 @@ class TenantRepository {
       phone: tenant.phone,
       email: tenant.email,
       socialNo: Value(tenant.socialNo),
+      bday: Value(tenant.bday),
+      personalNo: Value(tenant.personalNo),
       currentAddress: Value(tenant.currentAddress),
       createdAt: tenant.createdAt,
     ));
@@ -42,6 +46,8 @@ class TenantRepository {
       phone: Value(tenant.phone),
       email: Value(tenant.email),
       socialNo: Value(tenant.socialNo),
+      bday: Value(tenant.bday),
+      personalNo: Value(tenant.personalNo),
       currentAddress: Value(tenant.currentAddress),
       createdAt: Value(tenant.createdAt),
     ));

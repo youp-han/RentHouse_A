@@ -39,6 +39,8 @@ class Tenants extends Table {
   TextColumn get phone => text().withLength(min: 1, max: 50)();
   TextColumn get email => text().withLength(min: 1, max: 255)();
   TextColumn get socialNo => text().nullable()();
+  TextColumn get bday => text().nullable()(); // 생년월일 (YYMMDD 형태)
+  IntColumn get personalNo => integer().nullable()(); // 주민등록번호 뒷자리 첫번째 숫자
   TextColumn get currentAddress => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 

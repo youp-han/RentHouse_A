@@ -61,7 +61,18 @@ class TenantListScreen extends ConsumerWidget {
                         final tenant = tenants[i];
                         return ListTile(
                           title: Text(tenant.name),
-                          subtitle: Text(tenant.phone),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(tenant.phone),
+                              if (tenant.bday != null || tenant.socialNo != null)
+                                Text(
+                                  '주민번호: ${tenant.maskedSocialNo}',
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                            ],
+                          ),
                           onTap: () {
                             context.go('/tenants/edit/${tenant.id}');
                           },

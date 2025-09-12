@@ -12,6 +12,8 @@ _$TenantImpl _$$TenantImplFromJson(Map<String, dynamic> json) => _$TenantImpl(
   phone: json['phone'] as String,
   email: json['email'] as String,
   socialNo: json['socialNo'] as String?,
+  bday: json['bday'] as String?,
+  personalNo: (json['personalNo'] as num?)?.toInt(),
   currentAddress: json['currentAddress'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
 );
@@ -23,6 +25,8 @@ Map<String, dynamic> _$$TenantImplToJson(_$TenantImpl instance) =>
       'phone': instance.phone,
       'email': instance.email,
       'socialNo': instance.socialNo,
+      'bday': instance.bday,
+      'personalNo': instance.personalNo,
       'currentAddress': instance.currentAddress,
       'createdAt': instance.createdAt.toIso8601String(),
     };

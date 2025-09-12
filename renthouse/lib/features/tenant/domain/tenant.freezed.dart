@@ -26,6 +26,9 @@ mixin _$Tenant {
   String get phone => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
   String? get socialNo => throw _privateConstructorUsedError;
+  String? get bday => throw _privateConstructorUsedError; // 생년월일 (YYMMDD 형태)
+  int? get personalNo =>
+      throw _privateConstructorUsedError; // 주민등록번호 뒷자리 첫번째 숫자
   String? get currentAddress => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
@@ -49,6 +52,8 @@ abstract class $TenantCopyWith<$Res> {
     String phone,
     String email,
     String? socialNo,
+    String? bday,
+    int? personalNo,
     String? currentAddress,
     DateTime createdAt,
   });
@@ -74,6 +79,8 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
     Object? phone = null,
     Object? email = null,
     Object? socialNo = freezed,
+    Object? bday = freezed,
+    Object? personalNo = freezed,
     Object? currentAddress = freezed,
     Object? createdAt = null,
   }) {
@@ -99,6 +106,14 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
                 ? _value.socialNo
                 : socialNo // ignore: cast_nullable_to_non_nullable
                       as String?,
+            bday: freezed == bday
+                ? _value.bday
+                : bday // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            personalNo: freezed == personalNo
+                ? _value.personalNo
+                : personalNo // ignore: cast_nullable_to_non_nullable
+                      as int?,
             currentAddress: freezed == currentAddress
                 ? _value.currentAddress
                 : currentAddress // ignore: cast_nullable_to_non_nullable
@@ -127,6 +142,8 @@ abstract class _$$TenantImplCopyWith<$Res> implements $TenantCopyWith<$Res> {
     String phone,
     String email,
     String? socialNo,
+    String? bday,
+    int? personalNo,
     String? currentAddress,
     DateTime createdAt,
   });
@@ -151,6 +168,8 @@ class __$$TenantImplCopyWithImpl<$Res>
     Object? phone = null,
     Object? email = null,
     Object? socialNo = freezed,
+    Object? bday = freezed,
+    Object? personalNo = freezed,
     Object? currentAddress = freezed,
     Object? createdAt = null,
   }) {
@@ -176,6 +195,14 @@ class __$$TenantImplCopyWithImpl<$Res>
             ? _value.socialNo
             : socialNo // ignore: cast_nullable_to_non_nullable
                   as String?,
+        bday: freezed == bday
+            ? _value.bday
+            : bday // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        personalNo: freezed == personalNo
+            ? _value.personalNo
+            : personalNo // ignore: cast_nullable_to_non_nullable
+                  as int?,
         currentAddress: freezed == currentAddress
             ? _value.currentAddress
             : currentAddress // ignore: cast_nullable_to_non_nullable
@@ -191,16 +218,18 @@ class __$$TenantImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$TenantImpl implements _Tenant {
+class _$TenantImpl extends _Tenant {
   const _$TenantImpl({
     required this.id,
     required this.name,
     required this.phone,
     required this.email,
     this.socialNo,
+    this.bday,
+    this.personalNo,
     this.currentAddress,
     required this.createdAt,
-  });
+  }) : super._();
 
   factory _$TenantImpl.fromJson(Map<String, dynamic> json) =>
       _$$TenantImplFromJson(json);
@@ -216,13 +245,19 @@ class _$TenantImpl implements _Tenant {
   @override
   final String? socialNo;
   @override
+  final String? bday;
+  // 생년월일 (YYMMDD 형태)
+  @override
+  final int? personalNo;
+  // 주민등록번호 뒷자리 첫번째 숫자
+  @override
   final String? currentAddress;
   @override
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'Tenant(id: $id, name: $name, phone: $phone, email: $email, socialNo: $socialNo, currentAddress: $currentAddress, createdAt: $createdAt)';
+    return 'Tenant(id: $id, name: $name, phone: $phone, email: $email, socialNo: $socialNo, bday: $bday, personalNo: $personalNo, currentAddress: $currentAddress, createdAt: $createdAt)';
   }
 
   @override
@@ -236,6 +271,9 @@ class _$TenantImpl implements _Tenant {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.socialNo, socialNo) ||
                 other.socialNo == socialNo) &&
+            (identical(other.bday, bday) || other.bday == bday) &&
+            (identical(other.personalNo, personalNo) ||
+                other.personalNo == personalNo) &&
             (identical(other.currentAddress, currentAddress) ||
                 other.currentAddress == currentAddress) &&
             (identical(other.createdAt, createdAt) ||
@@ -251,6 +289,8 @@ class _$TenantImpl implements _Tenant {
     phone,
     email,
     socialNo,
+    bday,
+    personalNo,
     currentAddress,
     createdAt,
   );
@@ -269,16 +309,19 @@ class _$TenantImpl implements _Tenant {
   }
 }
 
-abstract class _Tenant implements Tenant {
+abstract class _Tenant extends Tenant {
   const factory _Tenant({
     required final String id,
     required final String name,
     required final String phone,
     required final String email,
     final String? socialNo,
+    final String? bday,
+    final int? personalNo,
     final String? currentAddress,
     required final DateTime createdAt,
   }) = _$TenantImpl;
+  const _Tenant._() : super._();
 
   factory _Tenant.fromJson(Map<String, dynamic> json) = _$TenantImpl.fromJson;
 
@@ -292,6 +335,10 @@ abstract class _Tenant implements Tenant {
   String get email;
   @override
   String? get socialNo;
+  @override
+  String? get bday; // 생년월일 (YYMMDD 형태)
+  @override
+  int? get personalNo; // 주민등록번호 뒷자리 첫번째 숫자
   @override
   String? get currentAddress;
   @override

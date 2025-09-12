@@ -26,6 +26,8 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
   DateTime? _issueDate;
   DateTime? _dueDate;
   final List<BillingItem> _items = [];
+  final List<TextEditingController> _amountControllers = [];
+  final List<bool> _itemsChecked = [];
   int _totalAmount = 0;
 
   bool get _isEditing => widget.billing != null;
@@ -39,13 +41,51 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       _issueDate = billing.issueDate;
       _dueDate = billing.dueDate;
       _items.addAll(billing.items);
+      // Initialize controllers for existing items
+      for (final item in _items) {
+        _amountControllers.add(TextEditingController(text: item.amount.toString()));
+        _itemsChecked.add(true); // Existing items are checked by default
+      }
       _calculateTotal();
+    } else {
+      // Set default dates for new billing
+      _setDefaultDates();
     }
+  }
+  
+  void _setDefaultDates() {
+    final now = DateTime.now();
+    // Issue date: last day of current month
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+    _issueDate = lastDayOfMonth;
+    // Due date: issue date + 5 days
+    _dueDate = lastDayOfMonth.add(const Duration(days: 5));
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers to prevent memory leaks
+    for (final controller in _amountControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _calculateTotal() {
+    int total = 0;
+    for (int i = 0; i < _items.length; i++) {
+      if (i < _amountControllers.length && i < _itemsChecked.length) {
+        final amount = int.tryParse(_amountControllers[i].text) ?? 0;
+        // Only include checked items in total
+        if (_itemsChecked[i]) {
+          total += amount;
+        }
+        // Update the item's amount
+        _items[i] = _items[i].copyWith(amount: amount);
+      }
+    }
     setState(() {
-      _totalAmount = _items.fold(0, (sum, item) => sum + item.amount);
+      _totalAmount = total;
     });
   }
 
@@ -57,8 +97,241 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         billTemplateId: template.id,
         amount: template.amount,
       ));
+      // Add controller for the new item
+      _amountControllers.add(TextEditingController(text: template.amount.toString()));
+      _itemsChecked.add(true); // New items are checked by default
     });
     _calculateTotal();
+  }
+
+  void _removeItem(int index) {
+    setState(() {
+      _items.removeAt(index);
+      _amountControllers[index].dispose();
+      _amountControllers.removeAt(index);
+      _itemsChecked.removeAt(index);
+    });
+    _calculateTotal();
+  }
+
+  void _showCustomItemDialog() {
+    final nameController = TextEditingController();
+    final amountController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('사용자 정의 청구 항목'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: '항목명',
+                hintText: '예: 인터넷비, 가스비 등',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              decoration: const InputDecoration(
+                labelText: '금액',
+                suffixText: '원',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              final amountText = amountController.text.trim();
+              
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('항목명을 입력하세요.')),
+                );
+                return;
+              }
+              
+              final amount = int.tryParse(amountText) ?? 0;
+              
+              // Create a temporary template for custom item
+              final customTemplate = BillTemplate(
+                id: const Uuid().v4(),
+                name: name,
+                category: 'custom',
+                amount: amount,
+                description: '사용자 정의 항목',
+              );
+              
+              _addItem(customTemplate);
+              Navigator.of(context).pop();
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$name 항목이 추가되었습니다.')),
+              );
+            },
+            child: const Text('추가'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddDefaultItemsDialog(String leaseId, List<Lease> availableLeases) {
+    final lease = availableLeases.firstWhere((l) => l.id == leaseId);
+    final hasParking = lease.contractNotes?.contains('주차') == true;
+    
+    final itemCount = hasParking ? 3 : 2; // 월세, 관리비 + (주차비)
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('기본 청구 항목 추가'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('이 계약에 대한 기본 청구 항목을 자동으로 추가하시겠습니까?'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('월세: ${NumberFormat('#,###').format(lease.monthlyRent)}원')),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 16, color: Colors.green),
+                      SizedBox(width: 8),
+                      Expanded(child: Text('관리비: 50,000원')),
+                    ],
+                  ),
+                  if (hasParking) ...[
+                    const SizedBox(height: 4),
+                    const Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 16, color: Colors.green),
+                        SizedBox(width: 8),
+                        Expanded(child: Text('주차비: 50,000원')),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '※ 추가 후 금액 수정이나 항목 해제가 가능합니다.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _addDefaultBillingItems(leaseId, availableLeases);
+            },
+            child: Text('$itemCount개 항목 추가'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addDefaultBillingItems(String leaseId, List<Lease> availableLeases) {
+    final lease = availableLeases.firstWhere((l) => l.id == leaseId);
+    final templates = ref.read(billTemplateControllerProvider).value;
+    
+    if (templates == null) return;
+    
+    // Clear existing items when selecting a new lease
+    setState(() {
+      for (final controller in _amountControllers) {
+        controller.dispose();
+      }
+      _items.clear();
+      _amountControllers.clear();
+      _itemsChecked.clear();
+    });
+    
+    // Add default items with smart amounts
+    final defaultItems = <Map<String, dynamic>>[];
+    
+    // 1. Monthly rent - always add with lease amount
+    defaultItems.add({
+      'name': '월세',
+      'amount': lease.monthlyRent,
+      'checked': true,
+    });
+    
+    // 2. Management fee - fixed 50,000 won
+    defaultItems.add({
+      'name': '관리비',
+      'amount': 50000,
+      'checked': true,
+    });
+    
+    // 3. Parking fee - add if "주차" is in contract notes
+    if (lease.contractNotes?.contains('주차') == true) {
+      defaultItems.add({
+        'name': '주차비',
+        'amount': 50000,
+        'checked': true,
+      });
+    }
+    
+    // Find and add matching templates
+    for (final itemData in defaultItems) {
+      final itemName = itemData['name'] as String;
+      final amount = itemData['amount'] as int;
+      final checked = itemData['checked'] as bool;
+      
+      final template = templates.where((t) => t.name.contains(itemName)).firstOrNull;
+      if (template != null) {
+        setState(() {
+          _items.add(BillingItem(
+            id: const Uuid().v4(),
+            billingId: widget.billing?.id ?? 'temp',
+            billTemplateId: template.id,
+            amount: amount,
+          ));
+          _amountControllers.add(TextEditingController(text: amount.toString()));
+          _itemsChecked.add(checked);
+        });
+      }
+    }
+    
+    _calculateTotal();
+    
+    // Show notification to user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${defaultItems.length}개의 기본 청구 항목이 추가되었습니다.'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _submit() {
@@ -71,7 +344,13 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       }
 
       final billingId = widget.billing?.id ?? const Uuid().v4();
-      final finalItems = _items.map((item) => item.copyWith(billingId: billingId)).toList();
+      // Only include checked items in final billing
+      final finalItems = <BillingItem>[];
+      for (int i = 0; i < _items.length; i++) {
+        if (i < _itemsChecked.length && _itemsChecked[i]) {
+          finalItems.add(_items[i].copyWith(billingId: billingId));
+        }
+      }
 
       final billing = Billing(
         id: billingId,
@@ -165,7 +444,13 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                     ),
                   );
                 }).toList(),
-                onChanged: (value) => setState(() => _selectedLeaseId = value),
+                onChanged: (value) {
+                  setState(() => _selectedLeaseId = value);
+                  if (value != null && !_isEditing) {
+                    // Show confirmation dialog for adding default items
+                    _showAddDefaultItemsDialog(value, availableLeases);
+                  }
+                },
                 validator: (value) => value == null ? '계약을 선택하세요' : null,
               ),
               const SizedBox(height: 16),
@@ -173,9 +458,10 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 controller: TextEditingController(
                   text: _issueDate == null ? '' : DateFormat('yyyy-MM-dd').format(_issueDate!),
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '발행일',
-                  suffixIcon: Icon(Icons.calendar_today),
+                  suffixIcon: const Icon(Icons.calendar_today),
+                  helperText: _isEditing ? null : '기본값: 매월 마지막 날',
                 ),
                 readOnly: true,
                 onTap: () async {
@@ -188,6 +474,8 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                   if (selectedDate != null) {
                     setState(() {
                       _issueDate = selectedDate;
+                      // Auto-update due date when issue date changes
+                      _dueDate = selectedDate.add(const Duration(days: 5));
                     });
                   }
                 },
@@ -198,9 +486,10 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 controller: TextEditingController(
                   text: _dueDate == null ? '' : DateFormat('yyyy-MM-dd').format(_dueDate!),
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '납부 기한',
-                  suffixIcon: Icon(Icons.calendar_today),
+                  suffixIcon: const Icon(Icons.calendar_today),
+                  helperText: _isEditing ? null : '기본값: 발행일 + 5일',
                 ),
                 readOnly: true,
                 onTap: () async {
@@ -221,36 +510,231 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
               const SizedBox(height: 16),
 
               const Divider(height: 32),
-              Text('청구 항목', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              ..._items.map((item) {
-                BillTemplate? template;
-                if (templatesAsync.value != null) {
-                  for (var t in templatesAsync.value!) {
-                    if (t.id == item.billTemplateId) {
-                      template = t;
-                      break;
+              
+              // 청구 항목 추가 섹션
+              Row(
+                children: [
+                  Text('청구 항목', style: Theme.of(context).textTheme.titleLarge),
+                  const Spacer(),
+                  templatesAsync.when(
+                    loading: () => const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (err, stack) => IconButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('템플릿 로딩 오류: $err')),
+                        );
+                      },
+                      icon: const Icon(Icons.error, color: Colors.red),
+                      tooltip: '템플릿 로딩 오류',
+                    ),
+                    data: (templates) {
+                      if (templates.isEmpty) {
+                        return IconButton(
+                          onPressed: () {
+                            _showCustomItemDialog();
+                          },
+                          icon: const Icon(Icons.add_circle),
+                          tooltip: '사용자 정의 항목 추가 (템플릿 없음)',
+                        );
+                      }
+                      return PopupMenuButton<BillTemplate?>(
+                        icon: const Icon(Icons.add_circle),
+                        tooltip: '청구 항목 추가',
+                        onSelected: (template) {
+                          if (template != null) {
+                            _addItem(template);
+                          } else {
+                            _showCustomItemDialog();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          ...templates.map((template) {
+                            return PopupMenuItem<BillTemplate>(
+                              value: template,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.receipt_outlined, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(template.name),
+                                ],
+                              ),
+                            );
+                          }),
+                          const PopupMenuDivider(),
+                          const PopupMenuItem<BillTemplate?>(
+                            value: null,
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, size: 16),
+                                SizedBox(width: 8),
+                                Text('사용자 정의 항목'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // 청구 항목 목록
+              if (_items.isEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Icon(Icons.receipt_long_outlined, 
+                          size: 48, 
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '청구 항목이 없습니다',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '위의 + 버튼을 눌러 항목을 추가하세요',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ..._items.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  
+                  BillTemplate? template;
+                  if (templatesAsync.value != null) {
+                    for (var t in templatesAsync.value!) {
+                      if (t.id == item.billTemplateId) {
+                        template = t;
+                        break;
+                      }
                     }
                   }
-                }
-                return ListTile(
-                  title: Text(template?.name ?? '알 수 없는 항목'),
-                  trailing: Text('${item.amount}원'),
-                );
-              }),
-              const SizedBox(height: 8),
-              templatesAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (err, stack) => const Text('템플릿 로딩 오류'),
-                data: (templates) => Wrap(
-                  spacing: 8,
-                  children: templates.map((template) {
-                    return ElevatedButton(onPressed: () => _addItem(template), child: Text("+ ${template.name}"));
-                  }).toList(),
+                  
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          // Checkbox
+                          Checkbox(
+                            value: _itemsChecked[index],
+                            onChanged: (value) {
+                              setState(() {
+                                _itemsChecked[index] = value ?? false;
+                              });
+                              _calculateTotal();
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Item name
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              template?.name ?? '알 수 없는 항목',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: _itemsChecked[index] 
+                                  ? null 
+                                  : Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Amount input
+                          Expanded(
+                            child: TextFormField(
+                              controller: _amountControllers[index],
+                              enabled: _itemsChecked[index],
+                              decoration: InputDecoration(
+                                labelText: '금액',
+                                suffixText: '원',
+                                border: const OutlineInputBorder(),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, 
+                                  vertical: 8,
+                                ),
+                                fillColor: _itemsChecked[index] 
+                                  ? null 
+                                  : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                filled: !_itemsChecked[index],
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (_) => _calculateTotal(),
+                              validator: (value) {
+                                if (_itemsChecked[index]) {
+                                  if (value == null || value.isEmpty) {
+                                    return '금액을 입력하세요';
+                                  }
+                                  if (int.tryParse(value) == null) {
+                                    return '유효한 숫자를 입력하세요';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Delete button
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _removeItem(index),
+                            tooltip: '항목 삭제',
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              const Divider(height: 32),
+              
+              // 총액 표시
+              Card(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calculate,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '총액',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${NumberFormat('#,###').format(_totalAmount)}원',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const Divider(height: 32),
-              Text('총액: $_totalAmount원', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 32),
               FilledButton(onPressed: _submit, child: const Text('저장')),
             ],

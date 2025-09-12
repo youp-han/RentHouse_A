@@ -8,7 +8,9 @@
       "mcp__shrimp-task-manager__process_thought",
       "mcp__shrimp-task-manager__verify_task",
       "mcp__shrimp-task-manager__execute_task",
-      "Bash(flutter packages pub run:*)"
+      "Bash(flutter packages pub run:*)",
+      "mcp__shrimp-task-manager__query_task",
+      "mcp__shrimp-task-manager__get_task_detail"
     ],
     "deny": [],
     "ask": []

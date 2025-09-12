@@ -21,6 +21,8 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
   late final TextEditingController _socialNoController;
+  late final TextEditingController _bdayController;
+  late final TextEditingController _personalNoController;
   late final TextEditingController _addressController;
 
   bool get _isEditing => widget.tenant != null;
@@ -32,6 +34,8 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
     _phoneController = TextEditingController(text: widget.tenant?.phone);
     _emailController = TextEditingController(text: widget.tenant?.email);
     _socialNoController = TextEditingController(text: widget.tenant?.socialNo);
+    _bdayController = TextEditingController(text: widget.tenant?.bday);
+    _personalNoController = TextEditingController(text: widget.tenant?.personalNo?.toString());
     _addressController = TextEditingController(text: widget.tenant?.currentAddress);
   }
 
@@ -41,19 +45,44 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _socialNoController.dispose();
+    _bdayController.dispose();
+    _personalNoController.dispose();
     _addressController.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      String? bday = _bdayController.text.isNotEmpty ? _bdayController.text : null;
+      int? personalNo;
+      String? socialNo;
+      
+      // 개인번호가 입력되었으면 정수로 변환
+      if (_personalNoController.text.isNotEmpty) {
+        try {
+          personalNo = int.parse(_personalNoController.text);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('개인번호는 숫자만 입력해주세요.')),
+          );
+          return;
+        }
+      }
+      
+      // 생년월일과 개인번호가 모두 있으면 원본 주민번호 재구성 (선택적)
+      if (bday != null && personalNo != null) {
+        socialNo = '$bday-$personalNo******'; // 표시용
+      }
+
       final tenant = Tenant(
         id: widget.tenant?.id ?? const Uuid().v4(),
         name: _nameController.text,
         phone: _phoneController.text,
         email: _emailController.text,
-        socialNo: _socialNoController.text,
-        currentAddress: _addressController.text,
+        socialNo: socialNo,
+        bday: bday,
+        personalNo: personalNo,
+        currentAddress: _addressController.text.isNotEmpty ? _addressController.text : null,
         createdAt: widget.tenant?.createdAt ?? DateTime.now(),
       );
 
@@ -165,9 +194,100 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
               validator: (value) => (value == null || value.isEmpty) ? '이메일을 입력하세요' : null,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _socialNoController,
-              decoration: const InputDecoration(labelText: '주민등록번호'),
+            // 주민등록번호 분리 입력
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '주민등록번호',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    // 생년월일 입력 (6자리)
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: _bdayController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        decoration: const InputDecoration(
+                          labelText: '생년월일',
+                          hintText: '750331',
+                          helperText: 'YYMMDD 형태',
+                          counterText: '', // 글자수 카운터 숨김
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return null; // 선택적 필드
+                          if (value.length != 6) {
+                            return '6자리를 입력하세요';
+                          }
+                          if (!RegExp(r'^\d{6}$').hasMatch(value)) {
+                            return '숫자만 입력하세요';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                      child: Text('-', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    ),
+                    // 개인번호 첫자리 입력 (1자리)
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _personalNoController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 1,
+                        textAlign: TextAlign.center,
+                        decoration: const InputDecoration(
+                          labelText: '성별',
+                          hintText: '1',
+                          helperText: '1~4',
+                          counterText: '', // 글자수 카운터 숨김
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return null; // 선택적 필드
+                          final num = int.tryParse(value);
+                          if (num == null || num < 1 || num > 4) {
+                            return '1~4 입력';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    // 마스킹된 나머지 6자리 표시
+                    const Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 4.0, top: 8.0),
+                        child: Text(
+                          '******',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                            color: Colors.grey,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isEditing && widget.tenant != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      '현재: ${widget.tenant!.maskedSocialNo}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
             TextFormField(

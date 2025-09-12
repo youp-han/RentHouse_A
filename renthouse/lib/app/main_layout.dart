@@ -77,6 +77,11 @@ class MainLayout extends StatelessWidget {
                   label: Text('수익관리'),
                 ),
                 NavigationRailDestination(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  selectedIcon: Icon(Icons.bar_chart),
+                  label: Text('보고서'),
+                ),
+                NavigationRailDestination(
                   icon: Icon(Icons.settings_outlined),
                   selectedIcon: Icon(Icons.settings),
                   label: Text('설정'),
@@ -130,6 +135,11 @@ class MainLayout extends StatelessWidget {
                   label: '수익',
                 ),
                 BottomNavigationBarItem(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  activeIcon: Icon(Icons.bar_chart),
+                  label: '보고서',
+                ),
+                BottomNavigationBarItem(
                   icon: Icon(Icons.settings_outlined),
                   activeIcon: Icon(Icons.settings),
                   label: '설정',
@@ -154,6 +164,8 @@ class MainLayout extends StatelessWidget {
     } else if (index == 5) {
       context.go('/revenue');
     } else if (index == 6) {
+      context.go('/reports');
+    } else if (index == 7) {
       context.go('/settings');
     }
   }
@@ -171,8 +183,10 @@ class MainLayout extends StatelessWidget {
       return 4;
     } else if (location.startsWith('/revenue')) {
       return 5;
-    } else if (location.startsWith('/settings')) {
+    } else if (location.startsWith('/reports')) {
       return 6;
+    } else if (location.startsWith('/settings')) {
+      return 7;
     }
     return 0;
   }

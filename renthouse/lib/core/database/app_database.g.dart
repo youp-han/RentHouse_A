@@ -1091,6 +1091,26 @@ class $TenantsTable extends Tenants with TableInfo<$TenantsTable, Tenant> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bdayMeta = const VerificationMeta('bday');
+  @override
+  late final GeneratedColumn<String> bday = GeneratedColumn<String>(
+    'bday',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _personalNoMeta = const VerificationMeta(
+    'personalNo',
+  );
+  @override
+  late final GeneratedColumn<int> personalNo = GeneratedColumn<int>(
+    'personal_no',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _currentAddressMeta = const VerificationMeta(
     'currentAddress',
   );
@@ -1120,6 +1140,8 @@ class $TenantsTable extends Tenants with TableInfo<$TenantsTable, Tenant> {
     phone,
     email,
     socialNo,
+    bday,
+    personalNo,
     currentAddress,
     createdAt,
   ];
@@ -1170,6 +1192,18 @@ class $TenantsTable extends Tenants with TableInfo<$TenantsTable, Tenant> {
         socialNo.isAcceptableOrUnknown(data['social_no']!, _socialNoMeta),
       );
     }
+    if (data.containsKey('bday')) {
+      context.handle(
+        _bdayMeta,
+        bday.isAcceptableOrUnknown(data['bday']!, _bdayMeta),
+      );
+    }
+    if (data.containsKey('personal_no')) {
+      context.handle(
+        _personalNoMeta,
+        personalNo.isAcceptableOrUnknown(data['personal_no']!, _personalNoMeta),
+      );
+    }
     if (data.containsKey('current_address')) {
       context.handle(
         _currentAddressMeta,
@@ -1216,6 +1250,14 @@ class $TenantsTable extends Tenants with TableInfo<$TenantsTable, Tenant> {
         DriftSqlType.string,
         data['${effectivePrefix}social_no'],
       ),
+      bday: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bday'],
+      ),
+      personalNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}personal_no'],
+      ),
       currentAddress: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}current_address'],
@@ -1239,6 +1281,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
   final String phone;
   final String email;
   final String? socialNo;
+  final String? bday;
+  final int? personalNo;
   final String? currentAddress;
   final DateTime createdAt;
   const Tenant({
@@ -1247,6 +1291,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
     required this.phone,
     required this.email,
     this.socialNo,
+    this.bday,
+    this.personalNo,
     this.currentAddress,
     required this.createdAt,
   });
@@ -1259,6 +1305,12 @@ class Tenant extends DataClass implements Insertable<Tenant> {
     map['email'] = Variable<String>(email);
     if (!nullToAbsent || socialNo != null) {
       map['social_no'] = Variable<String>(socialNo);
+    }
+    if (!nullToAbsent || bday != null) {
+      map['bday'] = Variable<String>(bday);
+    }
+    if (!nullToAbsent || personalNo != null) {
+      map['personal_no'] = Variable<int>(personalNo);
     }
     if (!nullToAbsent || currentAddress != null) {
       map['current_address'] = Variable<String>(currentAddress);
@@ -1276,6 +1328,10 @@ class Tenant extends DataClass implements Insertable<Tenant> {
       socialNo: socialNo == null && nullToAbsent
           ? const Value.absent()
           : Value(socialNo),
+      bday: bday == null && nullToAbsent ? const Value.absent() : Value(bday),
+      personalNo: personalNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(personalNo),
       currentAddress: currentAddress == null && nullToAbsent
           ? const Value.absent()
           : Value(currentAddress),
@@ -1294,6 +1350,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
       phone: serializer.fromJson<String>(json['phone']),
       email: serializer.fromJson<String>(json['email']),
       socialNo: serializer.fromJson<String?>(json['socialNo']),
+      bday: serializer.fromJson<String?>(json['bday']),
+      personalNo: serializer.fromJson<int?>(json['personalNo']),
       currentAddress: serializer.fromJson<String?>(json['currentAddress']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -1307,6 +1365,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
       'phone': serializer.toJson<String>(phone),
       'email': serializer.toJson<String>(email),
       'socialNo': serializer.toJson<String?>(socialNo),
+      'bday': serializer.toJson<String?>(bday),
+      'personalNo': serializer.toJson<int?>(personalNo),
       'currentAddress': serializer.toJson<String?>(currentAddress),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -1318,6 +1378,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
     String? phone,
     String? email,
     Value<String?> socialNo = const Value.absent(),
+    Value<String?> bday = const Value.absent(),
+    Value<int?> personalNo = const Value.absent(),
     Value<String?> currentAddress = const Value.absent(),
     DateTime? createdAt,
   }) => Tenant(
@@ -1326,6 +1388,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
     phone: phone ?? this.phone,
     email: email ?? this.email,
     socialNo: socialNo.present ? socialNo.value : this.socialNo,
+    bday: bday.present ? bday.value : this.bday,
+    personalNo: personalNo.present ? personalNo.value : this.personalNo,
     currentAddress: currentAddress.present
         ? currentAddress.value
         : this.currentAddress,
@@ -1338,6 +1402,10 @@ class Tenant extends DataClass implements Insertable<Tenant> {
       phone: data.phone.present ? data.phone.value : this.phone,
       email: data.email.present ? data.email.value : this.email,
       socialNo: data.socialNo.present ? data.socialNo.value : this.socialNo,
+      bday: data.bday.present ? data.bday.value : this.bday,
+      personalNo: data.personalNo.present
+          ? data.personalNo.value
+          : this.personalNo,
       currentAddress: data.currentAddress.present
           ? data.currentAddress.value
           : this.currentAddress,
@@ -1353,6 +1421,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
           ..write('phone: $phone, ')
           ..write('email: $email, ')
           ..write('socialNo: $socialNo, ')
+          ..write('bday: $bday, ')
+          ..write('personalNo: $personalNo, ')
           ..write('currentAddress: $currentAddress, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1360,8 +1430,17 @@ class Tenant extends DataClass implements Insertable<Tenant> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, phone, email, socialNo, currentAddress, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    phone,
+    email,
+    socialNo,
+    bday,
+    personalNo,
+    currentAddress,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1371,6 +1450,8 @@ class Tenant extends DataClass implements Insertable<Tenant> {
           other.phone == this.phone &&
           other.email == this.email &&
           other.socialNo == this.socialNo &&
+          other.bday == this.bday &&
+          other.personalNo == this.personalNo &&
           other.currentAddress == this.currentAddress &&
           other.createdAt == this.createdAt);
 }
@@ -1381,6 +1462,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
   final Value<String> phone;
   final Value<String> email;
   final Value<String?> socialNo;
+  final Value<String?> bday;
+  final Value<int?> personalNo;
   final Value<String?> currentAddress;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -1390,6 +1473,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
     this.phone = const Value.absent(),
     this.email = const Value.absent(),
     this.socialNo = const Value.absent(),
+    this.bday = const Value.absent(),
+    this.personalNo = const Value.absent(),
     this.currentAddress = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1400,6 +1485,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
     required String phone,
     required String email,
     this.socialNo = const Value.absent(),
+    this.bday = const Value.absent(),
+    this.personalNo = const Value.absent(),
     this.currentAddress = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -1414,6 +1501,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
     Expression<String>? phone,
     Expression<String>? email,
     Expression<String>? socialNo,
+    Expression<String>? bday,
+    Expression<int>? personalNo,
     Expression<String>? currentAddress,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -1424,6 +1513,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
       if (phone != null) 'phone': phone,
       if (email != null) 'email': email,
       if (socialNo != null) 'social_no': socialNo,
+      if (bday != null) 'bday': bday,
+      if (personalNo != null) 'personal_no': personalNo,
       if (currentAddress != null) 'current_address': currentAddress,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -1436,6 +1527,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
     Value<String>? phone,
     Value<String>? email,
     Value<String?>? socialNo,
+    Value<String?>? bday,
+    Value<int?>? personalNo,
     Value<String?>? currentAddress,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -1446,6 +1539,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       socialNo: socialNo ?? this.socialNo,
+      bday: bday ?? this.bday,
+      personalNo: personalNo ?? this.personalNo,
       currentAddress: currentAddress ?? this.currentAddress,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -1470,6 +1565,12 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
     if (socialNo.present) {
       map['social_no'] = Variable<String>(socialNo.value);
     }
+    if (bday.present) {
+      map['bday'] = Variable<String>(bday.value);
+    }
+    if (personalNo.present) {
+      map['personal_no'] = Variable<int>(personalNo.value);
+    }
     if (currentAddress.present) {
       map['current_address'] = Variable<String>(currentAddress.value);
     }
@@ -1490,6 +1591,8 @@ class TenantsCompanion extends UpdateCompanion<Tenant> {
           ..write('phone: $phone, ')
           ..write('email: $email, ')
           ..write('socialNo: $socialNo, ')
+          ..write('bday: $bday, ')
+          ..write('personalNo: $personalNo, ')
           ..write('currentAddress: $currentAddress, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -5536,6 +5639,8 @@ typedef $$TenantsTableCreateCompanionBuilder =
       required String phone,
       required String email,
       Value<String?> socialNo,
+      Value<String?> bday,
+      Value<int?> personalNo,
       Value<String?> currentAddress,
       required DateTime createdAt,
       Value<int> rowid,
@@ -5547,6 +5652,8 @@ typedef $$TenantsTableUpdateCompanionBuilder =
       Value<String> phone,
       Value<String> email,
       Value<String?> socialNo,
+      Value<String?> bday,
+      Value<int?> personalNo,
       Value<String?> currentAddress,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -5626,6 +5733,16 @@ class $$TenantsTableFilterComposer
 
   ColumnFilters<String> get socialNo => $composableBuilder(
     column: $table.socialNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bday => $composableBuilder(
+    column: $table.bday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get personalNo => $composableBuilder(
+    column: $table.personalNo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5724,6 +5841,16 @@ class $$TenantsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bday => $composableBuilder(
+    column: $table.bday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get personalNo => $composableBuilder(
+    column: $table.personalNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get currentAddress => $composableBuilder(
     column: $table.currentAddress,
     builder: (column) => ColumnOrderings(column),
@@ -5758,6 +5885,14 @@ class $$TenantsTableAnnotationComposer
 
   GeneratedColumn<String> get socialNo =>
       $composableBuilder(column: $table.socialNo, builder: (column) => column);
+
+  GeneratedColumn<String> get bday =>
+      $composableBuilder(column: $table.bday, builder: (column) => column);
+
+  GeneratedColumn<int> get personalNo => $composableBuilder(
+    column: $table.personalNo,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get currentAddress => $composableBuilder(
     column: $table.currentAddress,
@@ -5851,6 +5986,8 @@ class $$TenantsTableTableManager
                 Value<String> phone = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String?> socialNo = const Value.absent(),
+                Value<String?> bday = const Value.absent(),
+                Value<int?> personalNo = const Value.absent(),
                 Value<String?> currentAddress = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5860,6 +5997,8 @@ class $$TenantsTableTableManager
                 phone: phone,
                 email: email,
                 socialNo: socialNo,
+                bday: bday,
+                personalNo: personalNo,
                 currentAddress: currentAddress,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -5871,6 +6010,8 @@ class $$TenantsTableTableManager
                 required String phone,
                 required String email,
                 Value<String?> socialNo = const Value.absent(),
+                Value<String?> bday = const Value.absent(),
+                Value<int?> personalNo = const Value.absent(),
                 Value<String?> currentAddress = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -5880,6 +6021,8 @@ class $$TenantsTableTableManager
                 phone: phone,
                 email: email,
                 socialNo: socialNo,
+                bday: bday,
+                personalNo: personalNo,
                 currentAddress: currentAddress,
                 createdAt: createdAt,
                 rowid: rowid,
