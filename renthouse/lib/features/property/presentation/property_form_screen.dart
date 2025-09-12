@@ -16,13 +16,31 @@ class PropertyFormScreen extends ConsumerStatefulWidget {
 class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _typeController = TextEditingController();
-  final _rentController = TextEditingController();
-  final _totalFloorsController = TextEditingController();
+  // 주소 필드들 (task136)
+  final _zipCodeController = TextEditingController();
+  final _address1Controller = TextEditingController();
+  final _address2Controller = TextEditingController();
   final _totalUnitsController = TextEditingController();
+  // 소유자 정보 (task134)
+  final _ownerNameController = TextEditingController();
+  final _ownerPhoneController = TextEditingController();
+  final _ownerEmailController = TextEditingController();
 
   final Uuid _uuid = const Uuid();
+
+  // 자산 유형 (task132)
+  PropertyType _selectedPropertyType = PropertyType.villa;
+  // 계약 종류 (task135)
+  ContractType _selectedContractType = ContractType.wolse;
+  // 청구 항목들
+  final List<Map<String, dynamic>> _billingItems = [
+    {'name': '관리비', 'amount': 50000, 'enabled': false, 'controller': TextEditingController(text: '50000')},
+    {'name': '수도비', 'amount': 30000, 'enabled': false, 'controller': TextEditingController(text: '30000')},
+    {'name': '전기비', 'amount': 40000, 'enabled': false, 'controller': TextEditingController(text: '40000')},
+    {'name': '청소비', 'amount': 20000, 'enabled': false, 'controller': TextEditingController(text: '20000')},
+    {'name': '주차비', 'amount': 50000, 'enabled': false, 'controller': TextEditingController(text: '50000')},
+    {'name': '수리비 (임차인과실)', 'amount': 0, 'enabled': false, 'controller': TextEditingController(text: '0')},
+  ];
 
   bool get _isEditMode => widget.property != null;
 
@@ -32,22 +50,49 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
     if (_isEditMode) {
       final p = widget.property!;
       _nameController.text = p.name;
-      _addressController.text = p.address;
-      _typeController.text = p.type;
-      _rentController.text = p.rent.toString();
-      _totalFloorsController.text = p.totalFloors.toString();
+      // 주소 필드들
+      _zipCodeController.text = p.zipCode ?? '';
+      _address1Controller.text = p.address1 ?? '';
+      _address2Controller.text = p.address2 ?? '';
       _totalUnitsController.text = p.totalUnits.toString();
+      // 소유자 정보
+      _ownerNameController.text = p.ownerName ?? '';
+      _ownerPhoneController.text = p.ownerPhone ?? '';
+      _ownerEmailController.text = p.ownerEmail ?? '';
+      // 자산 유형과 계약 종류
+      _selectedPropertyType = p.propertyType;
+      _selectedContractType = p.contractType;
+      // 청구 항목들 로드
+      _loadExistingBillingItems(p.defaultBillingItems);
+    }
+  }
+  
+  void _loadExistingBillingItems(List<BillingItem> existingItems) {
+    for (final existing in existingItems) {
+      for (final item in _billingItems) {
+        if (item['name'] == existing.name) {
+          item['enabled'] = existing.isEnabled;
+          item['amount'] = existing.amount;
+          (item['controller'] as TextEditingController).text = existing.amount.toString();
+          break;
+        }
+      }
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _addressController.dispose();
-    _typeController.dispose();
-    _rentController.dispose();
-    _totalFloorsController.dispose();
+    _zipCodeController.dispose();
+    _address1Controller.dispose();
+    _address2Controller.dispose();
     _totalUnitsController.dispose();
+    _ownerNameController.dispose();
+    _ownerPhoneController.dispose();
+    _ownerEmailController.dispose();
+    for (final item in _billingItems) {
+      (item['controller'] as TextEditingController).dispose();
+    }
     super.dispose();
   }
 
@@ -99,30 +144,43 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
               validator: (v) => (v == null || v.isEmpty) ? '이름은 필수입니다.' : null,
             ),
             const SizedBox(height: 12),
+            // 주소 필드들 (task136)
             TextFormField(
-              controller: _addressController,
+              controller: _zipCodeController,
+              decoration: const InputDecoration(labelText: '우편번호'),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _address1Controller,
               decoration: const InputDecoration(labelText: '주소'),
               validator: (v) => (v == null || v.isEmpty) ? '주소는 필수입니다.' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _typeController,
-              decoration: const InputDecoration(labelText: '유형'),
-              validator: (v) => (v == null || v.isEmpty) ? '유형은 필수입니다.' : null,
+              controller: _address2Controller,
+              decoration: const InputDecoration(labelText: '상세주소'),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _rentController,
-              decoration: const InputDecoration(labelText: '임대료'),
-              keyboardType: TextInputType.number,
-              validator: (v) => (v == null || int.tryParse(v) == null) ? '유효한 임대료를 입력해주세요.' : null,
+            // 자산 유형 드롭다운 (task132)
+            DropdownButtonFormField<PropertyType>(
+              initialValue: _selectedPropertyType,
+              decoration: const InputDecoration(labelText: '자산 유형'),
+              items: PropertyType.values.map((type) => 
+                DropdownMenuItem(value: type, child: Text(type.displayName))
+              ).toList(),
+              onChanged: (value) => setState(() => _selectedPropertyType = value!),
+              validator: (v) => v == null ? '자산 유형을 선택해주세요.' : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _totalFloorsController,
-              decoration: const InputDecoration(labelText: '총 층수'),
-              keyboardType: TextInputType.number,
-              validator: (v) => (v == null || int.tryParse(v) == null) ? '유효한 총 층수를 입력해주세요.' : null,
+            // 계약 종류 드롭다운 (task135)
+            DropdownButtonFormField<ContractType>(
+              initialValue: _selectedContractType,
+              decoration: const InputDecoration(labelText: '계약 종류'),
+              items: ContractType.values.map((type) => 
+                DropdownMenuItem(value: type, child: Text(type.displayName))
+              ).toList(),
+              onChanged: (value) => setState(() => _selectedContractType = value!),
+              validator: (v) => v == null ? '계약 종류를 선택해주세요.' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -132,22 +190,94 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
               validator: (v) => (v == null || int.tryParse(v) == null) ? '유효한 총 유닛 수를 입력해주세요.' : null,
             ),
             const SizedBox(height: 24),
+            // 소유자 정보 섹션 (task134)
+            const Text('소유자 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _ownerNameController,
+              decoration: const InputDecoration(labelText: '소유자 성명'),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _ownerPhoneController,
+              decoration: const InputDecoration(labelText: '소유자 연락처'),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _ownerEmailController,
+              decoration: const InputDecoration(labelText: '소유자 이메일'),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 24),
+            // 청구 항목 선택 섹션 (추가 요구사항)
+            const Text('기본 청구 항목', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Column(
+              children: _billingItems.map((item) => Card(
+                child: CheckboxListTile(
+                  title: Text(item['name'] as String),
+                  subtitle: Row(
+                    children: [
+                      Text('금액: '),
+                      SizedBox(
+                        width: 120,
+                        child: TextFormField(
+                          controller: item['controller'] as TextEditingController,
+                          decoration: const InputDecoration(
+                            suffixText: '원',
+                            isDense: true,
+                          ),
+                          keyboardType: TextInputType.number,
+                          enabled: item['enabled'] as bool,
+                          onChanged: (value) {
+                            final amount = int.tryParse(value) ?? 0;
+                            item['amount'] = amount;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  value: item['enabled'] as bool,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      item['enabled'] = value ?? false;
+                    });
+                  },
+                ),
+              )).toList(),
+            ),
+            const SizedBox(height: 24),
             Row(children: [
               FilledButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
+                      // 청구 항목 준비
+                      final billingItems = _billingItems
+                        .where((item) => item['enabled'] as bool)
+                        .map((item) => BillingItem(
+                          name: item['name'] as String,
+                          amount: item['amount'] as int,
+                          isEnabled: true,
+                        ))
+                        .toList();
+
                       String propertyId;
                       if (_isEditMode) {
                         propertyId = widget.property!.id;
                         final updatedProperty = widget.property!.copyWith(
                           name: _nameController.text,
-                          address: _addressController.text,
-                          type: _typeController.text,
-                          rent: int.parse(_rentController.text),
-                          totalFloors: int.parse(_totalFloorsController.text),
+                          zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
+                          address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
+                          address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
+                          propertyType: _selectedPropertyType,
+                          contractType: _selectedContractType,
                           totalUnits: int.parse(_totalUnitsController.text),
-                          // units list is not modified here
+                          ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
+                          ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
+                          ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
+                          defaultBillingItems: billingItems,
                         );
                         await propertyRepository.updateProperty(updatedProperty);
                       } else {
@@ -155,11 +285,16 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                         final newProperty = Property(
                           id: propertyId,
                           name: _nameController.text,
-                          address: _addressController.text,
-                          type: _typeController.text,
-                          rent: int.parse(_rentController.text),
-                          totalFloors: int.parse(_totalFloorsController.text),
+                          zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
+                          address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
+                          address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
+                          propertyType: _selectedPropertyType,
+                          contractType: _selectedContractType,
                           totalUnits: int.parse(_totalUnitsController.text),
+                          ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
+                          ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
+                          ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
+                          defaultBillingItems: billingItems,
                           units: [], // Always create with empty units
                         );
                         await propertyRepository.createProperty(newProperty);

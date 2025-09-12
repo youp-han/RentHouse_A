@@ -35,6 +35,39 @@ class $PropertiesTable extends Properties
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _zipCodeMeta = const VerificationMeta(
+    'zipCode',
+  );
+  @override
+  late final GeneratedColumn<String> zipCode = GeneratedColumn<String>(
+    'zip_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _address1Meta = const VerificationMeta(
+    'address1',
+  );
+  @override
+  late final GeneratedColumn<String> address1 = GeneratedColumn<String>(
+    'address1',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _address2Meta = const VerificationMeta(
+    'address2',
+  );
+  @override
+  late final GeneratedColumn<String> address2 = GeneratedColumn<String>(
+    'address2',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _addressMeta = const VerificationMeta(
     'address',
   );
@@ -42,46 +75,33 @@ class $PropertiesTable extends Properties
   late final GeneratedColumn<String> address = GeneratedColumn<String>(
     'address',
     aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 255,
-    ),
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  static const VerificationMeta _propertyTypeMeta = const VerificationMeta(
+    'propertyType',
+  );
   @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
+  late final GeneratedColumn<String> propertyType = GeneratedColumn<String>(
+    'property_type',
     aliasedName,
     false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 50,
-    ),
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('villa'),
   );
-  static const VerificationMeta _rentMeta = const VerificationMeta('rent');
-  @override
-  late final GeneratedColumn<int> rent = GeneratedColumn<int>(
-    'rent',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _totalFloorsMeta = const VerificationMeta(
-    'totalFloors',
+  static const VerificationMeta _contractTypeMeta = const VerificationMeta(
+    'contractType',
   );
   @override
-  late final GeneratedColumn<int> totalFloors = GeneratedColumn<int>(
-    'total_floors',
+  late final GeneratedColumn<String> contractType = GeneratedColumn<String>(
+    'contract_type',
     aliasedName,
     false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('wolse'),
   );
   static const VerificationMeta _totalUnitsMeta = const VerificationMeta(
     'totalUnits',
@@ -94,15 +114,76 @@ class $PropertiesTable extends Properties
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _rentMeta = const VerificationMeta('rent');
+  @override
+  late final GeneratedColumn<int> rent = GeneratedColumn<int>(
+    'rent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerNameMeta = const VerificationMeta(
+    'ownerName',
+  );
+  @override
+  late final GeneratedColumn<String> ownerName = GeneratedColumn<String>(
+    'owner_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerPhoneMeta = const VerificationMeta(
+    'ownerPhone',
+  );
+  @override
+  late final GeneratedColumn<String> ownerPhone = GeneratedColumn<String>(
+    'owner_phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerEmailMeta = const VerificationMeta(
+    'ownerEmail',
+  );
+  @override
+  late final GeneratedColumn<String> ownerEmail = GeneratedColumn<String>(
+    'owner_email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
+    zipCode,
+    address1,
+    address2,
     address,
-    type,
-    rent,
-    totalFloors,
+    propertyType,
+    contractType,
     totalUnits,
+    rent,
+    ownerId,
+    ownerName,
+    ownerPhone,
+    ownerEmail,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -129,40 +210,47 @@ class $PropertiesTable extends Properties
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('zip_code')) {
+      context.handle(
+        _zipCodeMeta,
+        zipCode.isAcceptableOrUnknown(data['zip_code']!, _zipCodeMeta),
+      );
+    }
+    if (data.containsKey('address1')) {
+      context.handle(
+        _address1Meta,
+        address1.isAcceptableOrUnknown(data['address1']!, _address1Meta),
+      );
+    }
+    if (data.containsKey('address2')) {
+      context.handle(
+        _address2Meta,
+        address2.isAcceptableOrUnknown(data['address2']!, _address2Meta),
+      );
+    }
     if (data.containsKey('address')) {
       context.handle(
         _addressMeta,
         address.isAcceptableOrUnknown(data['address']!, _addressMeta),
       );
-    } else if (isInserting) {
-      context.missing(_addressMeta);
     }
-    if (data.containsKey('type')) {
+    if (data.containsKey('property_type')) {
       context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_typeMeta);
-    }
-    if (data.containsKey('rent')) {
-      context.handle(
-        _rentMeta,
-        rent.isAcceptableOrUnknown(data['rent']!, _rentMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_rentMeta);
-    }
-    if (data.containsKey('total_floors')) {
-      context.handle(
-        _totalFloorsMeta,
-        totalFloors.isAcceptableOrUnknown(
-          data['total_floors']!,
-          _totalFloorsMeta,
+        _propertyTypeMeta,
+        propertyType.isAcceptableOrUnknown(
+          data['property_type']!,
+          _propertyTypeMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_totalFloorsMeta);
+    }
+    if (data.containsKey('contract_type')) {
+      context.handle(
+        _contractTypeMeta,
+        contractType.isAcceptableOrUnknown(
+          data['contract_type']!,
+          _contractTypeMeta,
+        ),
+      );
     }
     if (data.containsKey('total_units')) {
       context.handle(
@@ -171,6 +259,36 @@ class $PropertiesTable extends Properties
       );
     } else if (isInserting) {
       context.missing(_totalUnitsMeta);
+    }
+    if (data.containsKey('rent')) {
+      context.handle(
+        _rentMeta,
+        rent.isAcceptableOrUnknown(data['rent']!, _rentMeta),
+      );
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    }
+    if (data.containsKey('owner_name')) {
+      context.handle(
+        _ownerNameMeta,
+        ownerName.isAcceptableOrUnknown(data['owner_name']!, _ownerNameMeta),
+      );
+    }
+    if (data.containsKey('owner_phone')) {
+      context.handle(
+        _ownerPhoneMeta,
+        ownerPhone.isAcceptableOrUnknown(data['owner_phone']!, _ownerPhoneMeta),
+      );
+    }
+    if (data.containsKey('owner_email')) {
+      context.handle(
+        _ownerEmailMeta,
+        ownerEmail.isAcceptableOrUnknown(data['owner_email']!, _ownerEmailMeta),
+      );
     }
     return context;
   }
@@ -189,26 +307,54 @@ class $PropertiesTable extends Properties
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      zipCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}zip_code'],
+      ),
+      address1: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address1'],
+      ),
+      address2: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address2'],
+      ),
       address: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}address'],
-      )!,
-      type: attachedDatabase.typeMapping.read(
+      ),
+      propertyType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}type'],
+        data['${effectivePrefix}property_type'],
       )!,
-      rent: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}rent'],
-      )!,
-      totalFloors: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}total_floors'],
+      contractType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contract_type'],
       )!,
       totalUnits: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}total_units'],
       )!,
+      rent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rent'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      ),
+      ownerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_name'],
+      ),
+      ownerPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_phone'],
+      ),
+      ownerEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_email'],
+      ),
     );
   }
 
@@ -221,30 +367,67 @@ class $PropertiesTable extends Properties
 class Property extends DataClass implements Insertable<Property> {
   final String id;
   final String name;
-  final String address;
-  final String type;
-  final int rent;
-  final int totalFloors;
+  final String? zipCode;
+  final String? address1;
+  final String? address2;
+  final String? address;
+  final String propertyType;
+  final String contractType;
   final int totalUnits;
+  final int rent;
+  final String? ownerId;
+  final String? ownerName;
+  final String? ownerPhone;
+  final String? ownerEmail;
   const Property({
     required this.id,
     required this.name,
-    required this.address,
-    required this.type,
-    required this.rent,
-    required this.totalFloors,
+    this.zipCode,
+    this.address1,
+    this.address2,
+    this.address,
+    required this.propertyType,
+    required this.contractType,
     required this.totalUnits,
+    required this.rent,
+    this.ownerId,
+    this.ownerName,
+    this.ownerPhone,
+    this.ownerEmail,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
-    map['address'] = Variable<String>(address);
-    map['type'] = Variable<String>(type);
-    map['rent'] = Variable<int>(rent);
-    map['total_floors'] = Variable<int>(totalFloors);
+    if (!nullToAbsent || zipCode != null) {
+      map['zip_code'] = Variable<String>(zipCode);
+    }
+    if (!nullToAbsent || address1 != null) {
+      map['address1'] = Variable<String>(address1);
+    }
+    if (!nullToAbsent || address2 != null) {
+      map['address2'] = Variable<String>(address2);
+    }
+    if (!nullToAbsent || address != null) {
+      map['address'] = Variable<String>(address);
+    }
+    map['property_type'] = Variable<String>(propertyType);
+    map['contract_type'] = Variable<String>(contractType);
     map['total_units'] = Variable<int>(totalUnits);
+    map['rent'] = Variable<int>(rent);
+    if (!nullToAbsent || ownerId != null) {
+      map['owner_id'] = Variable<String>(ownerId);
+    }
+    if (!nullToAbsent || ownerName != null) {
+      map['owner_name'] = Variable<String>(ownerName);
+    }
+    if (!nullToAbsent || ownerPhone != null) {
+      map['owner_phone'] = Variable<String>(ownerPhone);
+    }
+    if (!nullToAbsent || ownerEmail != null) {
+      map['owner_email'] = Variable<String>(ownerEmail);
+    }
     return map;
   }
 
@@ -252,11 +435,34 @@ class Property extends DataClass implements Insertable<Property> {
     return PropertiesCompanion(
       id: Value(id),
       name: Value(name),
-      address: Value(address),
-      type: Value(type),
-      rent: Value(rent),
-      totalFloors: Value(totalFloors),
+      zipCode: zipCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(zipCode),
+      address1: address1 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address1),
+      address2: address2 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address2),
+      address: address == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address),
+      propertyType: Value(propertyType),
+      contractType: Value(contractType),
       totalUnits: Value(totalUnits),
+      rent: Value(rent),
+      ownerId: ownerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerId),
+      ownerName: ownerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerName),
+      ownerPhone: ownerPhone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerPhone),
+      ownerEmail: ownerEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerEmail),
     );
   }
 
@@ -268,11 +474,18 @@ class Property extends DataClass implements Insertable<Property> {
     return Property(
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      address: serializer.fromJson<String>(json['address']),
-      type: serializer.fromJson<String>(json['type']),
-      rent: serializer.fromJson<int>(json['rent']),
-      totalFloors: serializer.fromJson<int>(json['totalFloors']),
+      zipCode: serializer.fromJson<String?>(json['zipCode']),
+      address1: serializer.fromJson<String?>(json['address1']),
+      address2: serializer.fromJson<String?>(json['address2']),
+      address: serializer.fromJson<String?>(json['address']),
+      propertyType: serializer.fromJson<String>(json['propertyType']),
+      contractType: serializer.fromJson<String>(json['contractType']),
       totalUnits: serializer.fromJson<int>(json['totalUnits']),
+      rent: serializer.fromJson<int>(json['rent']),
+      ownerId: serializer.fromJson<String?>(json['ownerId']),
+      ownerName: serializer.fromJson<String?>(json['ownerName']),
+      ownerPhone: serializer.fromJson<String?>(json['ownerPhone']),
+      ownerEmail: serializer.fromJson<String?>(json['ownerEmail']),
     );
   }
   @override
@@ -281,44 +494,78 @@ class Property extends DataClass implements Insertable<Property> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
-      'address': serializer.toJson<String>(address),
-      'type': serializer.toJson<String>(type),
-      'rent': serializer.toJson<int>(rent),
-      'totalFloors': serializer.toJson<int>(totalFloors),
+      'zipCode': serializer.toJson<String?>(zipCode),
+      'address1': serializer.toJson<String?>(address1),
+      'address2': serializer.toJson<String?>(address2),
+      'address': serializer.toJson<String?>(address),
+      'propertyType': serializer.toJson<String>(propertyType),
+      'contractType': serializer.toJson<String>(contractType),
       'totalUnits': serializer.toJson<int>(totalUnits),
+      'rent': serializer.toJson<int>(rent),
+      'ownerId': serializer.toJson<String?>(ownerId),
+      'ownerName': serializer.toJson<String?>(ownerName),
+      'ownerPhone': serializer.toJson<String?>(ownerPhone),
+      'ownerEmail': serializer.toJson<String?>(ownerEmail),
     };
   }
 
   Property copyWith({
     String? id,
     String? name,
-    String? address,
-    String? type,
-    int? rent,
-    int? totalFloors,
+    Value<String?> zipCode = const Value.absent(),
+    Value<String?> address1 = const Value.absent(),
+    Value<String?> address2 = const Value.absent(),
+    Value<String?> address = const Value.absent(),
+    String? propertyType,
+    String? contractType,
     int? totalUnits,
+    int? rent,
+    Value<String?> ownerId = const Value.absent(),
+    Value<String?> ownerName = const Value.absent(),
+    Value<String?> ownerPhone = const Value.absent(),
+    Value<String?> ownerEmail = const Value.absent(),
   }) => Property(
     id: id ?? this.id,
     name: name ?? this.name,
-    address: address ?? this.address,
-    type: type ?? this.type,
-    rent: rent ?? this.rent,
-    totalFloors: totalFloors ?? this.totalFloors,
+    zipCode: zipCode.present ? zipCode.value : this.zipCode,
+    address1: address1.present ? address1.value : this.address1,
+    address2: address2.present ? address2.value : this.address2,
+    address: address.present ? address.value : this.address,
+    propertyType: propertyType ?? this.propertyType,
+    contractType: contractType ?? this.contractType,
     totalUnits: totalUnits ?? this.totalUnits,
+    rent: rent ?? this.rent,
+    ownerId: ownerId.present ? ownerId.value : this.ownerId,
+    ownerName: ownerName.present ? ownerName.value : this.ownerName,
+    ownerPhone: ownerPhone.present ? ownerPhone.value : this.ownerPhone,
+    ownerEmail: ownerEmail.present ? ownerEmail.value : this.ownerEmail,
   );
   Property copyWithCompanion(PropertiesCompanion data) {
     return Property(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      zipCode: data.zipCode.present ? data.zipCode.value : this.zipCode,
+      address1: data.address1.present ? data.address1.value : this.address1,
+      address2: data.address2.present ? data.address2.value : this.address2,
       address: data.address.present ? data.address.value : this.address,
-      type: data.type.present ? data.type.value : this.type,
-      rent: data.rent.present ? data.rent.value : this.rent,
-      totalFloors: data.totalFloors.present
-          ? data.totalFloors.value
-          : this.totalFloors,
+      propertyType: data.propertyType.present
+          ? data.propertyType.value
+          : this.propertyType,
+      contractType: data.contractType.present
+          ? data.contractType.value
+          : this.contractType,
       totalUnits: data.totalUnits.present
           ? data.totalUnits.value
           : this.totalUnits,
+      rent: data.rent.present ? data.rent.value : this.rent,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      ownerName: data.ownerName.present ? data.ownerName.value : this.ownerName,
+      ownerPhone: data.ownerPhone.present
+          ? data.ownerPhone.value
+          : this.ownerPhone,
+      ownerEmail: data.ownerEmail.present
+          ? data.ownerEmail.value
+          : this.ownerEmail,
     );
   }
 
@@ -327,84 +574,143 @@ class Property extends DataClass implements Insertable<Property> {
     return (StringBuffer('Property(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('zipCode: $zipCode, ')
+          ..write('address1: $address1, ')
+          ..write('address2: $address2, ')
           ..write('address: $address, ')
-          ..write('type: $type, ')
+          ..write('propertyType: $propertyType, ')
+          ..write('contractType: $contractType, ')
+          ..write('totalUnits: $totalUnits, ')
           ..write('rent: $rent, ')
-          ..write('totalFloors: $totalFloors, ')
-          ..write('totalUnits: $totalUnits')
+          ..write('ownerId: $ownerId, ')
+          ..write('ownerName: $ownerName, ')
+          ..write('ownerPhone: $ownerPhone, ')
+          ..write('ownerEmail: $ownerEmail')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, address, type, rent, totalFloors, totalUnits);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    zipCode,
+    address1,
+    address2,
+    address,
+    propertyType,
+    contractType,
+    totalUnits,
+    rent,
+    ownerId,
+    ownerName,
+    ownerPhone,
+    ownerEmail,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Property &&
           other.id == this.id &&
           other.name == this.name &&
+          other.zipCode == this.zipCode &&
+          other.address1 == this.address1 &&
+          other.address2 == this.address2 &&
           other.address == this.address &&
-          other.type == this.type &&
+          other.propertyType == this.propertyType &&
+          other.contractType == this.contractType &&
+          other.totalUnits == this.totalUnits &&
           other.rent == this.rent &&
-          other.totalFloors == this.totalFloors &&
-          other.totalUnits == this.totalUnits);
+          other.ownerId == this.ownerId &&
+          other.ownerName == this.ownerName &&
+          other.ownerPhone == this.ownerPhone &&
+          other.ownerEmail == this.ownerEmail);
 }
 
 class PropertiesCompanion extends UpdateCompanion<Property> {
   final Value<String> id;
   final Value<String> name;
-  final Value<String> address;
-  final Value<String> type;
-  final Value<int> rent;
-  final Value<int> totalFloors;
+  final Value<String?> zipCode;
+  final Value<String?> address1;
+  final Value<String?> address2;
+  final Value<String?> address;
+  final Value<String> propertyType;
+  final Value<String> contractType;
   final Value<int> totalUnits;
+  final Value<int> rent;
+  final Value<String?> ownerId;
+  final Value<String?> ownerName;
+  final Value<String?> ownerPhone;
+  final Value<String?> ownerEmail;
   final Value<int> rowid;
   const PropertiesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.zipCode = const Value.absent(),
+    this.address1 = const Value.absent(),
+    this.address2 = const Value.absent(),
     this.address = const Value.absent(),
-    this.type = const Value.absent(),
-    this.rent = const Value.absent(),
-    this.totalFloors = const Value.absent(),
+    this.propertyType = const Value.absent(),
+    this.contractType = const Value.absent(),
     this.totalUnits = const Value.absent(),
+    this.rent = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.ownerName = const Value.absent(),
+    this.ownerPhone = const Value.absent(),
+    this.ownerEmail = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PropertiesCompanion.insert({
     required String id,
     required String name,
-    required String address,
-    required String type,
-    required int rent,
-    required int totalFloors,
+    this.zipCode = const Value.absent(),
+    this.address1 = const Value.absent(),
+    this.address2 = const Value.absent(),
+    this.address = const Value.absent(),
+    this.propertyType = const Value.absent(),
+    this.contractType = const Value.absent(),
     required int totalUnits,
+    this.rent = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.ownerName = const Value.absent(),
+    this.ownerPhone = const Value.absent(),
+    this.ownerEmail = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
-       address = Value(address),
-       type = Value(type),
-       rent = Value(rent),
-       totalFloors = Value(totalFloors),
        totalUnits = Value(totalUnits);
   static Insertable<Property> custom({
     Expression<String>? id,
     Expression<String>? name,
+    Expression<String>? zipCode,
+    Expression<String>? address1,
+    Expression<String>? address2,
     Expression<String>? address,
-    Expression<String>? type,
-    Expression<int>? rent,
-    Expression<int>? totalFloors,
+    Expression<String>? propertyType,
+    Expression<String>? contractType,
     Expression<int>? totalUnits,
+    Expression<int>? rent,
+    Expression<String>? ownerId,
+    Expression<String>? ownerName,
+    Expression<String>? ownerPhone,
+    Expression<String>? ownerEmail,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (zipCode != null) 'zip_code': zipCode,
+      if (address1 != null) 'address1': address1,
+      if (address2 != null) 'address2': address2,
       if (address != null) 'address': address,
-      if (type != null) 'type': type,
-      if (rent != null) 'rent': rent,
-      if (totalFloors != null) 'total_floors': totalFloors,
+      if (propertyType != null) 'property_type': propertyType,
+      if (contractType != null) 'contract_type': contractType,
       if (totalUnits != null) 'total_units': totalUnits,
+      if (rent != null) 'rent': rent,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (ownerName != null) 'owner_name': ownerName,
+      if (ownerPhone != null) 'owner_phone': ownerPhone,
+      if (ownerEmail != null) 'owner_email': ownerEmail,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -412,21 +718,35 @@ class PropertiesCompanion extends UpdateCompanion<Property> {
   PropertiesCompanion copyWith({
     Value<String>? id,
     Value<String>? name,
-    Value<String>? address,
-    Value<String>? type,
-    Value<int>? rent,
-    Value<int>? totalFloors,
+    Value<String?>? zipCode,
+    Value<String?>? address1,
+    Value<String?>? address2,
+    Value<String?>? address,
+    Value<String>? propertyType,
+    Value<String>? contractType,
     Value<int>? totalUnits,
+    Value<int>? rent,
+    Value<String?>? ownerId,
+    Value<String?>? ownerName,
+    Value<String?>? ownerPhone,
+    Value<String?>? ownerEmail,
     Value<int>? rowid,
   }) {
     return PropertiesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      zipCode: zipCode ?? this.zipCode,
+      address1: address1 ?? this.address1,
+      address2: address2 ?? this.address2,
       address: address ?? this.address,
-      type: type ?? this.type,
-      rent: rent ?? this.rent,
-      totalFloors: totalFloors ?? this.totalFloors,
+      propertyType: propertyType ?? this.propertyType,
+      contractType: contractType ?? this.contractType,
       totalUnits: totalUnits ?? this.totalUnits,
+      rent: rent ?? this.rent,
+      ownerId: ownerId ?? this.ownerId,
+      ownerName: ownerName ?? this.ownerName,
+      ownerPhone: ownerPhone ?? this.ownerPhone,
+      ownerEmail: ownerEmail ?? this.ownerEmail,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -440,20 +760,41 @@ class PropertiesCompanion extends UpdateCompanion<Property> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (zipCode.present) {
+      map['zip_code'] = Variable<String>(zipCode.value);
+    }
+    if (address1.present) {
+      map['address1'] = Variable<String>(address1.value);
+    }
+    if (address2.present) {
+      map['address2'] = Variable<String>(address2.value);
+    }
     if (address.present) {
       map['address'] = Variable<String>(address.value);
     }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
+    if (propertyType.present) {
+      map['property_type'] = Variable<String>(propertyType.value);
+    }
+    if (contractType.present) {
+      map['contract_type'] = Variable<String>(contractType.value);
+    }
+    if (totalUnits.present) {
+      map['total_units'] = Variable<int>(totalUnits.value);
     }
     if (rent.present) {
       map['rent'] = Variable<int>(rent.value);
     }
-    if (totalFloors.present) {
-      map['total_floors'] = Variable<int>(totalFloors.value);
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
     }
-    if (totalUnits.present) {
-      map['total_units'] = Variable<int>(totalUnits.value);
+    if (ownerName.present) {
+      map['owner_name'] = Variable<String>(ownerName.value);
+    }
+    if (ownerPhone.present) {
+      map['owner_phone'] = Variable<String>(ownerPhone.value);
+    }
+    if (ownerEmail.present) {
+      map['owner_email'] = Variable<String>(ownerEmail.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -466,11 +807,18 @@ class PropertiesCompanion extends UpdateCompanion<Property> {
     return (StringBuffer('PropertiesCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('zipCode: $zipCode, ')
+          ..write('address1: $address1, ')
+          ..write('address2: $address2, ')
           ..write('address: $address, ')
-          ..write('type: $type, ')
-          ..write('rent: $rent, ')
-          ..write('totalFloors: $totalFloors, ')
+          ..write('propertyType: $propertyType, ')
+          ..write('contractType: $contractType, ')
           ..write('totalUnits: $totalUnits, ')
+          ..write('rent: $rent, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('ownerName: $ownerName, ')
+          ..write('ownerPhone: $ownerPhone, ')
+          ..write('ownerEmail: $ownerEmail, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4746,6 +5094,384 @@ class PaymentAllocationsCompanion extends UpdateCompanion<PaymentAllocation> {
   }
 }
 
+class $PropertyBillingItemsTable extends PropertyBillingItems
+    with TableInfo<$PropertyBillingItemsTable, PropertyBillingItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PropertyBillingItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _propertyIdMeta = const VerificationMeta(
+    'propertyId',
+  );
+  @override
+  late final GeneratedColumn<String> propertyId = GeneratedColumn<String>(
+    'property_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES properties (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    propertyId,
+    name,
+    amount,
+    isEnabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'property_billing_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PropertyBillingItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('property_id')) {
+      context.handle(
+        _propertyIdMeta,
+        propertyId.isAcceptableOrUnknown(data['property_id']!, _propertyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_propertyIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PropertyBillingItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PropertyBillingItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      propertyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}property_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $PropertyBillingItemsTable createAlias(String alias) {
+    return $PropertyBillingItemsTable(attachedDatabase, alias);
+  }
+}
+
+class PropertyBillingItem extends DataClass
+    implements Insertable<PropertyBillingItem> {
+  final String id;
+  final String propertyId;
+  final String name;
+  final int amount;
+  final bool isEnabled;
+  const PropertyBillingItem({
+    required this.id,
+    required this.propertyId,
+    required this.name,
+    required this.amount,
+    required this.isEnabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['property_id'] = Variable<String>(propertyId);
+    map['name'] = Variable<String>(name);
+    map['amount'] = Variable<int>(amount);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    return map;
+  }
+
+  PropertyBillingItemsCompanion toCompanion(bool nullToAbsent) {
+    return PropertyBillingItemsCompanion(
+      id: Value(id),
+      propertyId: Value(propertyId),
+      name: Value(name),
+      amount: Value(amount),
+      isEnabled: Value(isEnabled),
+    );
+  }
+
+  factory PropertyBillingItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PropertyBillingItem(
+      id: serializer.fromJson<String>(json['id']),
+      propertyId: serializer.fromJson<String>(json['propertyId']),
+      name: serializer.fromJson<String>(json['name']),
+      amount: serializer.fromJson<int>(json['amount']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'propertyId': serializer.toJson<String>(propertyId),
+      'name': serializer.toJson<String>(name),
+      'amount': serializer.toJson<int>(amount),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+    };
+  }
+
+  PropertyBillingItem copyWith({
+    String? id,
+    String? propertyId,
+    String? name,
+    int? amount,
+    bool? isEnabled,
+  }) => PropertyBillingItem(
+    id: id ?? this.id,
+    propertyId: propertyId ?? this.propertyId,
+    name: name ?? this.name,
+    amount: amount ?? this.amount,
+    isEnabled: isEnabled ?? this.isEnabled,
+  );
+  PropertyBillingItem copyWithCompanion(PropertyBillingItemsCompanion data) {
+    return PropertyBillingItem(
+      id: data.id.present ? data.id.value : this.id,
+      propertyId: data.propertyId.present
+          ? data.propertyId.value
+          : this.propertyId,
+      name: data.name.present ? data.name.value : this.name,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PropertyBillingItem(')
+          ..write('id: $id, ')
+          ..write('propertyId: $propertyId, ')
+          ..write('name: $name, ')
+          ..write('amount: $amount, ')
+          ..write('isEnabled: $isEnabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, propertyId, name, amount, isEnabled);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PropertyBillingItem &&
+          other.id == this.id &&
+          other.propertyId == this.propertyId &&
+          other.name == this.name &&
+          other.amount == this.amount &&
+          other.isEnabled == this.isEnabled);
+}
+
+class PropertyBillingItemsCompanion
+    extends UpdateCompanion<PropertyBillingItem> {
+  final Value<String> id;
+  final Value<String> propertyId;
+  final Value<String> name;
+  final Value<int> amount;
+  final Value<bool> isEnabled;
+  final Value<int> rowid;
+  const PropertyBillingItemsCompanion({
+    this.id = const Value.absent(),
+    this.propertyId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PropertyBillingItemsCompanion.insert({
+    required String id,
+    required String propertyId,
+    required String name,
+    required int amount,
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       propertyId = Value(propertyId),
+       name = Value(name),
+       amount = Value(amount);
+  static Insertable<PropertyBillingItem> custom({
+    Expression<String>? id,
+    Expression<String>? propertyId,
+    Expression<String>? name,
+    Expression<int>? amount,
+    Expression<bool>? isEnabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (propertyId != null) 'property_id': propertyId,
+      if (name != null) 'name': name,
+      if (amount != null) 'amount': amount,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PropertyBillingItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? propertyId,
+    Value<String>? name,
+    Value<int>? amount,
+    Value<bool>? isEnabled,
+    Value<int>? rowid,
+  }) {
+    return PropertyBillingItemsCompanion(
+      id: id ?? this.id,
+      propertyId: propertyId ?? this.propertyId,
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      isEnabled: isEnabled ?? this.isEnabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (propertyId.present) {
+      map['property_id'] = Variable<String>(propertyId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PropertyBillingItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('propertyId: $propertyId, ')
+          ..write('name: $name, ')
+          ..write('amount: $amount, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4760,6 +5486,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PaymentsTable payments = $PaymentsTable(this);
   late final $PaymentAllocationsTable paymentAllocations =
       $PaymentAllocationsTable(this);
+  late final $PropertyBillingItemsTable propertyBillingItems =
+      $PropertyBillingItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4775,6 +5503,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     users,
     payments,
     paymentAllocations,
+    propertyBillingItems,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4834,6 +5563,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [TableUpdate('payment_allocations', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'properties',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('property_billing_items', kind: UpdateKind.delete)],
+    ),
   ]);
 }
 
@@ -4841,22 +5577,36 @@ typedef $$PropertiesTableCreateCompanionBuilder =
     PropertiesCompanion Function({
       required String id,
       required String name,
-      required String address,
-      required String type,
-      required int rent,
-      required int totalFloors,
+      Value<String?> zipCode,
+      Value<String?> address1,
+      Value<String?> address2,
+      Value<String?> address,
+      Value<String> propertyType,
+      Value<String> contractType,
       required int totalUnits,
+      Value<int> rent,
+      Value<String?> ownerId,
+      Value<String?> ownerName,
+      Value<String?> ownerPhone,
+      Value<String?> ownerEmail,
       Value<int> rowid,
     });
 typedef $$PropertiesTableUpdateCompanionBuilder =
     PropertiesCompanion Function({
       Value<String> id,
       Value<String> name,
-      Value<String> address,
-      Value<String> type,
-      Value<int> rent,
-      Value<int> totalFloors,
+      Value<String?> zipCode,
+      Value<String?> address1,
+      Value<String?> address2,
+      Value<String?> address,
+      Value<String> propertyType,
+      Value<String> contractType,
       Value<int> totalUnits,
+      Value<int> rent,
+      Value<String?> ownerId,
+      Value<String?> ownerName,
+      Value<String?> ownerPhone,
+      Value<String?> ownerEmail,
       Value<int> rowid,
     });
 
@@ -4882,6 +5632,34 @@ final class $$PropertiesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $PropertyBillingItemsTable,
+    List<PropertyBillingItem>
+  >
+  _propertyBillingItemsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.propertyBillingItems,
+        aliasName: $_aliasNameGenerator(
+          db.properties.id,
+          db.propertyBillingItems.propertyId,
+        ),
+      );
+
+  $$PropertyBillingItemsTableProcessedTableManager
+  get propertyBillingItemsRefs {
+    final manager = $$PropertyBillingItemsTableTableManager(
+      $_db,
+      $_db.propertyBillingItems,
+    ).filter((f) => f.propertyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _propertyBillingItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PropertiesTableFilterComposer
@@ -4903,13 +5681,38 @@ class $$PropertiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get zipCode => $composableBuilder(
+    column: $table.zipCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address1 => $composableBuilder(
+    column: $table.address1,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address2 => $composableBuilder(
+    column: $table.address2,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get address => $composableBuilder(
     column: $table.address,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
+  ColumnFilters<String> get propertyType => $composableBuilder(
+    column: $table.propertyType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contractType => $composableBuilder(
+    column: $table.contractType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalUnits => $composableBuilder(
+    column: $table.totalUnits,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4918,13 +5721,23 @@ class $$PropertiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get totalFloors => $composableBuilder(
-    column: $table.totalFloors,
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get totalUnits => $composableBuilder(
-    column: $table.totalUnits,
+  ColumnFilters<String> get ownerName => $composableBuilder(
+    column: $table.ownerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerPhone => $composableBuilder(
+    column: $table.ownerPhone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4944,6 +5757,31 @@ class $$PropertiesTableFilterComposer
           }) => $$UnitsTableFilterComposer(
             $db: $db,
             $table: $db.units,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> propertyBillingItemsRefs(
+    Expression<bool> Function($$PropertyBillingItemsTableFilterComposer f) f,
+  ) {
+    final $$PropertyBillingItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.propertyBillingItems,
+      getReferencedColumn: (t) => t.propertyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PropertyBillingItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.propertyBillingItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4973,13 +5811,38 @@ class $$PropertiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get zipCode => $composableBuilder(
+    column: $table.zipCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address1 => $composableBuilder(
+    column: $table.address1,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address2 => $composableBuilder(
+    column: $table.address2,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get address => $composableBuilder(
     column: $table.address,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get type => $composableBuilder(
-    column: $table.type,
+  ColumnOrderings<String> get propertyType => $composableBuilder(
+    column: $table.propertyType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contractType => $composableBuilder(
+    column: $table.contractType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalUnits => $composableBuilder(
+    column: $table.totalUnits,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4988,13 +5851,23 @@ class $$PropertiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get totalFloors => $composableBuilder(
-    column: $table.totalFloors,
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get totalUnits => $composableBuilder(
-    column: $table.totalUnits,
+  ColumnOrderings<String> get ownerName => $composableBuilder(
+    column: $table.ownerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerPhone => $composableBuilder(
+    column: $table.ownerPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -5014,22 +5887,49 @@ class $$PropertiesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get zipCode =>
+      $composableBuilder(column: $table.zipCode, builder: (column) => column);
+
+  GeneratedColumn<String> get address1 =>
+      $composableBuilder(column: $table.address1, builder: (column) => column);
+
+  GeneratedColumn<String> get address2 =>
+      $composableBuilder(column: $table.address2, builder: (column) => column);
+
   GeneratedColumn<String> get address =>
       $composableBuilder(column: $table.address, builder: (column) => column);
 
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumn<String> get propertyType => $composableBuilder(
+    column: $table.propertyType,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get rent =>
-      $composableBuilder(column: $table.rent, builder: (column) => column);
-
-  GeneratedColumn<int> get totalFloors => $composableBuilder(
-    column: $table.totalFloors,
+  GeneratedColumn<String> get contractType => $composableBuilder(
+    column: $table.contractType,
     builder: (column) => column,
   );
 
   GeneratedColumn<int> get totalUnits => $composableBuilder(
     column: $table.totalUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rent =>
+      $composableBuilder(column: $table.rent, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerName =>
+      $composableBuilder(column: $table.ownerName, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerPhone => $composableBuilder(
+    column: $table.ownerPhone,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
     builder: (column) => column,
   );
 
@@ -5057,6 +5957,32 @@ class $$PropertiesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> propertyBillingItemsRefs<T extends Object>(
+    Expression<T> Function($$PropertyBillingItemsTableAnnotationComposer a) f,
+  ) {
+    final $$PropertyBillingItemsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.propertyBillingItems,
+          getReferencedColumn: (t) => t.propertyId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PropertyBillingItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.propertyBillingItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$PropertiesTableTableManager
@@ -5072,7 +5998,10 @@ class $$PropertiesTableTableManager
           $$PropertiesTableUpdateCompanionBuilder,
           (Property, $$PropertiesTableReferences),
           Property,
-          PrefetchHooks Function({bool unitsRefs})
+          PrefetchHooks Function({
+            bool unitsRefs,
+            bool propertyBillingItemsRefs,
+          })
         > {
   $$PropertiesTableTableManager(_$AppDatabase db, $PropertiesTable table)
     : super(
@@ -5089,40 +6018,68 @@ class $$PropertiesTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String> address = const Value.absent(),
-                Value<String> type = const Value.absent(),
-                Value<int> rent = const Value.absent(),
-                Value<int> totalFloors = const Value.absent(),
+                Value<String?> zipCode = const Value.absent(),
+                Value<String?> address1 = const Value.absent(),
+                Value<String?> address2 = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String> propertyType = const Value.absent(),
+                Value<String> contractType = const Value.absent(),
                 Value<int> totalUnits = const Value.absent(),
+                Value<int> rent = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String?> ownerName = const Value.absent(),
+                Value<String?> ownerPhone = const Value.absent(),
+                Value<String?> ownerEmail = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PropertiesCompanion(
                 id: id,
                 name: name,
+                zipCode: zipCode,
+                address1: address1,
+                address2: address2,
                 address: address,
-                type: type,
-                rent: rent,
-                totalFloors: totalFloors,
+                propertyType: propertyType,
+                contractType: contractType,
                 totalUnits: totalUnits,
+                rent: rent,
+                ownerId: ownerId,
+                ownerName: ownerName,
+                ownerPhone: ownerPhone,
+                ownerEmail: ownerEmail,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 required String name,
-                required String address,
-                required String type,
-                required int rent,
-                required int totalFloors,
+                Value<String?> zipCode = const Value.absent(),
+                Value<String?> address1 = const Value.absent(),
+                Value<String?> address2 = const Value.absent(),
+                Value<String?> address = const Value.absent(),
+                Value<String> propertyType = const Value.absent(),
+                Value<String> contractType = const Value.absent(),
                 required int totalUnits,
+                Value<int> rent = const Value.absent(),
+                Value<String?> ownerId = const Value.absent(),
+                Value<String?> ownerName = const Value.absent(),
+                Value<String?> ownerPhone = const Value.absent(),
+                Value<String?> ownerEmail = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PropertiesCompanion.insert(
                 id: id,
                 name: name,
+                zipCode: zipCode,
+                address1: address1,
+                address2: address2,
                 address: address,
-                type: type,
-                rent: rent,
-                totalFloors: totalFloors,
+                propertyType: propertyType,
+                contractType: contractType,
                 totalUnits: totalUnits,
+                rent: rent,
+                ownerId: ownerId,
+                ownerName: ownerName,
+                ownerPhone: ownerPhone,
+                ownerEmail: ownerEmail,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5133,28 +6090,63 @@ class $$PropertiesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({unitsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (unitsRefs) db.units],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (unitsRefs)
-                    await $_getPrefetchedData<Property, $PropertiesTable, Unit>(
-                      currentTable: table,
-                      referencedTable: $$PropertiesTableReferences
-                          ._unitsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$PropertiesTableReferences(db, table, p0).unitsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.propertyId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({unitsRefs = false, propertyBillingItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (unitsRefs) db.units,
+                    if (propertyBillingItemsRefs) db.propertyBillingItems,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (unitsRefs)
+                        await $_getPrefetchedData<
+                          Property,
+                          $PropertiesTable,
+                          Unit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PropertiesTableReferences
+                              ._unitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PropertiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).unitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.propertyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (propertyBillingItemsRefs)
+                        await $_getPrefetchedData<
+                          Property,
+                          $PropertiesTable,
+                          PropertyBillingItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PropertiesTableReferences
+                              ._propertyBillingItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PropertiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).propertyBillingItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.propertyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5171,7 +6163,7 @@ typedef $$PropertiesTableProcessedTableManager =
       $$PropertiesTableUpdateCompanionBuilder,
       (Property, $$PropertiesTableReferences),
       Property,
-      PrefetchHooks Function({bool unitsRefs})
+      PrefetchHooks Function({bool unitsRefs, bool propertyBillingItemsRefs})
     >;
 typedef $$UnitsTableCreateCompanionBuilder =
     UnitsCompanion Function({
@@ -9059,6 +10051,347 @@ typedef $$PaymentAllocationsTableProcessedTableManager =
       PaymentAllocation,
       PrefetchHooks Function({bool paymentId, bool billingId})
     >;
+typedef $$PropertyBillingItemsTableCreateCompanionBuilder =
+    PropertyBillingItemsCompanion Function({
+      required String id,
+      required String propertyId,
+      required String name,
+      required int amount,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+typedef $$PropertyBillingItemsTableUpdateCompanionBuilder =
+    PropertyBillingItemsCompanion Function({
+      Value<String> id,
+      Value<String> propertyId,
+      Value<String> name,
+      Value<int> amount,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+
+final class $$PropertyBillingItemsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $PropertyBillingItemsTable,
+          PropertyBillingItem
+        > {
+  $$PropertyBillingItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PropertiesTable _propertyIdTable(_$AppDatabase db) =>
+      db.properties.createAlias(
+        $_aliasNameGenerator(
+          db.propertyBillingItems.propertyId,
+          db.properties.id,
+        ),
+      );
+
+  $$PropertiesTableProcessedTableManager get propertyId {
+    final $_column = $_itemColumn<String>('property_id')!;
+
+    final manager = $$PropertiesTableTableManager(
+      $_db,
+      $_db.properties,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_propertyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PropertyBillingItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $PropertyBillingItemsTable> {
+  $$PropertyBillingItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PropertiesTableFilterComposer get propertyId {
+    final $$PropertiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.propertyId,
+      referencedTable: $db.properties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PropertiesTableFilterComposer(
+            $db: $db,
+            $table: $db.properties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PropertyBillingItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PropertyBillingItemsTable> {
+  $$PropertyBillingItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PropertiesTableOrderingComposer get propertyId {
+    final $$PropertiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.propertyId,
+      referencedTable: $db.properties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PropertiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.properties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PropertyBillingItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PropertyBillingItemsTable> {
+  $$PropertyBillingItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  $$PropertiesTableAnnotationComposer get propertyId {
+    final $$PropertiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.propertyId,
+      referencedTable: $db.properties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PropertiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.properties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PropertyBillingItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PropertyBillingItemsTable,
+          PropertyBillingItem,
+          $$PropertyBillingItemsTableFilterComposer,
+          $$PropertyBillingItemsTableOrderingComposer,
+          $$PropertyBillingItemsTableAnnotationComposer,
+          $$PropertyBillingItemsTableCreateCompanionBuilder,
+          $$PropertyBillingItemsTableUpdateCompanionBuilder,
+          (PropertyBillingItem, $$PropertyBillingItemsTableReferences),
+          PropertyBillingItem,
+          PrefetchHooks Function({bool propertyId})
+        > {
+  $$PropertyBillingItemsTableTableManager(
+    _$AppDatabase db,
+    $PropertyBillingItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PropertyBillingItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PropertyBillingItemsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PropertyBillingItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> propertyId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PropertyBillingItemsCompanion(
+                id: id,
+                propertyId: propertyId,
+                name: name,
+                amount: amount,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String propertyId,
+                required String name,
+                required int amount,
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PropertyBillingItemsCompanion.insert(
+                id: id,
+                propertyId: propertyId,
+                name: name,
+                amount: amount,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PropertyBillingItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({propertyId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (propertyId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.propertyId,
+                                referencedTable:
+                                    $$PropertyBillingItemsTableReferences
+                                        ._propertyIdTable(db),
+                                referencedColumn:
+                                    $$PropertyBillingItemsTableReferences
+                                        ._propertyIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PropertyBillingItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PropertyBillingItemsTable,
+      PropertyBillingItem,
+      $$PropertyBillingItemsTableFilterComposer,
+      $$PropertyBillingItemsTableOrderingComposer,
+      $$PropertyBillingItemsTableAnnotationComposer,
+      $$PropertyBillingItemsTableCreateCompanionBuilder,
+      $$PropertyBillingItemsTableUpdateCompanionBuilder,
+      (PropertyBillingItem, $$PropertyBillingItemsTableReferences),
+      PropertyBillingItem,
+      PrefetchHooks Function({bool propertyId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9083,4 +10416,6 @@ class $AppDatabaseManager {
       $$PaymentsTableTableManager(_db, _db.payments);
   $$PaymentAllocationsTableTableManager get paymentAllocations =>
       $$PaymentAllocationsTableTableManager(_db, _db.paymentAllocations);
+  $$PropertyBillingItemsTableTableManager get propertyBillingItems =>
+      $$PropertyBillingItemsTableTableManager(_db, _db.propertyBillingItems);
 }

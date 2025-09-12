@@ -15,7 +15,8 @@ class PropertyRepository {
     final properties = await _appDatabase.getAllProperties();
     return Future.wait(properties.map((property) async {
       final units = await _appDatabase.getUnitsForProperty(property.id);
-      return _mapProperty(property, units);
+      final billingItems = await _appDatabase.getPropertyBillingItems(property.id);
+      return _mapProperty(property, units, billingItems);
     }).toList());
   }
 
@@ -30,12 +31,29 @@ class PropertyRepository {
     await _appDatabase.insertProperty(app_db.PropertiesCompanion.insert(
       id: property.id,
       name: property.name,
-      address: property.address,
-      type: property.type,
-      rent: property.rent,
-      totalFloors: property.totalFloors,
+      zipCode: Value(property.zipCode),
+      address1: Value(property.address1),
+      address2: Value(property.address2),
+      propertyType: Value(property.propertyType.name),
+      contractType: Value(property.contractType.name),
+      rent: const Value(0),
       totalUnits: property.totalUnits,
+      ownerName: Value(property.ownerName),
+      ownerPhone: Value(property.ownerPhone),
+      ownerEmail: Value(property.ownerEmail),
     ));
+    
+    // Insert billing items
+    for (var item in property.defaultBillingItems) {
+      await _appDatabase.insertPropertyBillingItem(app_db.PropertyBillingItemsCompanion.insert(
+        id: 'pbi_${property.id}_${DateTime.now().millisecondsSinceEpoch}_${item.name.hashCode}',
+        propertyId: property.id,
+        name: item.name,
+        amount: item.amount,
+        isEnabled: Value(item.isEnabled),
+      ));
+    }
+    
     for (var unit in property.units) {
       await addUnit(unit);
     }
@@ -46,12 +64,30 @@ class PropertyRepository {
     await _appDatabase.updateProperty(app_db.PropertiesCompanion(
       id: Value(property.id),
       name: Value(property.name),
-      address: Value(property.address),
-      type: Value(property.type),
-      rent: Value(property.rent),
-      totalFloors: Value(property.totalFloors),
+      zipCode: Value(property.zipCode),
+      address1: Value(property.address1),
+      address2: Value(property.address2),
+      propertyType: Value(property.propertyType.name),
+      contractType: Value(property.contractType.name),
+      rent: const Value(0),
       totalUnits: Value(property.totalUnits),
+      ownerName: Value(property.ownerName),
+      ownerPhone: Value(property.ownerPhone),
+      ownerEmail: Value(property.ownerEmail),
     ));
+    
+    // Update billing items - delete existing and insert new ones  
+    await _appDatabase.deletePropertyBillingItemsForProperty(property.id);
+    for (var item in property.defaultBillingItems) {
+      await _appDatabase.insertPropertyBillingItem(app_db.PropertyBillingItemsCompanion.insert(
+        id: 'pbi_${property.id}_${DateTime.now().millisecondsSinceEpoch}_${item.name.hashCode}',
+        propertyId: property.id,
+        name: item.name,
+        amount: item.amount,
+        isEnabled: Value(item.isEnabled),
+      ));
+    }
+    
     return property;
   }
 
@@ -105,15 +141,26 @@ class PropertyRepository {
     return units.map((unit) => _mapUnit(unit)).toList();
   }
 
-  Property _mapProperty(app_db.Property property, List<app_db.Unit> units) {
+  Property _mapProperty(app_db.Property property, List<app_db.Unit> units, List<app_db.PropertyBillingItem> billingItems) {
     return Property(
       id: property.id,
       name: property.name,
-      address: property.address,
-      type: property.type,
+      zipCode: property.zipCode,
+      address1: property.address1,
+      address2: property.address2,
+      address: property.address1, // For backward compatibility
+      propertyType: PropertyType.values.firstWhere((e) => e.name == property.propertyType),
+      contractType: ContractType.values.firstWhere((e) => e.name == property.contractType),
       rent: property.rent,
-      totalFloors: property.totalFloors,
       totalUnits: property.totalUnits,
+      ownerName: property.ownerName,
+      ownerPhone: property.ownerPhone,
+      ownerEmail: property.ownerEmail,
+      defaultBillingItems: billingItems.map((item) => BillingItem(
+        name: item.name,
+        amount: item.amount,
+        isEnabled: item.isEnabled,
+      )).toList(),
       units: units.map((unit) => _mapUnit(unit)).toList(),
     );
   }

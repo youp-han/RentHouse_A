@@ -10,7 +10,8 @@
       "mcp__shrimp-task-manager__execute_task",
       "Bash(flutter packages pub run:*)",
       "mcp__shrimp-task-manager__query_task",
-      "mcp__shrimp-task-manager__get_task_detail"
+      "mcp__shrimp-task-manager__get_task_detail",
+      "Bash(flutter run:*)"
     ],
     "deny": [],
     "ask": []

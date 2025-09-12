@@ -79,9 +79,9 @@ class PropertyDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('주소: ${property.address}', style: Theme.of(context).textTheme.titleMedium),
+                Text('주소: ${property.fullAddress}', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Text('유형: ${property.type}', style: Theme.of(context).textTheme.bodyLarge),
+                Text('유형: ${property.propertyType.displayName}', style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 8),
                 Text('총 유닛: ${property.totalUnits}개', style: Theme.of(context).textTheme.bodyLarge),
                 const Divider(height: 32),

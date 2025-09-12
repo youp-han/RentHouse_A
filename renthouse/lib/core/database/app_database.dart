@@ -9,11 +9,35 @@ part 'app_database.g.dart';
 class Properties extends Table {
   TextColumn get id => text().withLength(min: 1, max: 50)();
   TextColumn get name => text().withLength(min: 1, max: 255)();
-  TextColumn get address => text().withLength(min: 1, max: 255)();
-  TextColumn get type => text().withLength(min: 1, max: 50)();
-  IntColumn get rent => integer()();
-  IntColumn get totalFloors => integer()();
+  // 주소 구조 변경 (task136)
+  TextColumn get zipCode => text().nullable()(); // 우편번호
+  TextColumn get address1 => text().nullable()(); // 주소1
+  TextColumn get address2 => text().nullable()(); // 상세주소
+  TextColumn get address => text().nullable()(); // 기존 호환성을 위해 유지
+  // 자산 유형을 enum string으로 저장 (task132)
+  TextColumn get propertyType => text().withDefault(const Constant('villa'))();
+  // 계약 종류 추가 (task135)
+  TextColumn get contractType => text().withDefault(const Constant('wolse'))();
+  // 층수 필드 제거됨 (task133)
   IntColumn get totalUnits => integer()();
+  IntColumn get rent => integer().withDefault(const Constant(0))();
+  // 소유자 정보 추가 (task134) - 고객관리 기능과 연동 예정
+  TextColumn get ownerId => text().nullable()();
+  TextColumn get ownerName => text().nullable()();
+  TextColumn get ownerPhone => text().nullable()();
+  TextColumn get ownerEmail => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// 자산별 기본 청구 항목 테이블 (추가 요구사항)
+class PropertyBillingItems extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 50)();
+  TextColumn get propertyId => text().withLength(min: 1, max: 50).references(Properties, #id, onDelete: KeyAction.cascade)();
+  TextColumn get name => text().withLength(min: 1, max: 100)(); // 관리비, 수도비, 전기비, 청소비, 주차비, 수리비
+  IntColumn get amount => integer()(); // 고정 금액
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -138,12 +162,12 @@ class PaymentAllocations extends Table {
 }
 
 
-@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems, Users, Payments, PaymentAllocations])
+@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems, Users, Payments, PaymentAllocations, PropertyBillingItems])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? connect());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -163,6 +187,25 @@ class AppDatabase extends _$AppDatabase {
         // (lease_id, yearMonth) 유니크 인덱스 추가
         await m.createIndex(Index('billing_lease_month_unique', 
           'CREATE UNIQUE INDEX billing_lease_month_unique ON billings (lease_id, year_month)'));
+      }
+      
+      if (from < 6) {
+        // task131-136: Properties 테이블 업데이트
+        // 새로운 컬럼들 추가
+        await m.addColumn(properties, properties.zipCode);
+        await m.addColumn(properties, properties.address1);
+        await m.addColumn(properties, properties.address2);
+        await m.addColumn(properties, properties.propertyType);
+        await m.addColumn(properties, properties.contractType);
+        await m.addColumn(properties, properties.ownerId);
+        await m.addColumn(properties, properties.ownerName);
+        await m.addColumn(properties, properties.ownerPhone);
+        await m.addColumn(properties, properties.ownerEmail);
+        
+        // totalFloors 컬럼 제거 (task133) - Drift에서는 컬럼 삭제를 직접 지원하지 않으므로 무시
+        
+        // 새로운 테이블 생성
+        await m.createTable(propertyBillingItems);
       }
     },
   );
@@ -301,5 +344,48 @@ class AppDatabase extends _$AppDatabase {
       ..where((tbl) => tbl.leaseId.equals(leaseId) & tbl.yearMonth.equals(yearMonth))
     ).get();
     return existing.isNotEmpty;
+  }
+
+  // PropertyBillingItems DAO 메서드들
+  Future<List<PropertyBillingItem>> getPropertyBillingItems(String propertyId) => 
+    (select(propertyBillingItems)..where((tbl) => tbl.propertyId.equals(propertyId))).get();
+  
+  Future<List<PropertyBillingItem>> getActivePropertyBillingItems(String propertyId) => 
+    (select(propertyBillingItems)
+      ..where((tbl) => tbl.propertyId.equals(propertyId) & tbl.isEnabled.equals(true))
+    ).get();
+  
+  Future<void> insertPropertyBillingItem(PropertyBillingItemsCompanion item) => 
+    into(propertyBillingItems).insert(item);
+  
+  Future<bool> updatePropertyBillingItem(PropertyBillingItemsCompanion item) => 
+    update(propertyBillingItems).replace(item);
+  
+  Future<void> deletePropertyBillingItem(String id) => 
+    (delete(propertyBillingItems)..where((tbl) => tbl.id.equals(id))).go();
+  
+  Future<void> deletePropertyBillingItemsForProperty(String propertyId) => 
+    (delete(propertyBillingItems)..where((tbl) => tbl.propertyId.equals(propertyId))).go();
+
+  // 자산별 기본 청구 항목 초기화 (선택항목: 관리비, 수도비, 전기비, 청소비, 주차비, 수리비)
+  Future<void> initializeDefaultBillingItemsForProperty(String propertyId) async {
+    final defaultItems = [
+      {'name': '관리비', 'amount': 50000},
+      {'name': '수도비', 'amount': 30000},
+      {'name': '전기비', 'amount': 40000},
+      {'name': '청소비', 'amount': 20000},
+      {'name': '주차비', 'amount': 50000},
+      {'name': '수리비 (임차인과실)', 'amount': 0},
+    ];
+
+    for (final item in defaultItems) {
+      await insertPropertyBillingItem(PropertyBillingItemsCompanion.insert(
+        id: 'pbi_${propertyId}_${DateTime.now().millisecondsSinceEpoch}_${item['name'].hashCode}',
+        propertyId: propertyId,
+        name: item['name'] as String,
+        amount: item['amount'] as int,
+        isEnabled: const Value(false), // 기본적으로 비활성화
+      ));
+    }
   }
 }

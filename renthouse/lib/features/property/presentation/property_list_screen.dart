@@ -67,7 +67,7 @@ class PropertyListScreen extends ConsumerWidget {
                                 },
                                 child: ListTile(
                                   title: Text(property.name),
-                                  subtitle: Text(property.address),
+                                  subtitle: Text(property.fullAddress),
                                 ),
                               );
                             },
