@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(flutter build:*)",
+      "mcp__shrimp-task-manager__list_tasks",
+      "mcp__shrimp-task-manager__process_thought",
+      "mcp__shrimp-task-manager__verify_task",
+      "mcp__shrimp-task-manager__execute_task",
+      "Bash(flutter packages pub run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enabledMcpjsonServers": [
+    "shrimp-task-manager"
+  ]
+}
