@@ -93,6 +93,30 @@ class SettingsScreen extends ConsumerWidget {
                       );
                     },
                   ),
+                  FutureBuilder<int>(
+                    future: Future.value(CrashReportingService.getPendingLogCount()),
+                    builder: (context, snapshot) {
+                      final logCount = snapshot.data ?? 0;
+                      return ListTile(
+                        leading: Icon(
+                          Icons.send,
+                          color: logCount > 0 ? Colors.blue : Colors.grey,
+                        ),
+                        title: const Text('누적 로그 전송'),
+                        subtitle: Text(
+                          logCount > 0 
+                            ? '$logCount건의 로그가 저장되어 있습니다'
+                            : '전송할 로그가 없습니다'
+                        ),
+                        trailing: logCount > 0 
+                          ? const Icon(Icons.arrow_forward_ios)
+                          : null,
+                        onTap: logCount > 0 
+                          ? () => _sendPendingLogs(context)
+                          : null,
+                      );
+                    },
+                  ),
                   // 개발 모드에서만 테스트 크래시 버튼 표시
                   if (kDebugMode) ...[
                     const Divider(),
@@ -184,6 +208,42 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  void _sendPendingLogs(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('누적 로그 전송'),
+        content: Text(
+          '저장된 ${CrashReportingService.getPendingLogCount()}건의 로그를 개발자에게 전송하시겠습니까?\n\n'
+          '이메일 앱이 열리면서 미리 작성된 내용을 확인하고 전송할 수 있습니다.'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await CrashReportingService.sendAllPendingLogs();
+              
+              if (context.mounted) {
+                // 화면 새로고침을 위해 setState 트리거
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('이메일 앱이 열렸습니다. 확인 후 전송해주세요.'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              }
+            },
+            child: const Text('전송'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _triggerTestCrash(BuildContext context) {
     showDialog(
       context: context,
@@ -205,7 +265,7 @@ class SettingsScreen extends ConsumerWidget {
               // 1초 후 크래시 발생 (UI가 닫힌 후)
               Future.delayed(const Duration(seconds: 1), () {
                 CrashReportingService.reportException(
-                  Exception('테스트 크래시: 크래시 보고 시스템 검증용'),
+                  Exception('테스트 크래시: 이메일 기반 크래시 보고 시스템 검증용'),
                   StackTrace.current,
                   context: 'settings_screen_test',
                   extra: {
@@ -216,7 +276,7 @@ class SettingsScreen extends ConsumerWidget {
                 );
                 
                 // 실제 예외도 발생시켜서 Flutter 오류 핸들러도 테스트
-                throw Exception('테스트용 예외: Sentry 연동 검증');
+                throw Exception('테스트용 예외: 이메일 기반 오류 보고 검증');
               });
             },
             child: const Text('크래시 발생'),
