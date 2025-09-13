@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/payment/application/payment_controller.dart';
 import 'package:renthouse/features/payment/domain/payment.dart';
+import 'package:renthouse/features/payment/data/payment_repository.dart';
 import 'package:renthouse/features/payment/domain/receipt.dart';
 import 'package:renthouse/features/payment/services/receipt_service.dart';
 import 'package:renthouse/features/payment/services/receipt_pdf_service.dart';
@@ -158,11 +159,11 @@ class _PaymentListScreenState extends ConsumerState<PaymentListScreen> {
           FutureBuilder(
             future: ref.read(paymentRepositoryProvider).getPaymentAllocations(payment.id),
             builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
                 return const SizedBox.shrink();
               }
               
-              final allocations = snapshot.data!;
+              final allocations = snapshot.data as List;
               return Container(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Column(

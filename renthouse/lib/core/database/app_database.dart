@@ -246,12 +246,26 @@ class AppDatabase extends _$AppDatabase {
 
   // DAO for bill templates
   Future<List<BillTemplate>> getAllBillTemplates() => select(billTemplates).get();
+  Future<BillTemplate?> getBillTemplateById(String id) async {
+    try {
+      return await (select(billTemplates)..where((tbl) => tbl.id.equals(id))).getSingle();
+    } catch (e) {
+      return null;
+    }
+  }
   Future<void> insertBillTemplate(BillTemplatesCompanion template) => into(billTemplates).insert(template);
   Future<bool> updateBillTemplate(BillTemplatesCompanion template) => update(billTemplates).replace(template);
   Future<void> deleteBillTemplate(String id) => (delete(billTemplates)..where((tbl) => tbl.id.equals(id))).go();
 
   // DAO for billings
   Future<List<Billing>> getAllBillings() => select(billings).get();
+  Future<Billing?> getBillingById(String id) async {
+    try {
+      return await (select(billings)..where((tbl) => tbl.id.equals(id))).getSingle();
+    } catch (e) {
+      return null;
+    }
+  }
   Future<void> insertBilling(BillingsCompanion billing) => into(billings).insert(billing);
   Future<bool> updateBilling(BillingsCompanion billing) => update(billings).replace(billing);
   Future<void> deleteBilling(String id) => (delete(billings)..where((tbl) => tbl.id.equals(id))).go();

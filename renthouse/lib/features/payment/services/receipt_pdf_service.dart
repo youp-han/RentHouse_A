@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:renthouse/features/payment/domain/receipt.dart';
+import 'package:renthouse/features/payment/domain/payment.dart';
 import 'package:intl/intl.dart';
 
 class ReceiptPdfService {

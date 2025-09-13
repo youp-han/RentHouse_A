@@ -446,9 +446,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: 청구서 선택 다이얼로그
-                  },
+                  onPressed: () => _showBillingSelectionDialog(),
                   icon: const Icon(Icons.add),
                   label: const Text('청구서 추가'),
                 ),
@@ -470,16 +468,37 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                 
                 return Card(
                   child: ListTile(
-                    title: Text('청구서 ${allocation.billingId}'),
-                    subtitle: Text(CurrencyFormatter.format(allocation.amount, ref.watch(currencySettingProvider))),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          _manualAllocations.removeAt(index);
-                        });
-                      },
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.green,
+                      child: const Icon(Icons.account_balance_wallet, color: Colors.white),
                     ),
+                    title: Text('청구서 ${allocation.billingId.substring(0, 8)}...'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('배분 금액: ${CurrencyFormatter.format(allocation.amount, ref.watch(currencySettingProvider))}'),
+                        Text('청구서 ID: ${allocation.billingId}', 
+                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editManualAllocation(index, allocation),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _manualAllocations.removeAt(index);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    isThreeLine: true,
                   ),
                 );
               }),
@@ -569,5 +588,194 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
         );
       }
     }
+  }
+
+  Future<void> _showBillingSelectionDialog() async {
+    if (_selectedTenantId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 임차인을 선택해주세요')),
+      );
+      return;
+    }
+
+    // 해당 임차인의 미납 청구서 조회
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('청구서 선택'),
+        content: SizedBox(
+          width: 500,
+          height: 400,
+          child: FutureBuilder(
+            future: ref.read(autoAllocationPreviewProvider(_selectedTenantId!, 1000000).future),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (snapshot.hasError) {
+                return Center(child: Text('오류: ${snapshot.error}'));
+              }
+              
+              final preview = snapshot.data as AutoAllocationResult;
+              if (preview.allocations.isEmpty) {
+                return const Center(child: Text('미납 청구서가 없습니다.'));
+              }
+              
+              return ListView.builder(
+                itemCount: preview.allocations.length,
+                itemBuilder: (context, index) {
+                  final allocation = preview.allocations[index];
+                  final isAlreadyAdded = _manualAllocations.any(
+                    (manual) => manual.billingId == allocation.billingId
+                  );
+                  
+                  return Card(
+                    child: ListTile(
+                      title: Text('${allocation.yearMonth} 청구서'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('청구액: ${CurrencyFormatter.format(allocation.billingAmount, ref.watch(currencySettingProvider))}'),
+                          Text('기납부: ${CurrencyFormatter.format(allocation.paidAmount, ref.watch(currencySettingProvider))}'),
+                          Text('미납액: ${CurrencyFormatter.format(allocation.billingAmount - allocation.paidAmount, ref.watch(currencySettingProvider))}'),
+                        ],
+                      ),
+                      trailing: isAlreadyAdded 
+                        ? const Icon(Icons.check, color: Colors.green)
+                        : ElevatedButton(
+                            onPressed: () => _addManualAllocation(allocation),
+                            child: const Text('추가'),
+                          ),
+                      enabled: !isAlreadyAdded,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('닫기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addManualAllocation(allocation) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final amountController = TextEditingController();
+        final maxAmount = allocation.billingAmount - allocation.paidAmount;
+        
+        return AlertDialog(
+          title: const Text('배분 금액 입력'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('청구서: ${allocation.yearMonth}'),
+              Text('최대 배분 가능 금액: ${CurrencyFormatter.format(maxAmount, ref.watch(currencySettingProvider))}'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: amountController,
+                decoration: const InputDecoration(
+                  labelText: '배분 금액',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '금액을 입력해주세요';
+                  }
+                  final amount = int.tryParse(value.replaceAll(',', ''));
+                  if (amount == null || amount <= 0) {
+                    return '올바른 금액을 입력해주세요';
+                  }
+                  if (amount > maxAmount) {
+                    return '최대 배분 가능 금액을 초과했습니다';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final amount = int.tryParse(amountController.text.replaceAll(',', ''));
+                if (amount != null && amount > 0 && amount <= maxAmount) {
+                  setState(() {
+                    _manualAllocations.add(PaymentAllocationRequest(
+                      billingId: allocation.billingId,
+                      amount: amount,
+                    ));
+                  });
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // 선택 다이얼로그도 닫기
+                }
+              },
+              child: const Text('추가'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editManualAllocation(int index, PaymentAllocationRequest allocation) {
+    final amountController = TextEditingController(text: allocation.amount.toString());
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('배분 금액 수정'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('청구서 ID: ${allocation.billingId}'),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: amountController,
+              decoration: const InputDecoration(
+                labelText: '배분 금액',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final amount = int.tryParse(amountController.text.replaceAll(',', ''));
+              if (amount != null && amount > 0) {
+                setState(() {
+                  _manualAllocations[index] = PaymentAllocationRequest(
+                    billingId: allocation.billingId,
+                    amount: amount,
+                  );
+                });
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text('수정'),
+          ),
+        ],
+      ),
+    );
   }
 }

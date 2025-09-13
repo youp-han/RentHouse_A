@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/core/utils/currency_formatter.dart';
 import 'package:renthouse/features/settings/application/currency_controller.dart';
+import 'package:renthouse/features/dashboard/application/dashboard_controller.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -15,6 +17,7 @@ class DashboardScreen extends ConsumerWidget {
     final isTablet = screenWidth >= 768 && screenWidth < 1024;
     final isMobile = screenWidth < 768;
     final selectedCurrency = ref.watch(currencySettingProvider);
+    final dashboardStatsAsync = ref.watch(dashboardControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,19 +52,71 @@ class DashboardScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // KPI Cards
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: isDesktop ? 4 : (isTablet ? 3 : 2),
-              childAspectRatio: isDesktop ? 1.5 : (isMobile ? 1.1 : 1.3),
-              crossAxisSpacing: isMobile ? 8 : 16,
-              mainAxisSpacing: isMobile ? 8 : 16,
-              children: [
-                _KPI(title: '이번 달 청구 합계', value: CurrencyFormatter.format(0, selectedCurrency)),
-                _KPI(title: '이번 달 수납 합계', value: CurrencyFormatter.format(0, selectedCurrency)),
-                const _KPI(title: '미납 건수', value: '0'),
-                const _KPI(title: '활성 계약 수', value: '0'),
-              ],
+            dashboardStatsAsync.when(
+              loading: () => GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: isDesktop ? 4 : (isTablet ? 3 : 2),
+                childAspectRatio: isDesktop ? 1.5 : (isMobile ? 1.1 : 1.3),
+                crossAxisSpacing: isMobile ? 8 : 16,
+                mainAxisSpacing: isMobile ? 8 : 16,
+                children: [
+                  const _KPI(title: '이번 달 청구 합계', value: '로딩 중...', isLoading: true),
+                  const _KPI(title: '이번 달 수납 합계', value: '로딩 중...', isLoading: true),
+                  const _KPI(title: '이번 달 미납액', value: '로딩 중...', isLoading: true),
+                  const _KPI(title: '연체 비중', value: '로딩 중...', isLoading: true),
+                  const _KPI(title: '미납 건수', value: '로딩 중...', isLoading: true),
+                  const _KPI(title: '활성 계약 수', value: '로딩 중...', isLoading: true),
+                ],
+              ),
+              error: (err, stack) => Container(
+                padding: const EdgeInsets.all(16),
+                child: Text('데이터 로딩 오류: $err'),
+              ),
+              data: (stats) => GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: isDesktop ? 4 : (isTablet ? 3 : 2),
+                childAspectRatio: isDesktop ? 1.5 : (isMobile ? 1.1 : 1.3),
+                crossAxisSpacing: isMobile ? 8 : 16,
+                mainAxisSpacing: isMobile ? 8 : 16,
+                children: [
+                  _KPI(
+                    title: '이번 달 청구 합계',
+                    value: CurrencyFormatter.format(stats.currentMonthBillingAmount, selectedCurrency),
+                    color: Colors.blue,
+                  ),
+                  _KPI(
+                    title: '이번 달 수납 합계',
+                    value: CurrencyFormatter.format(stats.currentMonthPaymentAmount, selectedCurrency),
+                    color: Colors.green,
+                  ),
+                  _KPI(
+                    title: '이번 달 미납액',
+                    value: CurrencyFormatter.format(stats.unpaidAmount, selectedCurrency),
+                    color: Colors.orange,
+                    subtitle: '${stats.unpaidCount}건',
+                  ),
+                  _KPI(
+                    title: '연체 비중',
+                    value: '${stats.overduePercentage}%',
+                    color: stats.overduePercentage > 20 ? Colors.red : (stats.overduePercentage > 10 ? Colors.orange : Colors.green),
+                    subtitle: CurrencyFormatter.format(stats.overdueAmount, selectedCurrency),
+                  ),
+                  _KPI(
+                    title: '총 미납 건수',
+                    value: '${stats.unpaidCount}건',
+                    color: Colors.grey,
+                    subtitle: '연체: ${stats.overdueCount}건',
+                  ),
+                  _KPI(
+                    title: '활성 계약 수',
+                    value: '${stats.activeLeaseCount}개',
+                    color: Colors.indigo,
+                    subtitle: '업데이트: ${DateFormat('HH:mm').format(stats.lastUpdated)}',
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24.0),
 
@@ -169,39 +224,89 @@ class DashboardScreen extends ConsumerWidget {
 class _KPI extends StatelessWidget {
   final String title; 
   final String value;
-  const _KPI({required this.title, required this.value});
+  final String? subtitle;
+  final Color? color;
+  final bool isLoading;
+  
+  const _KPI({
+    required this.title, 
+    required this.value,
+    this.subtitle,
+    this.color,
+    this.isLoading = false,
+  });
   
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final effectiveColor = color ?? Theme.of(context).primaryColor;
     
     return Card(
       margin: EdgeInsets.all(isMobile ? 4 : 8),
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 8 : 12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title, 
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: isMobile ? 12 : 14,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            FittedBox(
-              child: Text(
-                value, 
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: isMobile ? 16 : 20,
-                  fontWeight: FontWeight.bold,
+      elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              effectiveColor.withOpacity(0.1),
+              effectiveColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isMobile ? 8 : 12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title, 
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontSize: isMobile ? 11 : 13,
+                  color: effectiveColor.withOpacity(0.8),
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              if (isLoading)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(effectiveColor),
+                  ),
+                )
+              else
+                FittedBox(
+                  child: Text(
+                    value, 
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: isMobile ? 16 : 20,
+                      fontWeight: FontWeight.bold,
+                      color: effectiveColor,
+                    ),
+                  ),
+                ),
+              if (subtitle != null && !isLoading) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: isMobile ? 10 : 11,
+                    color: Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
