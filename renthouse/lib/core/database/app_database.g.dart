@@ -5567,21 +5567,22 @@ class $ActivityLogsTable extends ActivityLogs
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _entityNameMeta = const VerificationMeta(
-    'entityName',
+  static const VerificationMeta _entityDisplayNameMeta = const VerificationMeta(
+    'entityDisplayName',
   );
   @override
-  late final GeneratedColumn<String> entityName = GeneratedColumn<String>(
-    'entity_name',
-    aliasedName,
-    true,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 255,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumn<String> entityDisplayName =
+      GeneratedColumn<String>(
+        'entity_name',
+        aliasedName,
+        true,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 255,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _metadataMeta = const VerificationMeta(
     'metadata',
   );
@@ -5612,7 +5613,7 @@ class $ActivityLogsTable extends ActivityLogs
     description,
     entityType,
     entityId,
-    entityName,
+    entityDisplayName,
     metadata,
     timestamp,
   ];
@@ -5681,8 +5682,11 @@ class $ActivityLogsTable extends ActivityLogs
     }
     if (data.containsKey('entity_name')) {
       context.handle(
-        _entityNameMeta,
-        entityName.isAcceptableOrUnknown(data['entity_name']!, _entityNameMeta),
+        _entityDisplayNameMeta,
+        entityDisplayName.isAcceptableOrUnknown(
+          data['entity_name']!,
+          _entityDisplayNameMeta,
+        ),
       );
     }
     if (data.containsKey('metadata')) {
@@ -5732,7 +5736,7 @@ class $ActivityLogsTable extends ActivityLogs
         DriftSqlType.string,
         data['${effectivePrefix}entity_id'],
       )!,
-      entityName: attachedDatabase.typeMapping.read(
+      entityDisplayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}entity_name'],
       ),
@@ -5760,7 +5764,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   final String description;
   final String entityType;
   final String entityId;
-  final String? entityName;
+  final String? entityDisplayName;
   final String? metadata;
   final DateTime timestamp;
   const ActivityLog({
@@ -5770,7 +5774,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     required this.description,
     required this.entityType,
     required this.entityId,
-    this.entityName,
+    this.entityDisplayName,
     this.metadata,
     required this.timestamp,
   });
@@ -5783,8 +5787,8 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     map['description'] = Variable<String>(description);
     map['entity_type'] = Variable<String>(entityType);
     map['entity_id'] = Variable<String>(entityId);
-    if (!nullToAbsent || entityName != null) {
-      map['entity_name'] = Variable<String>(entityName);
+    if (!nullToAbsent || entityDisplayName != null) {
+      map['entity_name'] = Variable<String>(entityDisplayName);
     }
     if (!nullToAbsent || metadata != null) {
       map['metadata'] = Variable<String>(metadata);
@@ -5801,9 +5805,9 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       description: Value(description),
       entityType: Value(entityType),
       entityId: Value(entityId),
-      entityName: entityName == null && nullToAbsent
+      entityDisplayName: entityDisplayName == null && nullToAbsent
           ? const Value.absent()
-          : Value(entityName),
+          : Value(entityDisplayName),
       metadata: metadata == null && nullToAbsent
           ? const Value.absent()
           : Value(metadata),
@@ -5823,7 +5827,9 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       description: serializer.fromJson<String>(json['description']),
       entityType: serializer.fromJson<String>(json['entityType']),
       entityId: serializer.fromJson<String>(json['entityId']),
-      entityName: serializer.fromJson<String?>(json['entityName']),
+      entityDisplayName: serializer.fromJson<String?>(
+        json['entityDisplayName'],
+      ),
       metadata: serializer.fromJson<String?>(json['metadata']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
     );
@@ -5838,7 +5844,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
       'description': serializer.toJson<String>(description),
       'entityType': serializer.toJson<String>(entityType),
       'entityId': serializer.toJson<String>(entityId),
-      'entityName': serializer.toJson<String?>(entityName),
+      'entityDisplayName': serializer.toJson<String?>(entityDisplayName),
       'metadata': serializer.toJson<String?>(metadata),
       'timestamp': serializer.toJson<DateTime>(timestamp),
     };
@@ -5851,7 +5857,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     String? description,
     String? entityType,
     String? entityId,
-    Value<String?> entityName = const Value.absent(),
+    Value<String?> entityDisplayName = const Value.absent(),
     Value<String?> metadata = const Value.absent(),
     DateTime? timestamp,
   }) => ActivityLog(
@@ -5861,7 +5867,9 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     description: description ?? this.description,
     entityType: entityType ?? this.entityType,
     entityId: entityId ?? this.entityId,
-    entityName: entityName.present ? entityName.value : this.entityName,
+    entityDisplayName: entityDisplayName.present
+        ? entityDisplayName.value
+        : this.entityDisplayName,
     metadata: metadata.present ? metadata.value : this.metadata,
     timestamp: timestamp ?? this.timestamp,
   );
@@ -5879,9 +5887,9 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
           ? data.entityType.value
           : this.entityType,
       entityId: data.entityId.present ? data.entityId.value : this.entityId,
-      entityName: data.entityName.present
-          ? data.entityName.value
-          : this.entityName,
+      entityDisplayName: data.entityDisplayName.present
+          ? data.entityDisplayName.value
+          : this.entityDisplayName,
       metadata: data.metadata.present ? data.metadata.value : this.metadata,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
     );
@@ -5896,7 +5904,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
           ..write('description: $description, ')
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
-          ..write('entityName: $entityName, ')
+          ..write('entityDisplayName: $entityDisplayName, ')
           ..write('metadata: $metadata, ')
           ..write('timestamp: $timestamp')
           ..write(')'))
@@ -5911,7 +5919,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
     description,
     entityType,
     entityId,
-    entityName,
+    entityDisplayName,
     metadata,
     timestamp,
   );
@@ -5925,7 +5933,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
           other.description == this.description &&
           other.entityType == this.entityType &&
           other.entityId == this.entityId &&
-          other.entityName == this.entityName &&
+          other.entityDisplayName == this.entityDisplayName &&
           other.metadata == this.metadata &&
           other.timestamp == this.timestamp);
 }
@@ -5937,7 +5945,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
   final Value<String> description;
   final Value<String> entityType;
   final Value<String> entityId;
-  final Value<String?> entityName;
+  final Value<String?> entityDisplayName;
   final Value<String?> metadata;
   final Value<DateTime> timestamp;
   final Value<int> rowid;
@@ -5948,7 +5956,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     this.description = const Value.absent(),
     this.entityType = const Value.absent(),
     this.entityId = const Value.absent(),
-    this.entityName = const Value.absent(),
+    this.entityDisplayName = const Value.absent(),
     this.metadata = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5960,7 +5968,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     required String description,
     required String entityType,
     required String entityId,
-    this.entityName = const Value.absent(),
+    this.entityDisplayName = const Value.absent(),
     this.metadata = const Value.absent(),
     required DateTime timestamp,
     this.rowid = const Value.absent(),
@@ -5978,7 +5986,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     Expression<String>? description,
     Expression<String>? entityType,
     Expression<String>? entityId,
-    Expression<String>? entityName,
+    Expression<String>? entityDisplayName,
     Expression<String>? metadata,
     Expression<DateTime>? timestamp,
     Expression<int>? rowid,
@@ -5990,7 +5998,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       if (description != null) 'description': description,
       if (entityType != null) 'entity_type': entityType,
       if (entityId != null) 'entity_id': entityId,
-      if (entityName != null) 'entity_name': entityName,
+      if (entityDisplayName != null) 'entity_name': entityDisplayName,
       if (metadata != null) 'metadata': metadata,
       if (timestamp != null) 'timestamp': timestamp,
       if (rowid != null) 'rowid': rowid,
@@ -6004,7 +6012,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     Value<String>? description,
     Value<String>? entityType,
     Value<String>? entityId,
-    Value<String?>? entityName,
+    Value<String?>? entityDisplayName,
     Value<String?>? metadata,
     Value<DateTime>? timestamp,
     Value<int>? rowid,
@@ -6016,7 +6024,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       description: description ?? this.description,
       entityType: entityType ?? this.entityType,
       entityId: entityId ?? this.entityId,
-      entityName: entityName ?? this.entityName,
+      entityDisplayName: entityDisplayName ?? this.entityDisplayName,
       metadata: metadata ?? this.metadata,
       timestamp: timestamp ?? this.timestamp,
       rowid: rowid ?? this.rowid,
@@ -6044,8 +6052,8 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     if (entityId.present) {
       map['entity_id'] = Variable<String>(entityId.value);
     }
-    if (entityName.present) {
-      map['entity_name'] = Variable<String>(entityName.value);
+    if (entityDisplayName.present) {
+      map['entity_name'] = Variable<String>(entityDisplayName.value);
     }
     if (metadata.present) {
       map['metadata'] = Variable<String>(metadata.value);
@@ -6068,7 +6076,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
           ..write('description: $description, ')
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
-          ..write('entityName: $entityName, ')
+          ..write('entityDisplayName: $entityDisplayName, ')
           ..write('metadata: $metadata, ')
           ..write('timestamp: $timestamp, ')
           ..write('rowid: $rowid')
@@ -11114,7 +11122,7 @@ typedef $$ActivityLogsTableCreateCompanionBuilder =
       required String description,
       required String entityType,
       required String entityId,
-      Value<String?> entityName,
+      Value<String?> entityDisplayName,
       Value<String?> metadata,
       required DateTime timestamp,
       Value<int> rowid,
@@ -11127,7 +11135,7 @@ typedef $$ActivityLogsTableUpdateCompanionBuilder =
       Value<String> description,
       Value<String> entityType,
       Value<String> entityId,
-      Value<String?> entityName,
+      Value<String?> entityDisplayName,
       Value<String?> metadata,
       Value<DateTime> timestamp,
       Value<int> rowid,
@@ -11190,8 +11198,8 @@ class $$ActivityLogsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get entityName => $composableBuilder(
-    column: $table.entityName,
+  ColumnFilters<String> get entityDisplayName => $composableBuilder(
+    column: $table.entityDisplayName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11263,8 +11271,8 @@ class $$ActivityLogsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get entityName => $composableBuilder(
-    column: $table.entityName,
+  ColumnOrderings<String> get entityDisplayName => $composableBuilder(
+    column: $table.entityDisplayName,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -11332,8 +11340,8 @@ class $$ActivityLogsTableAnnotationComposer
   GeneratedColumn<String> get entityId =>
       $composableBuilder(column: $table.entityId, builder: (column) => column);
 
-  GeneratedColumn<String> get entityName => $composableBuilder(
-    column: $table.entityName,
+  GeneratedColumn<String> get entityDisplayName => $composableBuilder(
+    column: $table.entityDisplayName,
     builder: (column) => column,
   );
 
@@ -11401,7 +11409,7 @@ class $$ActivityLogsTableTableManager
                 Value<String> description = const Value.absent(),
                 Value<String> entityType = const Value.absent(),
                 Value<String> entityId = const Value.absent(),
-                Value<String?> entityName = const Value.absent(),
+                Value<String?> entityDisplayName = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 Value<DateTime> timestamp = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -11412,7 +11420,7 @@ class $$ActivityLogsTableTableManager
                 description: description,
                 entityType: entityType,
                 entityId: entityId,
-                entityName: entityName,
+                entityDisplayName: entityDisplayName,
                 metadata: metadata,
                 timestamp: timestamp,
                 rowid: rowid,
@@ -11425,7 +11433,7 @@ class $$ActivityLogsTableTableManager
                 required String description,
                 required String entityType,
                 required String entityId,
-                Value<String?> entityName = const Value.absent(),
+                Value<String?> entityDisplayName = const Value.absent(),
                 Value<String?> metadata = const Value.absent(),
                 required DateTime timestamp,
                 Value<int> rowid = const Value.absent(),
@@ -11436,7 +11444,7 @@ class $$ActivityLogsTableTableManager
                 description: description,
                 entityType: entityType,
                 entityId: entityId,
-                entityName: entityName,
+                entityDisplayName: entityDisplayName,
                 metadata: metadata,
                 timestamp: timestamp,
                 rowid: rowid,

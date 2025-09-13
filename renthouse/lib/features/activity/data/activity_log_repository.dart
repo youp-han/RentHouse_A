@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:renthouse/core/database/app_database.dart';
 import 'package:renthouse/core/database/database_provider.dart';
@@ -9,7 +10,7 @@ import 'package:renthouse/features/activity/domain/activity_log.dart' as domain;
 part 'activity_log_repository.g.dart';
 
 @riverpod
-ActivityLogRepository activityLogRepository(ActivityLogRepositoryRef ref) {
+ActivityLogRepository activityLogRepository(Ref ref) {
   final database = ref.watch(appDatabaseProvider);
   return ActivityLogRepository(database);
 }
@@ -53,7 +54,7 @@ class ActivityLogRepository {
       description: Value(activityLog.description),
       entityType: Value(activityLog.entityType),
       entityId: Value(activityLog.entityId),
-      entityName: Value(activityLog.entityName),
+      entityDisplayName: Value(activityLog.entityName),
       metadata: Value(activityLog.metadata != null ? jsonEncode(activityLog.metadata) : null),
       timestamp: Value(activityLog.timestamp),
     );
@@ -98,7 +99,7 @@ class ActivityLogRepository {
       description: dbLog.description,
       entityType: dbLog.entityType,
       entityId: dbLog.entityId,
-      entityName: dbLog.entityName,
+      entityName: dbLog.entityDisplayName,
       metadata: metadata,
       timestamp: dbLog.timestamp,
     );

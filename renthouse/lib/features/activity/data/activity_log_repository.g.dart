@@ -7,7 +7,7 @@ part of 'activity_log_repository.dart';
 // **************************************************************************
 
 String _$activityLogRepositoryHash() =>
-    r'7c3f07be94c1158fc35f7ccca02eefbf81746ae7';
+    r'c005596ba6ce9d3b0fb3904186a7976ae034a3d3';
 
 /// See also [activityLogRepository].
 @ProviderFor(activityLogRepository)

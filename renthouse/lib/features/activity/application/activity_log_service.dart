@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/features/activity/data/activity_log_repository.dart';
 import 'package:renthouse/features/activity/domain/activity_log.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
@@ -6,20 +7,22 @@ import 'package:renthouse/features/auth/application/auth_controller.dart';
 part 'activity_log_service.g.dart';
 
 @riverpod
-ActivityLogService activityLogService(ActivityLogServiceRef ref) {
+ActivityLogService activityLogService(Ref ref) {
   final repository = ref.watch(activityLogRepositoryProvider);
-  final authController = ref.watch(authControllerProvider);
-  return ActivityLogService(repository, authController);
+  return ActivityLogService(repository, ref);
 }
 
 class ActivityLogService {
   final ActivityLogRepository _repository;
-  final AuthController _authController;
+  final Ref _ref;
 
-  ActivityLogService(this._repository, this._authController);
+  ActivityLogService(this._repository, this._ref);
 
   /// 현재 로그인한 사용자 ID 가져오기
-  String? get _currentUserId => _authController.currentUser?.id;
+  String? get _currentUserId {
+    final authState = _ref.read(authControllerProvider);
+    return authState.value?.id;
+  }
 
   /// 활동 로그 기록 (헬퍼 메서드)
   Future<void> _logActivity(ActivityLog activityLog) async {

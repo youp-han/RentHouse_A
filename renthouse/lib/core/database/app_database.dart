@@ -168,7 +168,7 @@ class ActivityLogs extends Table {
   TextColumn get description => text().withLength(min: 1, max: 500)();
   TextColumn get entityType => text().withLength(min: 1, max: 50)();
   TextColumn get entityId => text().withLength(min: 1, max: 50)();
-  TextColumn get entityName => text().withLength(min: 1, max: 255).nullable().named('entity_name')();
+  TextColumn get entityDisplayName => text().withLength(min: 1, max: 255).nullable().named('entity_name')();
   TextColumn get metadata => text().nullable()(); // JSON 형태로 저장
   DateTimeColumn get timestamp => dateTime()();
 
