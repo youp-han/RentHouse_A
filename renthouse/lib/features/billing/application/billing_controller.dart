@@ -31,4 +31,20 @@ class BillingController extends _$BillingController {
       return ref.read(billingRepositoryProvider).getBillings();
     });
   }
+
+  Future<List<String>> createBulkBillings(String yearMonth, DateTime issueDate, DateTime dueDate) async {
+    try {
+      final repository = ref.read(billingRepositoryProvider);
+      final createdIds = await repository.createBulkBillings(yearMonth, issueDate, dueDate);
+      
+      // 청구서 목록 새로고침
+      state = await AsyncValue.guard(() async {
+        return repository.getBillings();
+      });
+      
+      return createdIds;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -119,6 +119,82 @@ class BillingRepository {
   }
 
   Future<void> deleteBilling(String id) => _appDatabase.deleteBilling(id);
+
+  // 특정 월의 청구서가 이미 존재하는지 확인
+  Future<bool> billingExistsForLeaseAndMonth(String leaseId, String yearMonth) async {
+    final billings = await _appDatabase.getAllBillings();
+    return billings.any((billing) => 
+      billing.leaseId == leaseId && 
+      billing.yearMonth == yearMonth
+    );
+  }
+
+  // 활성 계약에 대한 일괄 청구서 생성
+  Future<List<String>> createBulkBillings(String yearMonth, DateTime issueDate, DateTime dueDate) async {
+    final leases = await _appDatabase.getAllLeases();
+    final activeLeases = leases.where((lease) => lease.leaseStatus == 'active').toList();
+    
+    final createdBillingIds = <String>[];
+    
+    for (final lease in activeLeases) {
+      // 중복 생성 방지: 이미 해당 월의 청구서가 있는지 확인
+      final exists = await billingExistsForLeaseAndMonth(lease.id, yearMonth);
+      if (!exists) {
+        // 청구서 생성
+        final billingId = 'billing_${DateTime.now().millisecondsSinceEpoch}_${lease.id}';
+        
+        // 기본 청구 항목들 (월세, 관리비 등)
+        final billingItems = <BillingItem>[];
+        var totalAmount = 0;
+        
+        // 월세 추가
+        if (lease.monthlyRent > 0) {
+          final rentItemId = 'item_${DateTime.now().millisecondsSinceEpoch}_rent';
+          billingItems.add(BillingItem(
+            id: rentItemId,
+            billingId: billingId,
+            billTemplateId: 'monthly_rent',
+            amount: lease.monthlyRent,
+          ));
+          totalAmount += lease.monthlyRent;
+        }
+        
+        // 자산별 청구 항목들 가져오기
+        final unit = await _appDatabase.getUnitById(lease.unitId);
+        if (unit != null) {
+          final propertyBillingItems = await _appDatabase.getPropertyBillingItems(unit.propertyId);
+          for (final propertyItem in propertyBillingItems.where((item) => item.isEnabled)) {
+            final itemId = 'item_${DateTime.now().millisecondsSinceEpoch}_${propertyItem.id}';
+            billingItems.add(BillingItem(
+              id: itemId,
+              billingId: billingId,
+              billTemplateId: propertyItem.id,
+              amount: propertyItem.amount,
+            ));
+            totalAmount += propertyItem.amount;
+          }
+        }
+        
+        // 청구서 생성
+        final billing = Billing(
+          id: billingId,
+          leaseId: lease.id,
+          yearMonth: yearMonth,
+          issueDate: issueDate,
+          dueDate: dueDate,
+          paid: false,
+          paidDate: null,
+          totalAmount: totalAmount,
+          items: billingItems,
+        );
+        
+        await createBilling(billing);
+        createdBillingIds.add(billingId);
+      }
+    }
+    
+    return createdBillingIds;
+  }
 }
 
 final billingRepositoryProvider = Provider<BillingRepository>((ref) {

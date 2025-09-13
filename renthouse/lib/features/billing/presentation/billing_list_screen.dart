@@ -39,6 +39,11 @@ class _BillingListScreenState extends ConsumerState<BillingListScreen> {
         title: const Text('청구서 목록'),
         actions: [
           TextButton.icon(
+            icon: const Icon(Icons.auto_awesome),
+            label: const Text('일괄 생성'),
+            onPressed: () => _showBulkGenerationDialog(context),
+          ),
+          TextButton.icon(
             icon: const Icon(Icons.list_alt),
             label: const Text('템플릿 관리'),
             onPressed: () {
@@ -107,5 +112,151 @@ class _BillingListScreenState extends ConsumerState<BillingListScreen> {
         ],
       ),
     );
+  }
+
+  void _showBulkGenerationDialog(BuildContext context) {
+    final now = DateTime.now();
+    String selectedYearMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    DateTime issueDate = now;
+    DateTime dueDate = DateTime(now.year, now.month + 1, 5); // 다음 달 5일이 기본 납기일
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('청구서 일괄 생성'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '모든 활성 계약에 대해 선택한 월의 청구서를 생성합니다.\n이미 생성된 청구서가 있는 계약은 제외됩니다.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                
+                // 연월 선택
+                TextFormField(
+                  initialValue: selectedYearMonth,
+                  decoration: const InputDecoration(
+                    labelText: '청구 월 (YYYY-MM)',
+                    border: OutlineInputBorder(),
+                    helperText: '예: 2024-03',
+                  ),
+                  onChanged: (value) {
+                    selectedYearMonth = value;
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // 발행일 선택
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('발행일'),
+                  subtitle: Text('${issueDate.year}-${issueDate.month.toString().padLeft(2, '0')}-${issueDate.day.toString().padLeft(2, '0')}'),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: issueDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        issueDate = picked;
+                      });
+                    }
+                  },
+                ),
+                
+                // 납기일 선택
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('납기일'),
+                  subtitle: Text('${dueDate.year}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}'),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: dueDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        dueDate = picked;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _performBulkGeneration(selectedYearMonth, issueDate, dueDate);
+              },
+              child: const Text('생성'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _performBulkGeneration(String yearMonth, DateTime issueDate, DateTime dueDate) async {
+    try {
+      // 로딩 다이얼로그 표시
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('청구서를 생성하는 중...'),
+            ],
+          ),
+        ),
+      );
+
+      // 일괄 생성 실행
+      final createdIds = await ref.read(billingControllerProvider(searchQuery: '').notifier)
+          .createBulkBillings(yearMonth, issueDate, dueDate);
+
+      if (mounted) {
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        
+        // 결과 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${createdIds.length}개의 청구서가 생성되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('청구서 생성 실패: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
