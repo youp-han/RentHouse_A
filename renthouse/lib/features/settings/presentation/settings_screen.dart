@@ -160,71 +160,73 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
-    final passwordController = TextEditingController();
-    
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('회원 탈퇴'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '정말로 계정을 삭제하시겠습니까?\n\n'
-                '이 작업은 되돌릴 수 없으며, 계정 정보가 영구적으로 삭제됩니다.\n'
-                '(등록된 자산, 임차인 등의 데이터는 보존됩니다)\n',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '비밀번호를 입력하여 본인 확인을 해주세요:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: '현재 비밀번호',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                passwordController.dispose();
-                Navigator.of(context).pop();
-              },
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final password = passwordController.text.trim();
-                if (password.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('비밀번호를 입력해주세요.'),
-                      backgroundColor: Colors.orange,
+        final passwordController = TextEditingController();
+        
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('회원 탈퇴'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '정말로 계정을 삭제하시겠습니까?\n\n'
+                    '이 작업은 되돌릴 수 없으며, 계정 정보가 영구적으로 삭제됩니다.\n'
+                    '(등록된 자산, 임차인 등의 데이터는 보존됩니다)\n',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '비밀번호를 입력하여 본인 확인을 해주세요:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: '현재 비밀번호',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
                     ),
-                  );
-                  return;
-                }
-                
-                passwordController.dispose();
-                Navigator.of(context).pop();
-                _handleDeleteAccount(context, ref, password);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                ],
               ),
-              child: const Text('계정 삭제'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('취소'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final password = passwordController.text.trim();
+                    if (password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('비밀번호를 입력해주세요.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    Navigator.of(context).pop();
+                    _handleDeleteAccount(context, ref, password);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  child: const Text('계정 삭제'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
