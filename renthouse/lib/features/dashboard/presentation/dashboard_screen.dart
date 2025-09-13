@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:renthouse/core/utils/currency_formatter.dart';
 import 'package:renthouse/features/settings/application/currency_controller.dart';
 import 'package:renthouse/features/dashboard/application/dashboard_controller.dart';
+import 'package:renthouse/features/activity/application/activity_log_service.dart';
+import 'package:renthouse/features/activity/domain/activity_log.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -133,12 +135,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // TODO: 실제 활동 로그 테이블 구현
-                    Container(
-                      height: 200, // 임시 높이
-                      alignment: Alignment.center,
-                      child: const Text('최근 활동 로그 테이블 (구현 예정)'),
-                    ),
+                    _RecentActivitiesWidget(),
                   ],
                 ),
               ),
@@ -342,3 +339,93 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
+
+
+class _RecentActivitiesWidget extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activityLogService = ref.watch(activityLogServiceProvider);
+    
+    return FutureBuilder<List<ActivityLog>>(
+      future: activityLogService.getRecentActivityLogs(limit: 10),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 200,
+            alignment: Alignment.center,
+            child: const CircularProgressIndicator(),
+          );
+        }
+        
+        if (snapshot.hasError) {
+          return Container(
+            height: 200,
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                const SizedBox(height: 8),
+                Text('활동 로그를 불러올 수 없습니다', 
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+              ],
+            ),
+          );
+        }
+        
+        final activities = snapshot.data ?? [];
+        
+        if (activities.isEmpty) {
+          return Container(
+            height: 200,
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.history, size: 48, color: Colors.grey),
+                const SizedBox(height: 8),
+                Text('최근 활동이 없습니다', 
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                const SizedBox(height: 4),
+                Text('자산, 임차인, 청구서 등을 등록하면 활동 내역이 표시됩니다', 
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
+              ],
+            ),
+          );
+        }
+        
+        return ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: activities.length,
+          separatorBuilder: (context, index) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final activity = activities[index];
+            return ListTile(
+              dense: true,
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue,
+                radius: 16,
+                child: Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              title: Text(
+                activity.description,
+                style: const TextStyle(fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                DateFormat('MM/dd HH:mm').format(activity.timestamp),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}

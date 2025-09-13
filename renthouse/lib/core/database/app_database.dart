@@ -161,13 +161,28 @@ class PaymentAllocations extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class ActivityLogs extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 50)();
+  TextColumn get userId => text().withLength(min: 1, max: 50).references(Users, #id, onDelete: KeyAction.cascade)();
+  TextColumn get activityType => text().withLength(min: 1, max: 50)();
+  TextColumn get description => text().withLength(min: 1, max: 500)();
+  TextColumn get entityType => text().withLength(min: 1, max: 50)();
+  TextColumn get entityId => text().withLength(min: 1, max: 50)();
+  TextColumn get entityName => text().withLength(min: 1, max: 255).nullable().named('entity_name')();
+  TextColumn get metadata => text().nullable()(); // JSON 형태로 저장
+  DateTimeColumn get timestamp => dateTime()();
 
-@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems, Users, Payments, PaymentAllocations, PropertyBillingItems])
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+
+@DriftDatabase(tables: [Properties, Units, Tenants, Leases, BillTemplates, Billings, BillingItems, Users, Payments, PaymentAllocations, PropertyBillingItems, ActivityLogs])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? connect());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -206,6 +221,11 @@ class AppDatabase extends _$AppDatabase {
         
         // 새로운 테이블 생성
         await m.createTable(propertyBillingItems);
+      }
+      
+      if (from < 7) {
+        // task160: ActivityLogs 테이블 생성
+        await m.createTable(activityLogs);
       }
     },
   );
@@ -412,6 +432,19 @@ class AppDatabase extends _$AppDatabase {
     ).get();
     return existing.isNotEmpty;
   }
+
+  // ActivityLogs DAO 메서드들
+  Future<List<ActivityLog>> getAllActivityLogs() => select(activityLogs).get();
+  Future<List<ActivityLog>> getRecentActivityLogs({int limit = 50}) => 
+    (select(activityLogs)..orderBy([(tbl) => OrderingTerm.desc(tbl.timestamp)])..limit(limit)).get();
+  Future<List<ActivityLog>> getActivityLogsByUser(String userId) => 
+    (select(activityLogs)..where((tbl) => tbl.userId.equals(userId))..orderBy([(tbl) => OrderingTerm.desc(tbl.timestamp)])).get();
+  Future<List<ActivityLog>> getActivityLogsByEntity(String entityType, String entityId) => 
+    (select(activityLogs)..where((tbl) => tbl.entityType.equals(entityType) & tbl.entityId.equals(entityId))..orderBy([(tbl) => OrderingTerm.desc(tbl.timestamp)])).get();
+  Future<void> insertActivityLog(ActivityLogsCompanion activityLog) => into(activityLogs).insert(activityLog);
+  Future<void> deleteActivityLog(String id) => (delete(activityLogs)..where((tbl) => tbl.id.equals(id))).go();
+  Future<void> deleteOldActivityLogs(DateTime cutoffDate) => 
+    (delete(activityLogs)..where((tbl) => tbl.timestamp.isSmallerThanValue(cutoffDate))).go();
 
   // PropertyBillingItems DAO 메서드들
   Future<List<PropertyBillingItem>> getPropertyBillingItems(String propertyId) => 

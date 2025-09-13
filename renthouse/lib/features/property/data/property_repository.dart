@@ -4,12 +4,14 @@ import 'package:renthouse/core/database/app_database.dart' as app_db;
 import 'package:renthouse/core/database/database_provider.dart';
 import 'package:renthouse/features/property/domain/property.dart';
 import 'package:renthouse/features/property/domain/unit.dart';
+import 'package:renthouse/features/activity/application/activity_log_service.dart';
 import 'package:drift/drift.dart';
 
 class PropertyRepository {
   final app_db.AppDatabase _appDatabase;
+  final ActivityLogService? _activityLogService;
 
-  PropertyRepository(this._appDatabase);
+  PropertyRepository(this._appDatabase, [this._activityLogService]);
 
   Future<List<Property>> getProperties() async {
     final properties = await _appDatabase.getAllProperties();
@@ -57,6 +59,10 @@ class PropertyRepository {
     for (var unit in property.units) {
       await addUnit(unit);
     }
+    
+    // 활동 로그 기록
+    await _activityLogService?.logPropertyCreated(property.id, property.name);
+    
     return property;
   }
 
@@ -88,11 +94,21 @@ class PropertyRepository {
       ));
     }
     
+    // 활동 로그 기록
+    await _activityLogService?.logPropertyUpdated(property.id, property.name);
+    
     return property;
   }
 
   Future<void> deleteProperty(String id) async {
+    // 삭제 전에 property 정보 가져오기 (로깅용)
+    final property = await getPropertyById(id);
+    final propertyName = property?.name ?? 'Unknown Property';
+    
     await _appDatabase.deleteProperty(id);
+    
+    // 활동 로그 기록
+    await _activityLogService?.logPropertyDeleted(id, propertyName);
   }
 
   Future<Unit> addUnit(Unit unit) async {
@@ -181,7 +197,8 @@ class PropertyRepository {
 
 final propertyRepositoryProvider = Provider<PropertyRepository>((ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
-  return PropertyRepository(appDatabase);
+  final activityLogService = ref.watch(activityLogServiceProvider);
+  return PropertyRepository(appDatabase, activityLogService);
 });
 
 final propertyDetailProvider = FutureProvider.autoDispose.family<Property?, String>((ref, id) async {
