@@ -6,11 +6,44 @@ import 'package:renthouse/features/auth/application/auth_controller.dart';
 import 'package:renthouse/core/logging/crash_reporting_service.dart';
 import 'package:renthouse/core/logging/crash_consent_dialog.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _crashReportingEnabled = false;
+  int _pendingLogCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCrashReportingState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 화면이 다시 표시될 때마다 상태 새로고침
+    _loadCrashReportingState();
+  }
+
+  Future<void> _loadCrashReportingState() async {
+    final isEnabled = await CrashReportingService.getUserConsent();
+    final logCount = CrashReportingService.getPendingLogCount();
+    
+    if (mounted) {
+      setState(() {
+        _crashReportingEnabled = isEnabled;
+        _pendingLogCount = logCount;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     
     return Scaffold(
@@ -73,49 +106,37 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () => context.go('/settings/currency'),
                   ),
-                  FutureBuilder<bool>(
-                    future: CrashReportingService.getUserConsent(),
-                    builder: (context, snapshot) {
-                      final isEnabled = snapshot.data ?? false;
-                      return ListTile(
-                        leading: const Icon(Icons.bug_report),
-                        title: const Text('오류 보고'),
-                        subtitle: Text(
-                          isEnabled 
-                            ? '앱 개선을 위해 오류 정보를 전송합니다'
-                            : '오류 보고가 비활성화되어 있습니다'
-                        ),
-                        trailing: Switch(
-                          value: isEnabled,
-                          onChanged: (value) => CrashConsentManager.changeConsentFromSettings(context),
-                        ),
-                        onTap: () => CrashConsentManager.changeConsentFromSettings(context),
-                      );
-                    },
+                  ListTile(
+                    leading: const Icon(Icons.bug_report),
+                    title: const Text('오류 보고'),
+                    subtitle: Text(
+                      _crashReportingEnabled 
+                        ? '앱 개선을 위해 오류 정보를 전송합니다'
+                        : '오류 보고가 비활성화되어 있습니다'
+                    ),
+                    trailing: Switch(
+                      value: _crashReportingEnabled,
+                      onChanged: (value) => _handleCrashReportingToggle(context),
+                    ),
+                    onTap: () => _handleCrashReportingToggle(context),
                   ),
-                  FutureBuilder<int>(
-                    future: Future.value(CrashReportingService.getPendingLogCount()),
-                    builder: (context, snapshot) {
-                      final logCount = snapshot.data ?? 0;
-                      return ListTile(
-                        leading: Icon(
-                          Icons.send,
-                          color: logCount > 0 ? Colors.blue : Colors.grey,
-                        ),
-                        title: const Text('누적 로그 전송'),
-                        subtitle: Text(
-                          logCount > 0 
-                            ? '$logCount건의 로그가 저장되어 있습니다'
-                            : '전송할 로그가 없습니다'
-                        ),
-                        trailing: logCount > 0 
-                          ? const Icon(Icons.arrow_forward_ios)
-                          : null,
-                        onTap: logCount > 0 
-                          ? () => _sendPendingLogs(context)
-                          : null,
-                      );
-                    },
+                  ListTile(
+                    leading: Icon(
+                      Icons.send,
+                      color: _pendingLogCount > 0 ? Colors.blue : Colors.grey,
+                    ),
+                    title: const Text('누적 로그 전송'),
+                    subtitle: Text(
+                      _pendingLogCount > 0 
+                        ? '$_pendingLogCount건의 로그가 저장되어 있습니다'
+                        : '전송할 로그가 없습니다'
+                    ),
+                    trailing: _pendingLogCount > 0 
+                      ? const Icon(Icons.arrow_forward_ios)
+                      : null,
+                    onTap: _pendingLogCount > 0 
+                      ? () => _sendPendingLogs(context)
+                      : null,
                   ),
                   // 개발 모드에서만 테스트 크래시 버튼 표시
                   if (kDebugMode) ...[
@@ -254,6 +275,12 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _handleCrashReportingToggle(BuildContext context) async {
+    await CrashConsentManager.changeConsentFromSettings(context);
+    // 상태 변경 후 UI 새로고침
+    await _loadCrashReportingState();
+  }
+
   void _sendPendingLogs(BuildContext context) {
     showDialog(
       context: context,
@@ -274,7 +301,11 @@ class SettingsScreen extends ConsumerWidget {
               await CrashReportingService.sendAllPendingLogs();
               
               if (context.mounted) {
-                // 화면 새로고침을 위해 setState 트리거
+                // 로그 개수 업데이트
+                setState(() {
+                  _pendingLogCount = CrashReportingService.getPendingLogCount();
+                });
+                
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('이메일 앱이 열렸습니다. 확인 후 전송해주세요.'),
@@ -320,6 +351,13 @@ class SettingsScreen extends ConsumerWidget {
                     'user_triggered': true,
                   },
                 );
+                
+                // 로그 개수 업데이트
+                if (mounted) {
+                  setState(() {
+                    _pendingLogCount = CrashReportingService.getPendingLogCount();
+                  });
+                }
                 
                 // 실제 예외도 발생시켜서 Flutter 오류 핸들러도 테스트
                 throw Exception('테스트용 예외: 이메일 기반 오류 보고 검증');
