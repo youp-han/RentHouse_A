@@ -175,8 +175,12 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     '정말로 계정을 삭제하시겠습니까?\n\n'
-                    '이 작업은 되돌릴 수 없으며, 계정 정보가 영구적으로 삭제됩니다.\n'
-                    '(등록된 자산, 임차인 등의 데이터는 보존됩니다)\n',
+                    '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n'
+                    '• 계정 정보\n'
+                    '• 등록된 모든 자산과 유닛\n'
+                    '• 임차인 계약 정보\n'
+                    '• 청구서 및 수납 내역\n'
+                    '• 기타 모든 관련 데이터\n',
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),

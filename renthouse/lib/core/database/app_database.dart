@@ -293,6 +293,59 @@ class AppDatabase extends _$AppDatabase {
         .write(UsersCompanion(name: Value(newName)));
   }
 
+  /// 사용자와 연관된 모든 데이터 삭제 (회원 탈퇴 시 사용)
+  Future<void> deleteAllUserData(String userId) async {
+    await transaction(() async {
+      // 1. 사용자가 소유한 자산들 조회
+      final userProperties = await (select(properties)..where((tbl) => tbl.ownerId.equals(userId))).get();
+      
+      for (final property in userProperties) {
+        // 2. 각 자산의 유닛들과 연관된 데이터 삭제
+        final propertyUnits = await getUnitsForProperty(property.id);
+        
+        for (final unit in propertyUnits) {
+          // 3. 해당 유닛의 계약들 조회 및 관련 데이터 삭제
+          final unitLeases = await (select(leases)..where((tbl) => tbl.unitId.equals(unit.id))).get();
+          
+          for (final lease in unitLeases) {
+            // 4. 계약별 청구서들과 관련 데이터 삭제
+            final leaseBillings = await (select(billings)..where((tbl) => tbl.leaseId.equals(lease.id))).get();
+            
+            for (final billing in leaseBillings) {
+              // 청구서 항목들 삭제
+              await (delete(billingItems)..where((tbl) => tbl.billingId.equals(billing.id))).go();
+              
+              // 수납 배분 데이터 삭제
+              await deletePaymentAllocationsForBilling(billing.id);
+            }
+            
+            // 청구서들 삭제
+            await (delete(billings)..where((tbl) => tbl.leaseId.equals(lease.id))).go();
+          }
+          
+          // 계약들 삭제
+          await (delete(leases)..where((tbl) => tbl.unitId.equals(unit.id))).go();
+        }
+        
+        // 5. 자산별 청구 항목들 삭제 (CASCADE로 자동 삭제되지만 명시적으로)
+        await (delete(propertyBillingItems)..where((tbl) => tbl.propertyId.equals(property.id))).go();
+        
+        // 6. 유닛들 삭제 (CASCADE로 자동 삭제되지만 명시적으로)
+        await deleteUnitsForProperty(property.id);
+      }
+      
+      // 7. 사용자 소유 자산들 삭제
+      await (delete(properties)..where((tbl) => tbl.ownerId.equals(userId))).go();
+      
+      // 8. 마지막으로 사용자 삭제
+      await deleteUser(userId);
+    });
+  }
+
+  /// 청구서 ID로 수납 배분 삭제
+  Future<void> deletePaymentAllocationsForBilling(String billingId) =>
+      (delete(paymentAllocations)..where((tbl) => tbl.billingId.equals(billingId))).go();
+
   // Phase 2: DAO for payments
   Future<List<Payment>> getAllPayments() => select(payments).get();
   Future<Payment?> getPaymentById(String id) async {
