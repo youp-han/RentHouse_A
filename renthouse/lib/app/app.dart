@@ -8,14 +8,15 @@ class RentHouseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CrashConsentWrapper(
-      child: MaterialApp.router(
-        title: 'RentHouse',
-        theme: buildLightTheme(),
-        darkTheme: buildDarkTheme(),
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-      ),
+    return MaterialApp.router(
+      title: 'RentHouse',
+      theme: buildLightTheme(),
+      darkTheme: buildDarkTheme(),
+      routerConfig: router,
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        return CrashConsentWrapper(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

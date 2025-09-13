@@ -136,6 +136,37 @@ class AuthRepository {
       await _database.updateUserName(currentUser.id, request.name!);
     }
   }
+
+  /// 회원 탈퇴
+  Future<void> deleteAccount(String password) async {
+    final currentUser = await getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
+
+    // 비밀번호 확인
+    final passwordHash = _hashPassword(password);
+    if (currentUser.passwordHash != passwordHash) {
+      throw Exception('비밀번호가 일치하지 않습니다.');
+    }
+
+    try {
+      // 1. 사용자와 연관된 모든 데이터 삭제
+      // TODO: 추후에 사용자 소유 데이터(속성, 임대 등) 삭제 정책 결정 필요
+      // 현재는 사용자만 삭제하고 데이터는 보존
+      
+      // 2. 데이터베이스에서 사용자 삭제
+      await _database.deleteUser(currentUser.id);
+      
+      // 3. 로컬 저장소에서 인증 정보 삭제
+      await logout();
+      
+      print('회원 탈퇴 완료: ${currentUser.email}');
+    } catch (e) {
+      print('회원 탈퇴 실패: $e');
+      throw Exception('회원 탈퇴 처리 중 오류가 발생했습니다.');
+    }
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

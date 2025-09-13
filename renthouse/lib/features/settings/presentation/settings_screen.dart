@@ -160,29 +160,69 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    final passwordController = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('회원 탈퇴'),
-          content: const Text(
-            '정말로 계정을 삭제하시겠습니까?\n\n'
-            '이 작업은 되돌릴 수 없으며, 모든 데이터가 영구적으로 삭제됩니다.',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '정말로 계정을 삭제하시겠습니까?\n\n'
+                '이 작업은 되돌릴 수 없으며, 계정 정보가 영구적으로 삭제됩니다.\n'
+                '(등록된 자산, 임차인 등의 데이터는 보존됩니다)\n',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '비밀번호를 입력하여 본인 확인을 해주세요:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: '현재 비밀번호',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                passwordController.dispose();
+                Navigator.of(context).pop();
+              },
               child: const Text('취소'),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () {
+                final password = passwordController.text.trim();
+                if (password.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('비밀번호를 입력해주세요.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+                
+                passwordController.dispose();
                 Navigator.of(context).pop();
-                _handleDeleteAccount(context, ref);
+                _handleDeleteAccount(context, ref, password);
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: const Text('삭제'),
+              child: const Text('계정 삭제'),
             ),
           ],
         );
@@ -286,17 +326,47 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {
+  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref, String password) async {
     try {
-      // TODO: 회원 탈퇴 로직 구현
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('회원 탈퇴 기능이 구현 예정입니다'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // 로딩 다이얼로그 표시
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('계정을 삭제하는 중...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // 회원 탈퇴 실행
+      await ref.read(authControllerProvider.notifier).deleteAccount(password);
+      
+      if (context.mounted) {
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        
+        // 성공 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('계정이 성공적으로 삭제되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // 로그인 화면으로 이동
+        context.go('/login');
+      }
     } catch (e) {
       if (context.mounted) {
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('회원 탈퇴 실패: ${e.toString()}'),

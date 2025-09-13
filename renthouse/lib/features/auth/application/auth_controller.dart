@@ -101,6 +101,23 @@ class AuthController extends _$AuthController {
       rethrow;
     }
   }
+
+  Future<void> deleteAccount(String password) async {
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.deleteAccount(password);
+      
+      // 기존 AuthState도 업데이트 (라우터 호환성을 위해)
+      AuthState.instance.logout();
+      
+      state = const AsyncValue.data(null);
+      CrashReportingService.logInfo('User account deleted successfully');
+    } catch (e) {
+      CrashReportingService.logError('User account deletion failed', e, StackTrace.current);
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
+  }
 }
 
 // 로그인 상태를 감시하는 별도 provider
