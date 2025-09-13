@@ -31,6 +31,7 @@ import 'package:renthouse/features/settings/presentation/profile_screen.dart';
 import 'package:renthouse/features/settings/presentation/currency_screen.dart';
 import 'package:renthouse/features/payment/presentation/revenue_screen.dart';
 import 'package:renthouse/features/payment/presentation/payment_form_screen.dart';
+import 'package:renthouse/features/payment/presentation/payment_list_screen.dart';
 import 'package:renthouse/features/reports/presentation/reports_screen.dart';
 
 final authState = AuthState.instance;
@@ -220,6 +221,10 @@ final router = GoRouter(
           path: '/revenue',
           builder: (c, s) => const RevenueScreen(),
           routes: [
+            GoRoute(
+              path: 'payment',
+              builder: (c, s) => const PaymentListScreen(),
+            ),
             GoRoute(
               path: 'payment/new',
               builder: (c, s) => const PaymentFormScreen(),
