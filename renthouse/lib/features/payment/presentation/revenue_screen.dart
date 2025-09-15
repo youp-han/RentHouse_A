@@ -267,10 +267,10 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
 
     return billingAsync.when(
       data: (billings) {
-        // 상태별로 그룹화
+        // 상태별로 그룹화 - 청구서 목록 화면과 동일한 로직 사용
         final statusGroups = <String, List<dynamic>>{};
         for (final billing in billings) {
-          final status = billing.status.toString();
+          final status = _getBillingStatus(billing);
           statusGroups[status] = (statusGroups[status] ?? [])..add(billing);
         }
 
@@ -350,7 +350,7 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
     final statusAmounts = <String, int>{};
 
     for (final billing in billings) {
-      final status = billing.status.toString();
+      final status = _getBillingStatus(billing);  // 일관된 상태 계산 로직 사용
       statusCounts[status] = (statusCounts[status] ?? 0) + 1;
       statusAmounts[status] = (statusAmounts[status] ?? 0) + billing.totalAmount as int;
     }
@@ -480,6 +480,18 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
         ],
       ),
     ) ?? false;
+  }
+
+  String _getBillingStatus(billing) {
+    // 실제 청구서 객체에서 status 필드가 있다고 가정
+    // 만약 없다면 paid, paidDate 등으로 상태를 추론
+    if (billing.paid) {
+      return 'PAID';
+    } else if (billing.dueDate.isBefore(DateTime.now())) {
+      return 'OVERDUE';
+    } else {
+      return 'ISSUED';
+    }
   }
 
   void _showBulkBillingDialog() {
