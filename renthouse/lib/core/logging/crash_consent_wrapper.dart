@@ -26,14 +26,11 @@ class _CrashConsentWrapperState extends ConsumerState<CrashConsentWrapper> {
 
   Future<void> _checkConsentAfterDelay() async {
     if (_hasCheckedConsent) return;
+    _hasCheckedConsent = true; // 임시로 비활성화
     
-    // 2초 딜레이 후 동의 확인 (앱이 완전히 로드된 후)
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (mounted) {
-      await CrashConsentManager.checkAndRequestConsent(context);
-      _hasCheckedConsent = true;
-    }
+    // TODO: 나중에 안전한 방법으로 다시 활성화
+    // 현재는 앱 실행 안정성을 위해 비활성화
+    return;
   }
 
   @override
