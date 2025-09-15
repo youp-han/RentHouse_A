@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/billing/application/billing_controller.dart';
+import 'package:renthouse/features/payment/presentation/payment_form_screen.dart';
 
 final _searchQueryProvider = StateProvider<String>((ref) => '');
 final _statusFilterProvider = StateProvider<String?>((ref) => null);
@@ -139,21 +140,32 @@ class _BillingListScreenState extends ConsumerState<BillingListScreen> {
                             ),
                             title: Row(
                               children: [
-                                Text(
-                                  '${billing.yearMonth} 청구',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                Expanded(
+                                  child: Consumer(
+                                    builder: (context, ref, child) {
+                                      final billingDisplayAsync = ref.watch(billingDisplayProvider(billing));
+                                      return billingDisplayAsync.when(
+                                        loading: () => Text(
+                                          '${billing.yearMonth} 청구',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        error: (_, __) => Text(
+                                          '${billing.yearMonth} 청구',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        data: (displayText) => Text(
+                                          displayText,
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 _buildStatusBadge(status),
                               ],
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('계약 ID: ${billing.leaseId}'),
-                                Text('납기: ${billing.dueDate.toString().substring(0, 10)}'),
-                              ],
-                            ),
+                            subtitle: Text('납기: ${billing.dueDate.toString().substring(0, 10)}'),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
