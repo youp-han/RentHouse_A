@@ -25,6 +25,7 @@ mixin _$BillingItem {
   String get billingId => throw _privateConstructorUsedError;
   String get billTemplateId => throw _privateConstructorUsedError;
   int get amount => throw _privateConstructorUsedError;
+  String? get itemName => throw _privateConstructorUsedError;
 
   /// Serializes this BillingItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -43,7 +44,13 @@ abstract class $BillingItemCopyWith<$Res> {
     $Res Function(BillingItem) then,
   ) = _$BillingItemCopyWithImpl<$Res, BillingItem>;
   @useResult
-  $Res call({String id, String billingId, String billTemplateId, int amount});
+  $Res call({
+    String id,
+    String billingId,
+    String billTemplateId,
+    int amount,
+    String? itemName,
+  });
 }
 
 /// @nodoc
@@ -65,6 +72,7 @@ class _$BillingItemCopyWithImpl<$Res, $Val extends BillingItem>
     Object? billingId = null,
     Object? billTemplateId = null,
     Object? amount = null,
+    Object? itemName = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -84,6 +92,10 @@ class _$BillingItemCopyWithImpl<$Res, $Val extends BillingItem>
                 ? _value.amount
                 : amount // ignore: cast_nullable_to_non_nullable
                       as int,
+            itemName: freezed == itemName
+                ? _value.itemName
+                : itemName // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -99,7 +111,13 @@ abstract class _$$BillingItemImplCopyWith<$Res>
   ) = __$$BillingItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String billingId, String billTemplateId, int amount});
+  $Res call({
+    String id,
+    String billingId,
+    String billTemplateId,
+    int amount,
+    String? itemName,
+  });
 }
 
 /// @nodoc
@@ -120,6 +138,7 @@ class __$$BillingItemImplCopyWithImpl<$Res>
     Object? billingId = null,
     Object? billTemplateId = null,
     Object? amount = null,
+    Object? itemName = freezed,
   }) {
     return _then(
       _$BillingItemImpl(
@@ -139,6 +158,10 @@ class __$$BillingItemImplCopyWithImpl<$Res>
             ? _value.amount
             : amount // ignore: cast_nullable_to_non_nullable
                   as int,
+        itemName: freezed == itemName
+            ? _value.itemName
+            : itemName // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -152,6 +175,7 @@ class _$BillingItemImpl implements _BillingItem {
     required this.billingId,
     required this.billTemplateId,
     required this.amount,
+    this.itemName,
   });
 
   factory _$BillingItemImpl.fromJson(Map<String, dynamic> json) =>
@@ -165,10 +189,12 @@ class _$BillingItemImpl implements _BillingItem {
   final String billTemplateId;
   @override
   final int amount;
+  @override
+  final String? itemName;
 
   @override
   String toString() {
-    return 'BillingItem(id: $id, billingId: $billingId, billTemplateId: $billTemplateId, amount: $amount)';
+    return 'BillingItem(id: $id, billingId: $billingId, billTemplateId: $billTemplateId, amount: $amount, itemName: $itemName)';
   }
 
   @override
@@ -181,13 +207,15 @@ class _$BillingItemImpl implements _BillingItem {
                 other.billingId == billingId) &&
             (identical(other.billTemplateId, billTemplateId) ||
                 other.billTemplateId == billTemplateId) &&
-            (identical(other.amount, amount) || other.amount == amount));
+            (identical(other.amount, amount) || other.amount == amount) &&
+            (identical(other.itemName, itemName) ||
+                other.itemName == itemName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, billingId, billTemplateId, amount);
+      Object.hash(runtimeType, id, billingId, billTemplateId, amount, itemName);
 
   /// Create a copy of BillingItem
   /// with the given fields replaced by the non-null parameter values.
@@ -209,6 +237,7 @@ abstract class _BillingItem implements BillingItem {
     required final String billingId,
     required final String billTemplateId,
     required final int amount,
+    final String? itemName,
   }) = _$BillingItemImpl;
 
   factory _BillingItem.fromJson(Map<String, dynamic> json) =
@@ -222,6 +251,8 @@ abstract class _BillingItem implements BillingItem {
   String get billTemplateId;
   @override
   int get amount;
+  @override
+  String? get itemName;
 
   /// Create a copy of BillingItem
   /// with the given fields replaced by the non-null parameter values.

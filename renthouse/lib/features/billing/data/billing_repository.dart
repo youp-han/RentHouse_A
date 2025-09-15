@@ -57,6 +57,7 @@ class BillingRepository {
           billingId: item.billingId,
           billTemplateId: item.billTemplateId,
           amount: item.amount,
+          itemName: item.itemName, // 저장된 템플릿 이름 포함
         )).toList(),
       );
     }).toList());
@@ -89,6 +90,7 @@ class BillingRepository {
         billingId: item.billingId,
         billTemplateId: item.billTemplateId,
         amount: item.amount,
+        itemName: Value(item.itemName), // 템플릿 이름 저장
       ));
     }
     return billing;
@@ -113,12 +115,18 @@ class BillingRepository {
         billingId: item.billingId,
         billTemplateId: item.billTemplateId,
         amount: item.amount,
+        itemName: Value(item.itemName), // 템플릿 이름 저장
       ));
     }
     return billing;
   }
 
-  Future<void> deleteBilling(String id) => _appDatabase.deleteBilling(id);
+  Future<void> deleteBilling(String id) async {
+    // 먼저 관련된 청구 항목들을 삭제
+    await _appDatabase.deleteBillingItemsForBilling(id);
+    // 그 다음 청구서를 삭제
+    await _appDatabase.deleteBilling(id);
+  }
 
   // 특정 월의 청구서가 이미 존재하는지 확인
   Future<bool> billingExistsForLeaseAndMonth(String leaseId, String yearMonth) async {

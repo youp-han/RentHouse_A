@@ -12,6 +12,7 @@ _$BillingItemImpl _$$BillingItemImplFromJson(Map<String, dynamic> json) =>
       billingId: json['billingId'] as String,
       billTemplateId: json['billTemplateId'] as String,
       amount: (json['amount'] as num).toInt(),
+      itemName: json['itemName'] as String?,
     );
 
 Map<String, dynamic> _$$BillingItemImplToJson(_$BillingItemImpl instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$$BillingItemImplToJson(_$BillingItemImpl instance) =>
       'billingId': instance.billingId,
       'billTemplateId': instance.billTemplateId,
       'amount': instance.amount,
+      'itemName': instance.itemName,
     };

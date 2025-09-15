@@ -120,6 +120,7 @@ class BillingItems extends Table {
   TextColumn get billingId => text().withLength(min: 1, max: 50).references(Billings, #id, onDelete: KeyAction.cascade)();
   TextColumn get billTemplateId => text().withLength(min: 1, max: 50).references(BillTemplates, #id, onDelete: KeyAction.restrict)();
   IntColumn get amount => integer()();
+  TextColumn get itemName => text().withLength(min: 1, max: 100).nullable()(); // 템플릿 이름 직접 저장
 
   @override
   Set<Column> get primaryKey => {id};
@@ -182,7 +183,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? connect());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -226,6 +227,11 @@ class AppDatabase extends _$AppDatabase {
       if (from < 7) {
         // task160: ActivityLogs 테이블 생성
         await m.createTable(activityLogs);
+      }
+
+      if (from < 8) {
+        // BillingItems 테이블에 itemName 컬럼 추가 (청구 항목 이름 직접 저장)
+        await m.addColumn(billingItems, billingItems.itemName);
       }
     },
   );

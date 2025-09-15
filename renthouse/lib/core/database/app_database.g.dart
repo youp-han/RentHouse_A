@@ -3605,8 +3605,29 @@ class $BillingItemsTable extends BillingItems
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _itemNameMeta = const VerificationMeta(
+    'itemName',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, billingId, billTemplateId, amount];
+  late final GeneratedColumn<String> itemName = GeneratedColumn<String>(
+    'item_name',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    billingId,
+    billTemplateId,
+    amount,
+    itemName,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3651,6 +3672,12 @@ class $BillingItemsTable extends BillingItems
     } else if (isInserting) {
       context.missing(_amountMeta);
     }
+    if (data.containsKey('item_name')) {
+      context.handle(
+        _itemNameMeta,
+        itemName.isAcceptableOrUnknown(data['item_name']!, _itemNameMeta),
+      );
+    }
     return context;
   }
 
@@ -3676,6 +3703,10 @@ class $BillingItemsTable extends BillingItems
         DriftSqlType.int,
         data['${effectivePrefix}amount'],
       )!,
+      itemName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_name'],
+      ),
     );
   }
 
@@ -3690,11 +3721,13 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
   final String billingId;
   final String billTemplateId;
   final int amount;
+  final String? itemName;
   const BillingItem({
     required this.id,
     required this.billingId,
     required this.billTemplateId,
     required this.amount,
+    this.itemName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3703,6 +3736,9 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
     map['billing_id'] = Variable<String>(billingId);
     map['bill_template_id'] = Variable<String>(billTemplateId);
     map['amount'] = Variable<int>(amount);
+    if (!nullToAbsent || itemName != null) {
+      map['item_name'] = Variable<String>(itemName);
+    }
     return map;
   }
 
@@ -3712,6 +3748,9 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
       billingId: Value(billingId),
       billTemplateId: Value(billTemplateId),
       amount: Value(amount),
+      itemName: itemName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(itemName),
     );
   }
 
@@ -3725,6 +3764,7 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
       billingId: serializer.fromJson<String>(json['billingId']),
       billTemplateId: serializer.fromJson<String>(json['billTemplateId']),
       amount: serializer.fromJson<int>(json['amount']),
+      itemName: serializer.fromJson<String?>(json['itemName']),
     );
   }
   @override
@@ -3735,6 +3775,7 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
       'billingId': serializer.toJson<String>(billingId),
       'billTemplateId': serializer.toJson<String>(billTemplateId),
       'amount': serializer.toJson<int>(amount),
+      'itemName': serializer.toJson<String?>(itemName),
     };
   }
 
@@ -3743,11 +3784,13 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
     String? billingId,
     String? billTemplateId,
     int? amount,
+    Value<String?> itemName = const Value.absent(),
   }) => BillingItem(
     id: id ?? this.id,
     billingId: billingId ?? this.billingId,
     billTemplateId: billTemplateId ?? this.billTemplateId,
     amount: amount ?? this.amount,
+    itemName: itemName.present ? itemName.value : this.itemName,
   );
   BillingItem copyWithCompanion(BillingItemsCompanion data) {
     return BillingItem(
@@ -3757,6 +3800,7 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           ? data.billTemplateId.value
           : this.billTemplateId,
       amount: data.amount.present ? data.amount.value : this.amount,
+      itemName: data.itemName.present ? data.itemName.value : this.itemName,
     );
   }
 
@@ -3766,13 +3810,15 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           ..write('id: $id, ')
           ..write('billingId: $billingId, ')
           ..write('billTemplateId: $billTemplateId, ')
-          ..write('amount: $amount')
+          ..write('amount: $amount, ')
+          ..write('itemName: $itemName')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, billingId, billTemplateId, amount);
+  int get hashCode =>
+      Object.hash(id, billingId, billTemplateId, amount, itemName);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3780,7 +3826,8 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           other.id == this.id &&
           other.billingId == this.billingId &&
           other.billTemplateId == this.billTemplateId &&
-          other.amount == this.amount);
+          other.amount == this.amount &&
+          other.itemName == this.itemName);
 }
 
 class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
@@ -3788,12 +3835,14 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
   final Value<String> billingId;
   final Value<String> billTemplateId;
   final Value<int> amount;
+  final Value<String?> itemName;
   final Value<int> rowid;
   const BillingItemsCompanion({
     this.id = const Value.absent(),
     this.billingId = const Value.absent(),
     this.billTemplateId = const Value.absent(),
     this.amount = const Value.absent(),
+    this.itemName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BillingItemsCompanion.insert({
@@ -3801,6 +3850,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     required String billingId,
     required String billTemplateId,
     required int amount,
+    this.itemName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        billingId = Value(billingId),
@@ -3811,6 +3861,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     Expression<String>? billingId,
     Expression<String>? billTemplateId,
     Expression<int>? amount,
+    Expression<String>? itemName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3818,6 +3869,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
       if (billingId != null) 'billing_id': billingId,
       if (billTemplateId != null) 'bill_template_id': billTemplateId,
       if (amount != null) 'amount': amount,
+      if (itemName != null) 'item_name': itemName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3827,6 +3879,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     Value<String>? billingId,
     Value<String>? billTemplateId,
     Value<int>? amount,
+    Value<String?>? itemName,
     Value<int>? rowid,
   }) {
     return BillingItemsCompanion(
@@ -3834,6 +3887,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
       billingId: billingId ?? this.billingId,
       billTemplateId: billTemplateId ?? this.billTemplateId,
       amount: amount ?? this.amount,
+      itemName: itemName ?? this.itemName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3853,6 +3907,9 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     if (amount.present) {
       map['amount'] = Variable<int>(amount.value);
     }
+    if (itemName.present) {
+      map['item_name'] = Variable<String>(itemName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3866,6 +3923,7 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
           ..write('billingId: $billingId, ')
           ..write('billTemplateId: $billTemplateId, ')
           ..write('amount: $amount, ')
+          ..write('itemName: $itemName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9213,6 +9271,7 @@ typedef $$BillingItemsTableCreateCompanionBuilder =
       required String billingId,
       required String billTemplateId,
       required int amount,
+      Value<String?> itemName,
       Value<int> rowid,
     });
 typedef $$BillingItemsTableUpdateCompanionBuilder =
@@ -9221,6 +9280,7 @@ typedef $$BillingItemsTableUpdateCompanionBuilder =
       Value<String> billingId,
       Value<String> billTemplateId,
       Value<int> amount,
+      Value<String?> itemName,
       Value<int> rowid,
     });
 
@@ -9286,6 +9346,11 @@ class $$BillingItemsTableFilterComposer
 
   ColumnFilters<int> get amount => $composableBuilder(
     column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemName => $composableBuilder(
+    column: $table.itemName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9355,6 +9420,11 @@ class $$BillingItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get itemName => $composableBuilder(
+    column: $table.itemName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BillingsTableOrderingComposer get billingId {
     final $$BillingsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -9416,6 +9486,9 @@ class $$BillingItemsTableAnnotationComposer
 
   GeneratedColumn<int> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get itemName =>
+      $composableBuilder(column: $table.itemName, builder: (column) => column);
 
   $$BillingsTableAnnotationComposer get billingId {
     final $$BillingsTableAnnotationComposer composer = $composerBuilder(
@@ -9496,12 +9569,14 @@ class $$BillingItemsTableTableManager
                 Value<String> billingId = const Value.absent(),
                 Value<String> billTemplateId = const Value.absent(),
                 Value<int> amount = const Value.absent(),
+                Value<String?> itemName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillingItemsCompanion(
                 id: id,
                 billingId: billingId,
                 billTemplateId: billTemplateId,
                 amount: amount,
+                itemName: itemName,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -9510,12 +9585,14 @@ class $$BillingItemsTableTableManager
                 required String billingId,
                 required String billTemplateId,
                 required int amount,
+                Value<String?> itemName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillingItemsCompanion.insert(
                 id: id,
                 billingId: billingId,
                 billTemplateId: billTemplateId,
                 amount: amount,
+                itemName: itemName,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

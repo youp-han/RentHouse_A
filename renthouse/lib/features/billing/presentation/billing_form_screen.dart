@@ -102,6 +102,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         billingId: widget.billing?.id ?? 'temp', // Will be replaced on save
         billTemplateId: template.id,
         amount: template.amount,
+        itemName: template.name, // 템플릿 이름을 직접 저장
       ));
       // Add controller for the new item
       _amountControllers.add(TextEditingController(text: template.amount.toString()));
@@ -391,6 +392,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
           billingId: widget.billing?.id ?? 'temp',
           billTemplateId: template!.id,
           amount: amount,
+          itemName: template.name, // 템플릿 이름을 직접 저장
         ));
         _amountControllers.add(TextEditingController(text: amount.toString()));
         _itemsChecked.add(checked);
@@ -742,7 +744,10 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                     description: '청구 항목',
                     amount: item.amount,
                   );
-                  
+
+                  // Use stored itemName if available, otherwise use template name
+                  final displayName = item.itemName ?? template.name;
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Padding(
@@ -764,7 +769,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              template.name,
+                              displayName,
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: _itemsChecked[index] 
                                   ? null 
