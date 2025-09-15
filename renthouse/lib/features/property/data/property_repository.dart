@@ -52,7 +52,7 @@ class PropertyRepository {
     // Insert billing items
     for (var item in property.defaultBillingItems) {
       await _appDatabase.insertPropertyBillingItem(app_db.PropertyBillingItemsCompanion.insert(
-        id: 'pbi_${property.id}_${DateTime.now().millisecondsSinceEpoch}_${item.name.hashCode}',
+        id: 'pbi_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}_${item.name.hashCode.abs()}',
         propertyId: property.id,
         name: item.name,
         amount: item.amount,
@@ -90,7 +90,7 @@ class PropertyRepository {
     await _appDatabase.deletePropertyBillingItemsForProperty(property.id);
     for (var item in property.defaultBillingItems) {
       await _appDatabase.insertPropertyBillingItem(app_db.PropertyBillingItemsCompanion.insert(
-        id: 'pbi_${property.id}_${DateTime.now().millisecondsSinceEpoch}_${item.name.hashCode}',
+        id: 'pbi_${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}_${item.name.hashCode.abs()}',
         propertyId: property.id,
         name: item.name,
         amount: item.amount,

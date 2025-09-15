@@ -89,6 +89,12 @@ final router = GoRouter(
                   });
                 }),
             GoRoute(
+                path: ':id/units',
+                redirect: (context, state) {
+                  final propertyId = state.pathParameters['id']!;
+                  return '/property/$propertyId';
+                }),
+            GoRoute(
                 path: ':id/units/add',
                 builder: (context, state) {
                   final propertyId = state.pathParameters['id']!;

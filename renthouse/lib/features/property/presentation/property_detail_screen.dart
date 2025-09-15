@@ -85,7 +85,17 @@ class PropertyDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text('총 유닛: ${property.totalUnits}개', style: Theme.of(context).textTheme.bodyLarge),
                 const Divider(height: 32),
-                Text('유닛 목록 (${property.units.length}개 등록됨)', style: Theme.of(context).textTheme.titleLarge),
+                Row(
+                  children: [
+                    Text('유닛 목록 (${property.units.length}개 등록됨)', style: Theme.of(context).textTheme.titleLarge),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/property/${property.id}/units/add'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('유닛 추가'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Expanded(
                   child: ListView.builder(

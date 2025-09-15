@@ -97,30 +97,53 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
   }
 
   Future<void> _showAddUnitsDialog(String propertyId) async {
-    final wantsToAddUnits = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('자산 저장 완료'),
-        content: const Text('자산 정보가 저장되었습니다. 이어서 유닛을 등록하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('나중에'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('지금 등록'),
-          ),
-        ],
-      ),
-    );
+    if (_isEditMode) {
+      // 수정 모드에서는 단순 완료 메시지만 표시하고 detail 화면으로 이동
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('자산 수정 완료'),
+          content: const Text('자산 정보가 성공적으로 수정되었습니다.'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
 
-    if (mounted) { // Check if the widget is still in the tree
-      if (wantsToAddUnits == true) {
-        context.go('/property/$propertyId/units');
-      } else {
-        context.go('/property');
+      if (mounted) {
+        context.go('/property/$propertyId');
+      }
+    } else {
+      // 신규 등록 모드에서는 유닛 등록 여부를 물어봄
+      final wantsToAddUnits = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('자산 저장 완료'),
+          content: const Text('자산 정보가 저장되었습니다. 이어서 유닛을 등록하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('나중에'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('지금 등록'),
+            ),
+          ],
+        ),
+      );
+
+      if (mounted) { // Check if the widget is still in the tree
+        if (wantsToAddUnits == true) {
+          context.go('/property/$propertyId/units/add');
+        } else {
+          context.go('/property');
+        }
       }
     }
   }
