@@ -18,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _hasRegisteredUser = false;
 
   @override
   void initState() {
@@ -38,6 +39,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final email = await authRepository.getFirstUserEmail();
       if (email != null && mounted) {
         _emailController.text = email;
+        setState(() {
+          _hasRegisteredUser = true;
+        });
       }
     } catch (e) {
       // 에러가 있어도 로그인 화면은 정상적으로 표시
@@ -182,12 +186,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
-              // 회원가입 화면으로 이동
-              TextButton(
-                onPressed: () => context.go('/register'),
-                child: const Text('계정이 없으신가요? 회원가입하기'),
-              ),
+
+              // 회원가입 화면으로 이동 (등록된 사용자가 없을 때만 표시)
+              if (!_hasRegisteredUser)
+                TextButton(
+                  onPressed: () => context.go('/register'),
+                  child: const Text('계정이 없으신가요? 회원가입하기'),
+                ),
               
               const SizedBox(height: 32),
               const Divider(),
