@@ -12,36 +12,28 @@ class BillingController extends _$BillingController {
   }
 
   Future<void> addBilling(Billing billing) async {
-    state = await AsyncValue.guard(() async {
-      await ref.read(billingRepositoryProvider).createBilling(billing);
-      return ref.read(billingRepositoryProvider).getBillings();
-    });
+    await ref.read(billingRepositoryProvider).createBilling(billing);
+    ref.invalidateSelf();
   }
 
   Future<void> updateBilling(Billing billing) async {
-    state = await AsyncValue.guard(() async {
-      await ref.read(billingRepositoryProvider).updateBilling(billing);
-      return ref.read(billingRepositoryProvider).getBillings();
-    });
+    await ref.read(billingRepositoryProvider).updateBilling(billing);
+    ref.invalidateSelf();
   }
 
   Future<void> deleteBilling(String id) async {
-    state = await AsyncValue.guard(() async {
-      await ref.read(billingRepositoryProvider).deleteBilling(id);
-      return ref.read(billingRepositoryProvider).getBillings();
-    });
+    await ref.read(billingRepositoryProvider).deleteBilling(id);
+    ref.invalidateSelf();
   }
 
   Future<List<String>> createBulkBillings(String yearMonth, DateTime issueDate, DateTime dueDate) async {
     try {
       final repository = ref.read(billingRepositoryProvider);
       final createdIds = await repository.createBulkBillings(yearMonth, issueDate, dueDate);
-      
+
       // 청구서 목록 새로고침
-      state = await AsyncValue.guard(() async {
-        return repository.getBillings();
-      });
-      
+      ref.invalidateSelf();
+
       return createdIds;
     } catch (e) {
       rethrow;
