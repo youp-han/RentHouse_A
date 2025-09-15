@@ -503,9 +503,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 items: availableLeases.map((Lease lease) {
                   return DropdownMenuItem<String>(
                     value: lease.id,
-                    child: Text(
-                      '${lease.leaseType.name.toUpperCase()} - ${DateFormat('yyyy-MM-dd').format(lease.startDate)} ~ ${DateFormat('yyyy-MM-dd').format(lease.endDate)}',
-                    ),
+                    child: Text('${lease.leaseType.displayName} - ${DateFormat('yyyy-MM-dd').format(lease.startDate)} ~ ${DateFormat('yyyy-MM-dd').format(lease.endDate)}'),
                   );
                 }).toList(),
                 onChanged: (value) {
