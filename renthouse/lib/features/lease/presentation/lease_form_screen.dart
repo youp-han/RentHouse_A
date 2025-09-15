@@ -28,7 +28,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
   String? _selectedUnitId;
   DateTime? _startDate;
   DateTime? _endDate;
-  LeaseType _leaseType = LeaseType.residential;
+  LeaseType _leaseType = LeaseType.monthly;
   LeaseStatus _leaseStatus = LeaseStatus.pending;
 
   late final TextEditingController _depositController;
@@ -341,34 +341,63 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                       validator: (value) => (value == null || value.isEmpty) ? '월세를 입력하세요' : null,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('시작일: ${_startDate == null ? '선택 안함' : DateFormat.yMd().format(_startDate!)}'),
-                        ),
-                        TextButton(onPressed: () async {
-                          final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
-                          if(date != null) setState(() => _startDate = date);
-                        }, child: const Text('선택')),
-                      ],
+                    TextFormField(
+                      controller: TextEditingController(
+                        text: _startDate == null ? '' : DateFormat('yyyy-MM-dd').format(_startDate!),
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: '시작일',
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (selectedDate != null) {
+                          setState(() {
+                            _startDate = selectedDate;
+                            // 시작일 선택 시 자동으로 1년 후로 종료일 설정
+                            _endDate = DateTime(selectedDate.year + 1, selectedDate.month, selectedDate.day);
+                          });
+                        }
+                      },
+                      validator: (value) => value == null || value.isEmpty ? '시작일을 선택하세요' : null,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('종료일: ${_endDate == null ? '선택 안함' : DateFormat.yMd().format(_endDate!)}'),
-                        ),
-                        TextButton(onPressed: () async {
-                          final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2000), lastDate: DateTime(2100));
-                          if(date != null) setState(() => _endDate = date);
-                        }, child: const Text('선택')),
-                      ],
+                    TextFormField(
+                      controller: TextEditingController(
+                        text: _endDate == null ? '' : DateFormat('yyyy-MM-dd').format(_endDate!),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: '종료일',
+                        suffixIcon: const Icon(Icons.calendar_today),
+                        helperText: _isEditing ? null : '시작일 선택 시 자동으로 1년 후로 설정됩니다',
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _endDate ?? (_startDate?.add(const Duration(days: 365)) ?? DateTime.now().add(const Duration(days: 365))),
+                          firstDate: _startDate ?? DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (selectedDate != null) {
+                          setState(() {
+                            _endDate = selectedDate;
+                          });
+                        }
+                      },
+                      validator: (value) => value == null || value.isEmpty ? '종료일을 선택하세요' : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<LeaseType>(
                       initialValue: _leaseType,
                       decoration: const InputDecoration(labelText: '계약 종류'),
-                      items: LeaseType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.name))).toList(),
+                      items: LeaseType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.displayName))).toList(),
                       onChanged: (value) => setState(() => _leaseType = value!),
                     ),
                     const SizedBox(height: 16),

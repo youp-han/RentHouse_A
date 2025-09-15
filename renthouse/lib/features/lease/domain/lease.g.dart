@@ -34,8 +34,9 @@ Map<String, dynamic> _$$LeaseImplToJson(_$LeaseImpl instance) =>
     };
 
 const _$LeaseTypeEnumMap = {
-  LeaseType.residential: 'residential',
-  LeaseType.commercial: 'commercial',
+  LeaseType.jeonse: 'jeonse',
+  LeaseType.monthly: 'monthly',
+  LeaseType.yearly: 'yearly',
 };
 
 const _$LeaseStatusEnumMap = {

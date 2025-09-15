@@ -14,6 +14,7 @@ class LeaseListScreen extends ConsumerWidget {
     final leasesAsync = ref.watch(leaseControllerProvider);
     final tenantsAsync = ref.watch(tenantControllerProvider);
     final unitsAsync = ref.watch(allUnitsProvider);
+    final propertiesAsync = ref.watch(propertyRepositoryProvider).getProperties();
 
     return Scaffold(
       appBar: AppBar(title: const Text('임대 계약 목록')),
@@ -55,37 +56,57 @@ class LeaseListScreen extends ConsumerWidget {
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: leases.length,
-                      itemBuilder: (_, i) {
-                        final lease = leases[i];
-                        final tenant = tenantsAsync.value?.firstWhereOrNull((t) => t.id == lease.tenantId);
-                        final unit = unitsAsync.value?.firstWhereOrNull((u) => u.id == lease.unitId);
-                        return ListTile(
-                          title: Text('${tenant?.name ?? '알 수 없는 임차인'} - ${unit?.unitNumber ?? '알 수 없는 유닛'}'),
-                          subtitle: Text('계약 ID: ${lease.id.substring(0, 8)}...'),
-                          onTap: () {
-                            context.go('/leases/edit/${lease.id}');
+                  : FutureBuilder(
+                      future: propertiesAsync,
+                      builder: (context, propertiesSnapshot) {
+                        if (propertiesSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        final properties = propertiesSnapshot.data ?? [];
+
+                        return ListView.builder(
+                          itemCount: leases.length,
+                          itemBuilder: (_, i) {
+                            final lease = leases[i];
+                            final tenant = tenantsAsync.value?.firstWhereOrNull((t) => t.id == lease.tenantId);
+                            final unit = unitsAsync.value?.firstWhereOrNull((u) => u.id == lease.unitId);
+                            final property = unit != null
+                                ? properties.firstWhereOrNull((p) => p.id == unit.propertyId)
+                                : null;
+
+                            final tenantName = tenant?.name ?? '알 수 없는 임차인';
+                            final propertyName = property?.name ?? '알 수 없는 자산';
+                            final unitNumber = unit?.unitNumber ?? '알 수 없는 유닛';
+                            final displayText = '$tenantName: $propertyName - $unitNumber';
+
+                            return ListTile(
+                              title: Text(displayText),
+                              subtitle: Text('계약 ID: ${lease.id.substring(0, 8)}...'),
+                              onTap: () {
+                                context.go('/leases/edit/${lease.id}');
+                              },
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // The edit button is now redundant if onTap handles navigation
+                                  // IconButton(
+                                  //   icon: const Icon(Icons.edit, color: Colors.blue),
+                                  //   onPressed: () {
+                                  //     context.go('/leases/edit/${lease.id}');
+                                  //   },
+                                  // ),
+                                  // The delete button will be moved to the form screen
+                                  // IconButton(
+                                  //   icon: const Icon(Icons.delete, color: Colors.red),
+                                  //   onPressed: () {
+                                  //     ref.read(leaseControllerProvider.notifier).deleteLease(lease.id);
+                                  //   },
+                                  // ),
+                                ],
+                              ),
+                            );
                           },
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // The edit button is now redundant if onTap handles navigation
-                              // IconButton(
-                              //   icon: const Icon(Icons.edit, color: Colors.blue),
-                              //   onPressed: () {
-                              //     context.go('/leases/edit/${lease.id}');
-                              //   },
-                              // ),
-                              // The delete button will be moved to the form screen
-                              // IconButton(
-                              //   icon: const Icon(Icons.delete, color: Colors.red),
-                              //   onPressed: () {
-                              //     ref.read(leaseControllerProvider.notifier).deleteLease(lease.id);
-                              //   },
-                              // ),
-                            ],
-                          ),
                         );
                       },
                     ),
