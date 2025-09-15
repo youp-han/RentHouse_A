@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/property/application/property_controller.dart';
 import 'package:renthouse/features/property/domain/property.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
+import 'package:renthouse/core/auth/auth_repository.dart';
 import 'package:uuid/uuid.dart';
 
 class PropertyFormScreen extends ConsumerStatefulWidget {
@@ -32,6 +33,8 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
   PropertyType _selectedPropertyType = PropertyType.villa;
   // 계약 종류 (task135)
   ContractType _selectedContractType = ContractType.wolse;
+  // 소유자 정보 자동 입력 여부
+  bool _useCurrentUserAsOwner = false;
   // 청구 항목들
   final List<Map<String, dynamic>> _billingItems = [
     {'name': '관리비', 'amount': 50000, 'enabled': false, 'controller': TextEditingController(text: '50000')},
@@ -77,6 +80,29 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
           break;
         }
       }
+    }
+  }
+
+  Future<void> _loadCurrentUserInfo() async {
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      final currentUser = await authRepository.getCurrentUser();
+      if (currentUser != null) {
+        setState(() {
+          _ownerNameController.text = currentUser.name;
+          _ownerEmailController.text = currentUser.email;
+          // 연락처는 사용자가 직접 입력하도록 포커스 이동
+          FocusScope.of(context).requestFocus(FocusNode());
+        });
+        // 연락처 필드에 포커스
+        Future.delayed(const Duration(milliseconds: 100), () {
+          FocusScope.of(context).nextFocus();
+          FocusScope.of(context).nextFocus();
+        });
+      }
+    } catch (e) {
+      // 오류가 있어도 계속 진행
+      print('사용자 정보 로딩 실패: $e');
     }
   }
 
@@ -216,21 +242,60 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
             // 소유자 정보 섹션 (task134)
             const Text('소유자 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
+
+            // 현재 사용자와 동일 체크박스
+            CheckboxListTile(
+              title: const Text('소유자 정보가 로그인 회원과 동일'),
+              subtitle: const Text('성명과 이메일이 자동으로 입력됩니다'),
+              value: _useCurrentUserAsOwner,
+              onChanged: (bool? value) {
+                setState(() {
+                  _useCurrentUserAsOwner = value ?? false;
+                });
+
+                if (_useCurrentUserAsOwner) {
+                  _loadCurrentUserInfo();
+                } else {
+                  // 체크 해제 시 필드 초기화
+                  setState(() {
+                    _ownerNameController.clear();
+                    _ownerEmailController.clear();
+                  });
+                }
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            const SizedBox(height: 12),
+
             TextFormField(
               controller: _ownerNameController,
               decoration: const InputDecoration(labelText: '소유자 성명'),
+              readOnly: _useCurrentUserAsOwner,
+              style: TextStyle(
+                color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _ownerPhoneController,
-              decoration: const InputDecoration(labelText: '소유자 연락처'),
+              decoration: const InputDecoration(
+                labelText: '소유자 연락처 *',
+                helperText: '필수 입력 항목입니다',
+              ),
               keyboardType: TextInputType.phone,
+              validator: _useCurrentUserAsOwner
+                ? (v) => (v == null || v.isEmpty) ? '연락처는 필수입니다.' : null
+                : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _ownerEmailController,
               decoration: const InputDecoration(labelText: '소유자 이메일'),
               keyboardType: TextInputType.emailAddress,
+              readOnly: _useCurrentUserAsOwner,
+              style: TextStyle(
+                color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
+              ),
             ),
             const SizedBox(height: 24),
             // 청구 항목 선택 섹션 (추가 요구사항)
