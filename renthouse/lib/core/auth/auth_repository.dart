@@ -142,6 +142,17 @@ class AuthRepository {
     return token != null;
   }
 
+  /// 등록된 첫 번째 사용자의 이메일을 가져옵니다 (단일 사용자 로컬 앱용)
+  Future<String?> getFirstUserEmail() async {
+    try {
+      final user = await _database.getFirstUser();
+      return user?.email;
+    } catch (e) {
+      AppLogger.warning('첫 번째 사용자 이메일 조회 실패', tag: 'Auth', details: e);
+      return null;
+    }
+  }
+
   Future<void> updateUserProfile(auth.UpdateUserRequest request) async {
     final currentUser = await getCurrentUser();
     if (currentUser == null) {

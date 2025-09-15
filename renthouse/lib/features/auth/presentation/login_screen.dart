@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
+import 'package:renthouse/core/auth/auth_repository.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,10 +20,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserEmail();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserEmail() async {
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      final email = await authRepository.getFirstUserEmail();
+      if (email != null && mounted) {
+        _emailController.text = email;
+      }
+    } catch (e) {
+      // 에러가 있어도 로그인 화면은 정상적으로 표시
+      print('사용자 이메일 로딩 실패: $e');
+    }
   }
 
   String? _validateEmail(String? value) {
@@ -106,16 +126,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 48),
               
-              // 이메일 입력 필드
+              // 이메일 입력 필드 (자동으로 채워짐)
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 validator: _validateEmail,
+                readOnly: true,  // 단일 사용자 앱이므로 이메일 변경 불가
                 decoration: const InputDecoration(
-                  labelText: '이메일',
-                  hintText: 'example@email.com',
+                  labelText: '이메일 (자동 설정)',
+                  hintText: '등록된 사용자 이메일',
                   prefixIcon: Icon(Icons.email),
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Color(0xFFF5F5F5),
                 ),
               ),
               const SizedBox(height: 16),
@@ -170,33 +193,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const Divider(),
               const SizedBox(height: 16),
               
-              // 테스트용 안내
+              // 단일 사용자 안내
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: Colors.green[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(color: Colors.green[200]!),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info, color: Colors.blue[600], size: 20),
+                        Icon(Icons.person, color: Colors.green[600], size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          '개발 테스트용',
+                          '개인 사용자 전용',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue[600],
+                            color: Colors.green[600],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      '회원가입 후 로그인하거나, 새 계정을 만들어 사용하세요.',
+                      '이 앱은 단일 사용자 전용입니다. 등록된 사용자의 이메일이 자동으로 설정됩니다.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ],

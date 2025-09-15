@@ -349,6 +349,14 @@ class AppDatabase extends _$AppDatabase {
       return null;
     }
   }
+
+  Future<User?> getFirstUser() async {
+    try {
+      return await (select(users)..orderBy([(t) => OrderingTerm(expression: t.createdAt)])).getSingleOrNull();
+    } catch (e) {
+      return null;
+    }
+  }
   Future<void> insertUser(UsersCompanion user) => into(users).insert(user);
   Future<bool> updateUser(UsersCompanion user) => update(users).replace(user);
   Future<void> deleteUser(String id) => (delete(users)..where((tbl) => tbl.id.equals(id))).go();
