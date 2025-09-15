@@ -11,18 +11,16 @@ class LeaseRepository {
 
   Future<List<Lease>> getLeases() async {
     final leases = await _appDatabase.getAllLeases();
-    return leases.map((lease) => Lease(
-      id: lease.id,
-      tenantId: lease.tenantId,
-      unitId: lease.unitId,
-      startDate: lease.startDate,
-      endDate: lease.endDate,
-      deposit: lease.deposit,
-      monthlyRent: lease.monthlyRent,
-      leaseType: LeaseType.values.firstWhere((e) => e.toString() == 'LeaseType.${lease.leaseType}'),
-      leaseStatus: LeaseStatus.values.firstWhere((e) => e.toString() == 'LeaseStatus.${lease.leaseStatus}'),
-      contractNotes: lease.contractNotes,
-    )).toList();
+    return leases.map((lease) => _mapLease(lease)).toList();
+  }
+
+  Future<Lease?> getLeaseById(String id) async {
+    try {
+      final lease = await _appDatabase.getLeaseById(id);
+      return _mapLease(lease);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<Lease> createLease(Lease lease) async {
@@ -67,31 +65,27 @@ class LeaseRepository {
 
   // 임차인이 현재 활성 계약을 가지고 있는지 확인
   Future<bool> hasActiveLeaseForTenant(String tenantId) async {
-    final leases = await getLeases();
-    final now = DateTime.now();
-    
-    return leases.any((lease) => 
-      lease.tenantId == tenantId && 
-      lease.leaseStatus == LeaseStatus.active &&
-      lease.startDate.isBefore(now) &&
-      lease.endDate.isAfter(now)
-    );
+    return await _appDatabase.hasActiveLeaseForTenant(tenantId);
   }
 
   // 현재 활성 계약이 없는 임차인 ID 목록 반환
   Future<List<String>> getAvailableTenantIds() async {
-    final allLeases = await getLeases();
-    final now = DateTime.now();
-    
-    final activeTenantIds = allLeases
-      .where((lease) =>
-        lease.leaseStatus == LeaseStatus.active &&
-        lease.startDate.isBefore(now) &&
-        lease.endDate.isAfter(now))
-      .map((lease) => lease.tenantId)
-      .toSet();
-    
-    return activeTenantIds.toList();
+    return await _appDatabase.getActiveTenantIds();
+  }
+
+  Lease _mapLease(app_db.Lease lease) {
+    return Lease(
+      id: lease.id,
+      tenantId: lease.tenantId,
+      unitId: lease.unitId,
+      startDate: lease.startDate,
+      endDate: lease.endDate,
+      deposit: lease.deposit,
+      monthlyRent: lease.monthlyRent,
+      leaseType: LeaseType.values.firstWhere((e) => e.toString() == 'LeaseType.${lease.leaseType}'),
+      leaseStatus: LeaseStatus.values.firstWhere((e) => e.toString() == 'LeaseStatus.${lease.leaseStatus}'),
+      contractNotes: lease.contractNotes,
+    );
   }
 }
 

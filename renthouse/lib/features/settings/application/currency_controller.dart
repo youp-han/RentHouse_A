@@ -1,13 +1,14 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:renthouse/features/settings/domain/currency.dart';
 
-// 통화 설정 상태 관리
-final currencySettingProvider = StateNotifierProvider<CurrencyNotifier, Currency>((ref) {
-  return CurrencyNotifier();
-});
+part 'currency_controller.g.dart';
 
-class CurrencyNotifier extends StateNotifier<Currency> {
-  CurrencyNotifier() : super(Currency.krw); // 기본값은 한국 원화
+@riverpod
+class CurrencyController extends _$CurrencyController {
+  @override
+  Currency build() {
+    return Currency.krw; // 기본값은 한국 원화
+  }
 
   void setCurrency(Currency currency) {
     state = currency;

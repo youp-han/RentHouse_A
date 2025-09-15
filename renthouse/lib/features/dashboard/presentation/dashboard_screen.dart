@@ -18,7 +18,7 @@ class DashboardScreen extends ConsumerWidget {
     final isDesktop = screenWidth >= 1024;
     final isTablet = screenWidth >= 768 && screenWidth < 1024;
     final isMobile = screenWidth < 768;
-    final selectedCurrency = ref.watch(currencySettingProvider);
+    final selectedCurrency = ref.watch(currencyControllerProvider);
     final dashboardStatsAsync = ref.watch(dashboardControllerProvider);
 
     return Scaffold(

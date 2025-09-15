@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
 import 'package:renthouse/core/database/database_provider.dart';
 import 'package:renthouse/features/auth/domain/user.dart' as auth;
 import 'package:renthouse/core/database/app_database.dart';
+import 'package:renthouse/core/exceptions/app_exceptions.dart';
+import 'package:renthouse/core/logging/app_logger.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
@@ -20,60 +23,92 @@ class AuthRepository {
     return digest.toString();
   }
 
+  /// 임시 세션 토큰 생성 (프로덕션에서는 실제 JWT 구현 필요)
+  String _generateSessionToken(String userId) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final tokenData = '$userId:$timestamp:${_uuid.v4()}';
+    final bytes = utf8.encode(tokenData);
+    final digest = sha256.convert(bytes);
+    return 'session_${digest.toString().substring(0, 32)}';
+  }
+
   Future<auth.User> register(auth.RegisterUserRequest request) async {
-    final existingUser = await _database.getUserByEmail(request.email);
-    if (existingUser != null) {
-      throw Exception('이미 사용 중인 이메일입니다.');
+    try {
+      AppLogger.info('회원가입 시도', tag: 'Auth');
+      
+      final existingUser = await _database.getUserByEmail(request.email);
+      if (existingUser != null) {
+        AppLogger.warning('이미 사용 중인 이메일로 회원가입 시도', tag: 'Auth');
+        throw const AuthException('이미 사용 중인 이메일입니다.');
+      }
+
+      final hashedPassword = _hashPassword(request.password);
+      final userId = _uuid.v4();
+      
+      final userCompanion = UsersCompanion.insert(
+        id: userId,
+        email: request.email,
+        name: request.name,
+        passwordHash: hashedPassword,
+        createdAt: DateTime.now(),
+      );
+
+      await _database.insertUser(userCompanion);
+      
+      AppLogger.logAuthOperation('회원가입 완료', userId: userId, success: true);
+      
+      return auth.User(
+        id: userId,
+        email: request.email,
+        name: request.name,
+        passwordHash: hashedPassword,
+        createdAt: DateTime.now(),
+      );
+    } catch (e, stackTrace) {
+      if (e is AuthException) {
+        rethrow;
+      }
+      AppLogger.error('회원가입 중 오류 발생', tag: 'Auth', error: e, stackTrace: stackTrace);
+      throw AuthException('회원가입 처리 중 오류가 발생했습니다.', details: e.toString(), stackTrace: stackTrace.toString());
     }
-
-    final hashedPassword = _hashPassword(request.password);
-    final userId = _uuid.v4();
-    
-    final userCompanion = UsersCompanion.insert(
-      id: userId,
-      email: request.email,
-      name: request.name,
-      passwordHash: hashedPassword,
-      createdAt: DateTime.now(),
-    );
-
-    await _database.insertUser(userCompanion);
-    
-    return auth.User(
-      id: userId,
-      email: request.email,
-      name: request.name,
-      passwordHash: hashedPassword,
-      createdAt: DateTime.now(),
-    );
   }
 
   Future<String> login(String email, String password) async {
-    final user = await _database.getUserByEmail(email);
-    if (user == null) {
-      throw Exception('사용자를 찾을 수 없습니다.');
-    }
+    try {
+      AppLogger.info('로그인 시도', tag: 'Auth');
+      
+      final user = await _database.getUserByEmail(email);
+      if (user == null) {
+        AppLogger.warning('존재하지 않는 이메일로 로그인 시도', tag: 'Auth');
+        throw const AuthException('사용자를 찾을 수 없습니다.');
+      }
 
-    final hashedPassword = _hashPassword(password);
-    
-    // 디버깅용 로그 (실제 운영에서는 제거해야 함)
-    print('로그인 디버깅:');
-    print('이메일: $email');
-    print('입력한 비밀번호: $password');
-    print('해싱된 비밀번호: $hashedPassword');
-    print('저장된 해시: ${user.passwordHash}');
-    print('해시 일치 여부: ${user.passwordHash == hashedPassword}');
-    
-    if (user.passwordHash != hashedPassword) {
-      throw Exception('비밀번호가 일치하지 않습니다.');
-    }
+      final hashedPassword = _hashPassword(password);
+      
+      AppLogger.logAuthOperation('로그인 시도', userId: user.id);
+      
+      if (user.passwordHash != hashedPassword) {
+        AppLogger.warning('잘못된 비밀번호로 로그인 시도', tag: 'Auth');
+        AppLogger.logAuthOperation('로그인 실패 (비밀번호 불일치)', userId: user.id, success: false);
+        throw const AuthException('비밀번호가 일치하지 않습니다.');
+      }
 
-    const dummyToken = 'dummy_jwt_token_for_testing';
-    await _secureStorage.write(key: 'jwt_token', value: dummyToken);
-    await _secureStorage.write(key: 'user_id', value: user.id);
-    await _secureStorage.write(key: 'user_email', value: user.email);
-    
-    return dummyToken;
+      // TODO: 실제 JWT 토큰 구현 필요 (프로덕션에서는 백엔드에서 발급)
+      final sessionToken = _generateSessionToken(user.id);
+      await _secureStorage.write(key: 'jwt_token', value: sessionToken);
+      await _secureStorage.write(key: 'user_id', value: user.id);
+      await _secureStorage.write(key: 'user_email', value: user.email);
+      
+      AppLogger.logAuthOperation('로그인 성공', userId: user.id, success: true);
+      
+      return sessionToken;
+    } catch (e, stackTrace) {
+      if (e is AuthException) {
+        rethrow;
+      }
+      AppLogger.error('로그인 중 오류 발생', tag: 'Auth', error: e, stackTrace: stackTrace);
+      throw AuthException('로그인 처리 중 오류가 발생했습니다.', details: e.toString(), stackTrace: stackTrace.toString());
+    }
   }
 
   Future<void> logout() async {
@@ -125,10 +160,10 @@ class AuthRepository {
       final newPasswordHash = _hashPassword(request.newPassword!);
       await _database.updateUserPassword(currentUser.id, newPasswordHash);
       
-      // 디버깅용 로그
-      print('비밀번호 변경 완료:');
-      print('사용자 ID: ${currentUser.id}');
-      print('새 비밀번호 해시: $newPasswordHash');
+      // 보안이 강화된 로그
+      if (kDebugMode) {
+        print('비밀번호 변경 완료: 사용자 ${currentUser.id.substring(0, 8)}***');
+      }
     }
 
     // 이름 업데이트
@@ -157,7 +192,11 @@ class AuthRepository {
       // 2. 로컬 저장소에서 인증 정보 삭제
       await logout();
       
-      print('회원 탈퇴 완료: ${currentUser.email} - 모든 연관 데이터 삭제됨');
+      if (kDebugMode) {
+        final maskedEmail = currentUser.email.length > 3 ? 
+            '${currentUser.email.substring(0, 3)}***@${currentUser.email.split('@').last}' : '***';
+        print('회원 탈퇴 완료: $maskedEmail - 모든 연관 데이터 삭제됨');
+      }
     } catch (e) {
       print('회원 탈퇴 실패: $e');
       throw Exception('회원 탈퇴 처리 중 오류가 발생했습니다.');

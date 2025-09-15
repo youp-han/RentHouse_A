@@ -264,6 +264,38 @@ class AppDatabase extends _$AppDatabase {
     return count > 0;
   }
 
+  // 최적화된 활성 계약 확인 쿼리
+  Future<bool> hasActiveLeaseForTenant(String tenantId) async {
+    final now = DateTime.now();
+    final activeLeases = await (select(leases)
+      ..where((tbl) => 
+        tbl.tenantId.equals(tenantId) & 
+        tbl.leaseStatus.equals('active') &
+        tbl.startDate.isSmallerThanValue(now) &
+        tbl.endDate.isBiggerThanValue(now)
+      )
+    ).get();
+    return activeLeases.isNotEmpty;
+  }
+
+  // 현재 활성 임차인 ID 목록 반환 (최적화된 쿼리)
+  Future<List<String>> getActiveTenantIds() async {
+    final now = DateTime.now();
+    final activeLeases = await (select(leases)
+      ..where((tbl) => 
+        tbl.leaseStatus.equals('active') &
+        tbl.startDate.isSmallerThanValue(now) &
+        tbl.endDate.isBiggerThanValue(now)
+      )
+    ).get();
+    return activeLeases.map((lease) => lease.tenantId).toSet().toList();
+  }
+
+  // 활성 계약 목록 반환 (최적화된 쿼리)
+  Future<List<Lease>> getActiveLeases() async {
+    return (select(leases)..where((tbl) => tbl.leaseStatus.equals('active'))).get();
+  }
+
   // DAO for bill templates
   Future<List<BillTemplate>> getAllBillTemplates() => select(billTemplates).get();
   Future<BillTemplate?> getBillTemplateById(String id) async {

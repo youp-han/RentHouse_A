@@ -180,7 +180,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               hintText: '수납할 금액을 입력해주세요',
-              prefixText: '${ref.watch(currencySettingProvider).symbol} ',
+              prefixText: '${ref.watch(currencyControllerProvider).symbol} ',
             ),
             keyboardType: TextInputType.number,
             validator: (value) {
@@ -363,14 +363,14 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('총 수납액:'),
-                      Text(CurrencyFormatter.format(preview.totalAmount, ref.watch(currencySettingProvider))),
+                      Text(CurrencyFormatter.format(preview.totalAmount, ref.watch(currencyControllerProvider))),
                     ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('배분 금액:'),
-                      Text(CurrencyFormatter.format(preview.allocatedAmount, ref.watch(currencySettingProvider))),
+                      Text(CurrencyFormatter.format(preview.allocatedAmount, ref.watch(currencyControllerProvider))),
                     ],
                   ),
                   if (preview.remainingAmount > 0)
@@ -379,7 +379,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                       children: [
                         const Text('잔여 금액:'),
                         Text(
-                          CurrencyFormatter.format(preview.remainingAmount, ref.watch(currencySettingProvider)),
+                          CurrencyFormatter.format(preview.remainingAmount, ref.watch(currencyControllerProvider)),
                           style: const TextStyle(color: Colors.orange),
                         ),
                       ],
@@ -400,15 +400,15 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                   child: ListTile(
                     title: Text('${allocation.yearMonth} 청구서'),
                     subtitle: Text(
-                      '청구액: ${CurrencyFormatter.format(allocation.billingAmount, ref.watch(currencySettingProvider))} | '
-                      '기납부: ${CurrencyFormatter.format(allocation.paidAmount, ref.watch(currencySettingProvider))}'
+                      '청구액: ${CurrencyFormatter.format(allocation.billingAmount, ref.watch(currencyControllerProvider))} | '
+                      '기납부: ${CurrencyFormatter.format(allocation.paidAmount, ref.watch(currencyControllerProvider))}'
                     ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          CurrencyFormatter.format(allocation.allocationAmount, ref.watch(currencySettingProvider)),
+                          CurrencyFormatter.format(allocation.allocationAmount, ref.watch(currencyControllerProvider)),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.green,
@@ -416,7 +416,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                         ),
                         if (allocation.remainingAmount > 0)
                           Text(
-                            '잔액: ${CurrencyFormatter.format(allocation.remainingAmount, ref.watch(currencySettingProvider))}',
+                            '잔액: ${CurrencyFormatter.format(allocation.remainingAmount, ref.watch(currencyControllerProvider))}',
                             style: const TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                       ],
@@ -476,7 +476,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('배분 금액: ${CurrencyFormatter.format(allocation.amount, ref.watch(currencySettingProvider))}'),
+                        Text('배분 금액: ${CurrencyFormatter.format(allocation.amount, ref.watch(currencyControllerProvider))}'),
                         Text('청구서 ID: ${allocation.billingId}', 
                           style: const TextStyle(fontSize: 12, color: Colors.grey)),
                       ],
@@ -636,9 +636,9 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('청구액: ${CurrencyFormatter.format(allocation.billingAmount, ref.watch(currencySettingProvider))}'),
-                          Text('기납부: ${CurrencyFormatter.format(allocation.paidAmount, ref.watch(currencySettingProvider))}'),
-                          Text('미납액: ${CurrencyFormatter.format(allocation.billingAmount - allocation.paidAmount, ref.watch(currencySettingProvider))}'),
+                          Text('청구액: ${CurrencyFormatter.format(allocation.billingAmount, ref.watch(currencyControllerProvider))}'),
+                          Text('기납부: ${CurrencyFormatter.format(allocation.paidAmount, ref.watch(currencyControllerProvider))}'),
+                          Text('미납액: ${CurrencyFormatter.format(allocation.billingAmount - allocation.paidAmount, ref.watch(currencyControllerProvider))}'),
                         ],
                       ),
                       trailing: isAlreadyAdded 
@@ -679,7 +679,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('청구서: ${allocation.yearMonth}'),
-              Text('최대 배분 가능 금액: ${CurrencyFormatter.format(maxAmount, ref.watch(currencySettingProvider))}'),
+              Text('최대 배분 가능 금액: ${CurrencyFormatter.format(maxAmount, ref.watch(currencyControllerProvider))}'),
               const SizedBox(height: 16),
               TextFormField(
                 controller: amountController,

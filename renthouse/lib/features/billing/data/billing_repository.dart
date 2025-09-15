@@ -122,17 +122,35 @@ class BillingRepository {
 
   // 특정 월의 청구서가 이미 존재하는지 확인
   Future<bool> billingExistsForLeaseAndMonth(String leaseId, String yearMonth) async {
-    final billings = await _appDatabase.getAllBillings();
-    return billings.any((billing) => 
-      billing.leaseId == leaseId && 
-      billing.yearMonth == yearMonth
+    return await _appDatabase.hasExistingBilling(leaseId, yearMonth);
+  }
+
+  Future<Billing?> getBillingById(String id) async {
+    final billing = await _appDatabase.getBillingById(id);
+    if (billing == null) return null;
+    
+    final items = await _appDatabase.getBillingItemsForBilling(billing.id);
+    return Billing(
+      id: billing.id,
+      leaseId: billing.leaseId,
+      yearMonth: billing.yearMonth,
+      issueDate: billing.issueDate,
+      dueDate: billing.dueDate,
+      paid: billing.paid,
+      paidDate: billing.paidDate,
+      totalAmount: billing.totalAmount,
+      items: items.map((item) => BillingItem(
+        id: item.id,
+        billingId: item.billingId,
+        billTemplateId: item.billTemplateId,
+        amount: item.amount,
+      )).toList(),
     );
   }
 
   // 활성 계약에 대한 일괄 청구서 생성
   Future<List<String>> createBulkBillings(String yearMonth, DateTime issueDate, DateTime dueDate) async {
-    final leases = await _appDatabase.getAllLeases();
-    final activeLeases = leases.where((lease) => lease.leaseStatus == 'active').toList();
+    final activeLeases = await _appDatabase.getActiveLeases();
     
     final createdBillingIds = <String>[];
     
@@ -160,8 +178,8 @@ class BillingRepository {
         }
         
         // 자산별 청구 항목들 가져오기
-        final unit = await _appDatabase.getUnitById(lease.unitId);
-        if (unit != null) {
+        try {
+          final unit = await _appDatabase.getUnitById(lease.unitId);
           final propertyBillingItems = await _appDatabase.getPropertyBillingItems(unit.propertyId);
           for (final propertyItem in propertyBillingItems.where((item) => item.isEnabled)) {
             final itemId = 'item_${DateTime.now().millisecondsSinceEpoch}_${propertyItem.id}';
@@ -173,6 +191,9 @@ class BillingRepository {
             ));
             totalAmount += propertyItem.amount;
           }
+        } catch (e) {
+          // 유닛을 찾을 수 없는 경우 건너뛰기
+          continue;
         }
         
         // 청구서 생성

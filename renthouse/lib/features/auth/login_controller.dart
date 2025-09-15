@@ -1,27 +1,23 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:renthouse/core/auth/auth_repository.dart';
 import 'package:renthouse/core/auth/auth_state.dart'; // AuthState for updating login status
 
-enum LoginState {
-  initial,
-  loading,
-  success,
-  error,
-}
+part 'login_controller.g.dart';
 
-class LoginController extends StateNotifier<LoginState> {
-  final AuthRepository _authRepository;
-  final AuthState _authState; // To update the global AuthState
-
+@riverpod
+class LoginController extends _$LoginController {
   String? errorMessage;
 
-  LoginController(this._authRepository, this._authState) : super(LoginState.initial);
+  @override
+  LoginState build() {
+    return LoginState.initial;
+  }
 
   Future<void> login(String email, String password) async {
     state = LoginState.loading;
     try {
-      await _authRepository.login(email, password);
-      _authState.login(roles: ['ADMIN']); // TODO: 실제 역할은 토큰에서 파싱하거나 서버에서 받아와야 함
+      await ref.read(authRepositoryProvider).login(email, password);
+      AuthState.instance.login(roles: ['ADMIN']); // TODO: 실제 역할은 토큰에서 파싱하거나 서버에서 받아와야 함
       state = LoginState.success;
     } catch (e) {
       errorMessage = e.toString();
@@ -35,11 +31,9 @@ class LoginController extends StateNotifier<LoginState> {
   }
 }
 
-// Riverpod Providers
-
-final loginControllerProvider = StateNotifierProvider<LoginController, LoginState>((ref) {
-  return LoginController(
-    ref.read(authRepositoryProvider),
-    AuthState.instance, // Using the global AuthState singleton
-  );
-});
+enum LoginState {
+  initial,
+  loading,
+  success,
+  error,
+}

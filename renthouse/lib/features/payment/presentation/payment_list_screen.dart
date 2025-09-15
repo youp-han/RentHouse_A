@@ -91,7 +91,7 @@ class _PaymentListScreenState extends ConsumerState<PaymentListScreen> {
   }
 
   Widget _buildPaymentCard(Payment payment) {
-    final currencySetting = ref.watch(currencySettingProvider);
+    final currencySetting = ref.watch(currencyControllerProvider);
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -329,7 +329,7 @@ class _PaymentListScreenState extends ConsumerState<PaymentListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildDetailRow('결제 ID', payment.id.substring(0, 8).toUpperCase()),
-              _buildDetailRow('금액', CurrencyFormatter.format(payment.amount, ref.watch(currencySettingProvider))),
+              _buildDetailRow('금액', CurrencyFormatter.format(payment.amount, ref.watch(currencyControllerProvider))),
               _buildDetailRow('결제방법', _getMethodDisplayName(payment.method)),
               _buildDetailRow('수납일', _dateFormat.format(payment.paidDate)),
               _buildDetailRow('등록일', _dateFormat.format(payment.createdAt)),

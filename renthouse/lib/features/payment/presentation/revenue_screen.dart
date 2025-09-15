@@ -298,7 +298,7 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildStatItem('총 수납액', CurrencyFormatter.format(totalAmount, ref.watch(currencySettingProvider)), Colors.green),
+            _buildStatItem('총 수납액', CurrencyFormatter.format(totalAmount, ref.watch(currencyControllerProvider)), Colors.green),
             _buildStatItem('수납 건수', '$totalCount건', Colors.blue),
           ],
         ),
@@ -326,7 +326,7 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(methodName),
-              Text(CurrencyFormatter.format(amount, ref.watch(currencySettingProvider))),
+              Text(CurrencyFormatter.format(amount, ref.watch(currencyControllerProvider))),
             ],
           ),
         );
@@ -400,7 +400,7 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
           backgroundColor: Colors.green[100],
           child: Icon(Icons.payment, color: Colors.green[700]),
         ),
-        title: Text(CurrencyFormatter.format(payment.amount, ref.watch(currencySettingProvider))),
+        title: Text(CurrencyFormatter.format(payment.amount, ref.watch(currencyControllerProvider))),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -449,11 +449,11 @@ class _RevenueScreenState extends ConsumerState<RevenueScreen>
       child: ExpansionTile(
         leading: Icon(Icons.circle, color: color, size: 12),
         title: Text(title),
-        subtitle: Text('${billings.length}건 · ${CurrencyFormatter.format(totalAmount, ref.watch(currencySettingProvider))}'),
+        subtitle: Text('${billings.length}건 · ${CurrencyFormatter.format(totalAmount, ref.watch(currencyControllerProvider))}'),
         children: billings.map<Widget>((billing) {
           return ListTile(
             title: Text('${billing.yearMonth} 청구서'),
-            subtitle: Text(CurrencyFormatter.format(billing.totalAmount, ref.watch(currencySettingProvider))),
+            subtitle: Text(CurrencyFormatter.format(billing.totalAmount, ref.watch(currencyControllerProvider))),
             trailing: Text(_dateFormat.format(billing.dueDate)),
           );
         }).toList(),

@@ -8,7 +8,7 @@ class CurrencyScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedCurrency = ref.watch(currencySettingProvider);
+    final selectedCurrency = ref.watch(currencyControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +71,7 @@ class CurrencyScreen extends ConsumerWidget {
                             )
                           : const Icon(Icons.radio_button_unchecked),
                         onTap: () {
-                          ref.read(currencySettingProvider.notifier).setCurrency(currency);
+                          ref.read(currencyControllerProvider.notifier).setCurrency(currency);
                           
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

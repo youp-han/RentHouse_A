@@ -23,10 +23,14 @@ class PropertyRepository {
   }
 
   Future<Property?> getPropertyById(String id) async {
-    // Inefficient: Fetches all properties and filters in memory.
-    // TODO: Replace with a direct database query for a single property by ID.
-    final allProperties = await getProperties();
-    return allProperties.firstWhereOrNull((p) => p.id == id);
+    try {
+      final property = await _appDatabase.getPropertyById(id);
+      final units = await _appDatabase.getUnitsForProperty(property.id);
+      final billingItems = await _appDatabase.getPropertyBillingItems(property.id);
+      return _mapProperty(property, units, billingItems);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<Property> createProperty(Property property) async {

@@ -11,17 +11,16 @@ class TenantRepository {
 
   Future<List<Tenant>> getTenants() async {
     final tenants = await _appDatabase.getAllTenants();
-    return tenants.map((tenant) => Tenant(
-      id: tenant.id,
-      name: tenant.name,
-      phone: tenant.phone,
-      email: tenant.email,
-      socialNo: tenant.socialNo,
-      bday: tenant.bday,
-      personalNo: tenant.personalNo,
-      currentAddress: tenant.currentAddress,
-      createdAt: tenant.createdAt,
-    )).toList();
+    return tenants.map((tenant) => _mapTenant(tenant)).toList();
+  }
+
+  Future<Tenant?> getTenantById(String id) async {
+    try {
+      final tenant = await _appDatabase.getTenantById(id);
+      return _mapTenant(tenant);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<Tenant> createTenant(Tenant tenant) async {
@@ -61,6 +60,20 @@ class TenantRepository {
       throw Exception('Tenant has associated leases and cannot be deleted.');
     }
     await _appDatabase.deleteTenant(id);
+  }
+
+  Tenant _mapTenant(app_db.Tenant tenant) {
+    return Tenant(
+      id: tenant.id,
+      name: tenant.name,
+      phone: tenant.phone,
+      email: tenant.email,
+      socialNo: tenant.socialNo,
+      bday: tenant.bday,
+      personalNo: tenant.personalNo,
+      currentAddress: tenant.currentAddress,
+      createdAt: tenant.createdAt,
+    );
   }
 }
 
