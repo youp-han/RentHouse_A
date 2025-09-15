@@ -124,7 +124,7 @@ class ImageOptimizer {
     precacheImage(imageProvider, context).then((_) {
       AppLogger.debug('이미지 프리로딩 완료', tag: 'Performance');
     }).catchError((error) {
-      AppLogger.warning('이미지 프리로딩 실패', tag: 'Performance', error: error);
+      AppLogger.warning('이미지 프리로딩 실패', tag: 'Performance', details: error);
     });
   }
 }

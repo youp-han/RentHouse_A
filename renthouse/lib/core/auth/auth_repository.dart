@@ -106,7 +106,7 @@ class AuthRepository {
       if (e is AuthException) {
         rethrow;
       }
-      AppLogger.warning('로그인 중 오류 발생', tag: 'Auth', error: e, stackTrace: stackTrace);
+      AppLogger.warning('로그인 중 오류 발생', tag: 'Auth', details: e);
       throw AuthException('로그인 처리 중 오류가 발생했습니다.', details: e.toString(), stackTrace: stackTrace.toString());
     }
   }
