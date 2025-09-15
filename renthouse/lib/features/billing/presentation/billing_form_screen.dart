@@ -8,6 +8,8 @@ import 'package:renthouse/features/billing/domain/billing_item.dart';
 import 'package:renthouse/features/lease/application/lease_controller.dart';
 import 'package:renthouse/features/lease/domain/lease.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
+import 'package:renthouse/features/tenant/application/tenant_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
@@ -30,6 +32,9 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
   final List<TextEditingController> _amountControllers = [];
   final List<bool> _itemsChecked = [];
   int _totalAmount = 0;
+
+  // Cache for custom templates created during this session
+  final Map<String, BillTemplate> _customTemplates = {};
 
   bool get _isEditing => widget.billing != null;
 
@@ -167,11 +172,14 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
               final customTemplate = BillTemplate(
                 id: const Uuid().v4(),
                 name: name,
-                category: 'custom',
+                category: '사용자정의',
                 amount: amount,
                 description: '사용자 정의 항목',
               );
-              
+
+              // Cache the custom template for later retrieval
+              _customTemplates[customTemplate.id] = customTemplate;
+
               _addItem(customTemplate);
               Navigator.of(context).pop();
               
@@ -299,36 +307,26 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
 
   Future<void> _addDefaultBillingItems(String leaseId, List<Lease> availableLeases) async {
     final lease = availableLeases.firstWhere((l) => l.id == leaseId);
-    final templates = ref.read(billTemplateControllerProvider).value;
-    
-    if (templates == null) return;
-    
-    // Clear existing items when selecting a new lease
-    setState(() {
-      for (final controller in _amountControllers) {
-        controller.dispose();
-      }
-      _items.clear();
-      _amountControllers.clear();
-      _itemsChecked.clear();
-    });
-    
+    final templates = ref.read(billTemplateControllerProvider).value ?? [];
+
+    // Don't clear existing items, just add new ones
+
     // Get unit and property information
     final unitDetail = await ref.read(unitDetailProvider(lease.unitId).future);
-    final property = unitDetail != null 
+    final property = unitDetail != null
         ? await ref.read(propertyDetailProvider(unitDetail.propertyId).future)
         : null;
-    
+
     // Add default items with smart amounts
     final defaultItems = <Map<String, dynamic>>[];
-    
+
     // 1. Monthly rent - always add with lease amount
     defaultItems.add({
       'name': '월세',
       'amount': lease.monthlyRent,
       'checked': true,
     });
-    
+
     // 2. Add property's default billing items (자산에서 설정한 기본 청구 항목)
     if (property != null && property.defaultBillingItems.isNotEmpty) {
       for (final billingItem in property.defaultBillingItems) {
@@ -349,13 +347,13 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         'checked': true,
       });
     }
-    
+
     // 3. Parking fee - add if "주차" is in contract notes
     if (lease.contractNotes?.contains('주차') == true) {
       // Check if parking fee is not already in property billing items
-      final hasParking = property?.defaultBillingItems.any((item) => 
+      final hasParking = property?.defaultBillingItems.any((item) =>
         item.name.contains('주차') && item.isEnabled) ?? false;
-      
+
       if (!hasParking) {
         defaultItems.add({
           'name': '주차비',
@@ -364,26 +362,39 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         });
       }
     }
-    
-    // Find and add matching templates
+
+    // Create custom templates for default items and add them
     for (final itemData in defaultItems) {
       final itemName = itemData['name'] as String;
       final amount = itemData['amount'] as int;
       final checked = itemData['checked'] as bool;
-      
-      final template = templates.where((t) => t.name.contains(itemName)).firstOrNull;
-      if (template != null) {
-        setState(() {
-          _items.add(BillingItem(
-            id: const Uuid().v4(),
-            billingId: widget.billing?.id ?? 'temp',
-            billTemplateId: template.id,
-            amount: amount,
-          ));
-          _amountControllers.add(TextEditingController(text: amount.toString()));
-          _itemsChecked.add(checked);
-        });
+
+      // Try to find matching existing template
+      var template = templates.where((t) => t.name.contains(itemName)).firstOrNull;
+
+      // If no match found, create a custom template for this item
+      if (template == null) {
+        template = BillTemplate(
+          id: const Uuid().v4(),
+          name: itemName,
+          category: '기본',
+          amount: amount,
+          description: '기본 청구 항목',
+        );
+        // Cache the custom template for later retrieval
+        _customTemplates[template.id] = template;
       }
+
+      setState(() {
+        _items.add(BillingItem(
+          id: const Uuid().v4(),
+          billingId: widget.billing?.id ?? 'temp',
+          billTemplateId: template!.id,
+          amount: amount,
+        ));
+        _amountControllers.add(TextEditingController(text: amount.toString()));
+        _itemsChecked.add(checked);
+      });
     }
     
     _calculateTotal();
@@ -441,6 +452,9 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
   Widget build(BuildContext context) {
     final leasesAsync = ref.watch(leaseControllerProvider);
     final templatesAsync = ref.watch(billTemplateControllerProvider);
+    final tenantsAsync = ref.watch(tenantControllerProvider);
+    final unitsAsync = ref.watch(allUnitsProvider);
+    final propertiesAsync = ref.watch(propertyRepositoryProvider).getProperties();
 
     return Scaffold(
       appBar: AppBar(
@@ -489,32 +503,58 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
             ),
         ],
       ),
-      body: leasesAsync.when(
+      body: tenantsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('계약 목록 로딩 오류: $err')),
-        data: (availableLeases) => Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: _selectedLeaseId,
-                decoration: const InputDecoration(labelText: '계약 선택'),
-                items: availableLeases.map((Lease lease) {
-                  return DropdownMenuItem<String>(
-                    value: lease.id,
-                    child: Text('${lease.leaseType.displayName} - ${DateFormat('yyyy-MM-dd').format(lease.startDate)} ~ ${DateFormat('yyyy-MM-dd').format(lease.endDate)}'),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedLeaseId = value);
-                  if (value != null && !_isEditing) {
-                    // Show confirmation dialog for adding default items
-                    _showAddDefaultItemsDialog(value, availableLeases);
-                  }
-                },
-                validator: (value) => value == null ? '계약을 선택하세요' : null,
-              ),
+        error: (err, stack) => Center(child: Text('임차인 목록 로딩 오류: $err')),
+        data: (tenants) => unitsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('유닛 목록 로딩 오류: $err')),
+          data: (units) => FutureBuilder(
+            future: propertiesAsync,
+            builder: (context, propertiesSnapshot) {
+              if (propertiesSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final properties = propertiesSnapshot.data ?? [];
+
+              return leasesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('계약 목록 로딩 오류: $err')),
+                data: (availableLeases) => Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: _selectedLeaseId,
+                        decoration: const InputDecoration(labelText: '계약 선택'),
+                        items: availableLeases.map((Lease lease) {
+                          final tenant = tenants.firstWhereOrNull((t) => t.id == lease.tenantId);
+                          final unit = units.firstWhereOrNull((u) => u.id == lease.unitId);
+                          final property = unit != null
+                              ? properties.firstWhereOrNull((p) => p.id == unit.propertyId)
+                              : null;
+
+                          final propertyName = property?.name ?? '알 수 없는 자산';
+                          final unitNumber = unit?.unitNumber ?? '알 수 없는 유닛';
+                          final tenantName = tenant?.name ?? '알 수 없는 임차인';
+                          final displayText = '$propertyName:$unitNumber - $tenantName';
+
+                          return DropdownMenuItem<String>(
+                            value: lease.id,
+                            child: Text(displayText),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedLeaseId = value);
+                          if (value != null && !_isEditing) {
+                            // Show confirmation dialog for adding default items
+                            _showAddDefaultItemsDialog(value, availableLeases);
+                          }
+                        },
+                        validator: (value) => value == null ? '계약을 선택하세요' : null,
+                      ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: TextEditingController(
@@ -680,7 +720,12 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                   final item = entry.value;
                   
                   BillTemplate? template;
-                  if (templatesAsync.value != null) {
+
+                  // First check cached custom templates
+                  template = _customTemplates[item.billTemplateId];
+
+                  // If not found in cache, check official templates
+                  if (template == null && templatesAsync.value != null) {
                     for (var t in templatesAsync.value!) {
                       if (t.id == item.billTemplateId) {
                         template = t;
@@ -688,6 +733,15 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                       }
                     }
                   }
+
+                  // If template not found, create a default one for display
+                  template ??= BillTemplate(
+                    id: item.billTemplateId,
+                    name: '기본 항목',
+                    category: '기타',
+                    description: '청구 항목',
+                    amount: item.amount,
+                  );
                   
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
@@ -710,7 +764,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              template?.name ?? '알 수 없는 항목',
+                              template.name,
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: _itemsChecked[index] 
                                   ? null 
@@ -799,7 +853,11 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
               ),
               const SizedBox(height: 32),
               FilledButton(onPressed: _submit, child: const Text('저장')),
-            ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
