@@ -43,7 +43,7 @@ class AuthController extends _$AuthController {
       CrashReportingService.logInfo('User registration successful');
       CrashReportingService.recordUserAction('register_success', data: {'email': request.email});
     } catch (e) {
-      CrashReportingService.logError('User registration failed', e, StackTrace.current);
+      CrashReportingService.logWarning('User registration failed', e, StackTrace.current);
       CrashReportingService.recordUserAction('register_failed', data: {'email': request.email, 'error': e.toString()});
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
@@ -66,7 +66,7 @@ class AuthController extends _$AuthController {
       CrashReportingService.logInfo('User login successful');
       CrashReportingService.recordUserAction('login_success', data: {'email': email});
     } catch (e) {
-      CrashReportingService.logError('User login failed', e, StackTrace.current);
+      CrashReportingService.logWarning('User login failed', e, StackTrace.current);
       CrashReportingService.recordUserAction('login_failed', data: {'email': email, 'error': e.toString()});
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
@@ -113,7 +113,7 @@ class AuthController extends _$AuthController {
       state = const AsyncValue.data(null);
       CrashReportingService.logInfo('User account deleted successfully');
     } catch (e) {
-      CrashReportingService.logError('User account deletion failed', e, StackTrace.current);
+      CrashReportingService.logWarning('User account deletion failed', e, StackTrace.current);
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
     }
