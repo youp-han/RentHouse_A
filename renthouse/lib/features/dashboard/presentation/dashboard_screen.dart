@@ -6,6 +6,7 @@ import 'package:renthouse/features/settings/application/currency_controller.dart
 import 'package:renthouse/features/dashboard/application/dashboard_controller.dart';
 import 'package:renthouse/features/activity/application/activity_log_service.dart';
 import 'package:renthouse/features/activity/domain/activity_log.dart';
+import 'package:renthouse/features/lease/services/lease_status_service.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -46,6 +47,36 @@ class DashboardScreen extends ConsumerWidget {
               },
               icon: const Icon(Icons.search),
             ),
+          // 계약 상태 수동 업데이트 버튼
+          IconButton(
+            onPressed: () async {
+              final service = ref.read(leaseStatusServiceProvider);
+              try {
+                await service.forceUpdate();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('계약 상태가 업데이트되었습니다.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // 대시보드 데이터 새로고침
+                  ref.invalidate(dashboardControllerProvider);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('업데이트 실패: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.update),
+            tooltip: '계약 상태 업데이트',
+          ),
         ],
       ),
       body: SingleChildScrollView(
