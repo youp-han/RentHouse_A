@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/core/logging/crash_consent_wrapper.dart';
 import 'package:renthouse/core/performance/memory_manager.dart';
+import 'package:renthouse/core/utils/platform_utils.dart';
 import 'package:renthouse/features/lease/services/lease_status_service.dart';
 import 'theme.dart';
 import 'router.dart';
@@ -81,6 +82,8 @@ class _RentHouseAppState extends ConsumerState<RentHouseApp> with WidgetsBinding
       darkTheme: buildDarkTheme(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      // 플랫폼별 스크롤 동작 설정
+      scrollBehavior: PlatformUtils.getScrollBehavior(),
       builder: (context, child) {
         return CrashConsentWrapper(child: child ?? const SizedBox.shrink());
       },

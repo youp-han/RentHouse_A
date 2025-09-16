@@ -12,7 +12,8 @@
       "mcp__shrimp-task-manager__query_task",
       "mcp__shrimp-task-manager__get_task_detail",
       "Bash(flutter run:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": [],
     "ask": []
