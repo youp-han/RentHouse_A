@@ -543,13 +543,27 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                         decoration: const InputDecoration(labelText: '계약 선택'),
                         items: availableLeases.map((Lease lease) {
                           final tenant = tenants.firstWhereOrNull((t) => t.id == lease.tenantId);
-                          final unit = units.firstWhereOrNull((u) => u.id == lease.unitId);
-                          final property = unit != null
-                              ? properties.firstWhereOrNull((p) => p.id == unit.propertyId)
+
+                          // 가상 유닛 ID 처리
+                          String? propertyId;
+                          String unitNumber;
+
+                          if (lease.unitId.startsWith('virtual-unit-')) {
+                            // 가상 유닛 ID에서 propertyId 추출
+                            propertyId = lease.unitId.replaceFirst('virtual-unit-', '');
+                            unitNumber = '전체'; // 토지/주택의 경우 전체로 표시
+                          } else {
+                            // 실제 유닛 ID인 경우
+                            final unit = units.firstWhereOrNull((u) => u.id == lease.unitId);
+                            propertyId = unit?.propertyId;
+                            unitNumber = unit?.unitNumber ?? '알 수 없는 유닛';
+                          }
+
+                          final property = propertyId != null
+                              ? properties.firstWhereOrNull((p) => p.id == propertyId)
                               : null;
 
                           final propertyName = property?.name ?? '알 수 없는 자산';
-                          final unitNumber = unit?.unitNumber ?? '알 수 없는 유닛';
                           final tenantName = tenant?.name ?? '알 수 없는 임차인';
                           final displayText = '$propertyName:$unitNumber - $tenantName';
 
