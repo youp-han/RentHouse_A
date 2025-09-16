@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
 import 'package:renthouse/core/logging/crash_reporting_service.dart';
 import 'package:renthouse/core/logging/crash_consent_dialog.dart';
+import 'package:renthouse/core/services/database_backup_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -105,6 +106,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     subtitle: const Text('원화(KRW), 달러(USD) 등'),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () => context.go('/settings/currency'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.backup),
+                    title: const Text('데이터베이스 백업'),
+                    subtitle: const Text('현재 데이터를 안전한 위치에 백업'),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () => _handleDatabaseBackup(context),
                   ),
                   ListTile(
                     leading: const Icon(Icons.bug_report),
@@ -414,6 +422,108 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('회원 탈퇴 실패: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDatabaseBackup(BuildContext context) async {
+    bool isDialogOpen = false;
+
+    try {
+      // 백업 폴더 선택
+      final backupFolder = await DatabaseBackupService.selectBackupFolder();
+
+      if (backupFolder == null) {
+        if (mounted && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('백업 폴더가 선택되지 않았습니다.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!mounted || !context.mounted) return;
+
+      // 로딩 다이얼로그 표시
+      isDialogOpen = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => const AlertDialog(
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('데이터베이스를 백업하는 중...'),
+            ],
+          ),
+        ),
+      );
+
+      try {
+        // 백업 실행
+        final success = await DatabaseBackupService.backupDatabase(backupFolder);
+
+        // 로딩 다이얼로그 닫기
+        if (isDialogOpen && mounted && context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+          isDialogOpen = false;
+        }
+
+        // 잠시 대기 후 SnackBar 표시 (UI 안정화)
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        if (mounted && context.mounted) {
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('데이터베이스가 성공적으로 백업되었습니다.\n위치: $backupFolder'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('데이터베이스 백업에 실패했습니다.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // 백업 중 오류 발생 시 다이얼로그 닫기
+        if (isDialogOpen && mounted && context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+          isDialogOpen = false;
+        }
+        rethrow;
+      }
+    } catch (e) {
+      // 전체 과정에서 오류 발생 시 다이얼로그 닫기
+      if (isDialogOpen && mounted && context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (_) {
+          // 이미 닫혔을 수 있음
+        }
+        isDialogOpen = false;
+      }
+
+      // 잠시 대기 후 에러 메시지 표시
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('백업 중 오류 발생: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

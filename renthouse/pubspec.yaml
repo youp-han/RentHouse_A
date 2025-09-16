@@ -59,6 +59,8 @@ dependencies:
   # PDF 생성
   pdf: ^3.11.1
   printing: ^5.13.2
+  # 파일 선택기
+  file_picker: ^8.1.2
 
 dev_dependencies:
   flutter_test:
