@@ -224,11 +224,16 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
         }
       }
     } else {
-      // Fallback to management fee
-      previewItems.add({
-        'name': '관리비',
-        'amount': 50000,
-      });
+      // Fallback to management fee - only for villa, house, commercial properties
+      if (property != null &&
+          (property.propertyType.name == 'villa' ||
+           property.propertyType.name == 'house' ||
+           property.propertyType.name == 'commercial')) {
+        previewItems.add({
+          'name': '관리비',
+          'amount': 50000,
+        });
+      }
     }
     
     // 3. Parking fee from contract notes if not in property items
@@ -341,12 +346,17 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
       }
     } else {
       // Fallback to hardcoded items if no property billing items
-      // 2. Management fee - fixed 50,000 won
-      defaultItems.add({
-        'name': '관리비',
-        'amount': 50000,
-        'checked': true,
-      });
+      // 2. Management fee - only for villa, house, commercial properties
+      if (property != null &&
+          (property.propertyType.name == 'villa' ||
+           property.propertyType.name == 'house' ||
+           property.propertyType.name == 'commercial')) {
+        defaultItems.add({
+          'name': '관리비',
+          'amount': 50000,
+          'checked': true,
+        });
+      }
     }
 
     // 3. Parking fee - add if "주차" is in contract notes

@@ -214,10 +214,20 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
             DropdownButtonFormField<PropertyType>(
               initialValue: _selectedPropertyType,
               decoration: const InputDecoration(labelText: '자산 유형'),
-              items: PropertyType.values.map((type) => 
+              items: PropertyType.values.map((type) =>
                 DropdownMenuItem(value: type, child: Text(type.displayName))
               ).toList(),
-              onChanged: (value) => setState(() => _selectedPropertyType = value!),
+              onChanged: (value) {
+                setState(() {
+                  _selectedPropertyType = value!;
+                  // 토지/주택 외 자산의 경우 기본 unit 수를 1로 설정
+                  if (value != PropertyType.land && value != PropertyType.house) {
+                    if (_totalUnitsController.text.isEmpty || _totalUnitsController.text == '0') {
+                      _totalUnitsController.text = '1';
+                    }
+                  }
+                });
+              },
               validator: (v) => v == null ? '자산 유형을 선택해주세요.' : null,
             ),
             const SizedBox(height: 12),
@@ -234,9 +244,25 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _totalUnitsController,
-              decoration: const InputDecoration(labelText: '총 유닛 수'),
+              decoration: InputDecoration(
+                labelText: '총 유닛 수',
+                helperText: _selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house
+                    ? '토지/주택은 0으로 설정 가능합니다'
+                    : '일반 자산은 1 이상이어야 합니다',
+              ),
               keyboardType: TextInputType.number,
-              validator: (v) => (v == null || int.tryParse(v) == null) ? '유효한 총 유닛 수를 입력해주세요.' : null,
+              validator: (v) {
+                if (v == null || v.isEmpty) return '총 유닛 수를 입력해주세요.';
+                final units = int.tryParse(v);
+                if (units == null) return '유효한 총 유닛 수를 입력해주세요.';
+
+                // 토지/주택은 0 허용, 다른 자산은 1 이상 필요
+                if (_selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house) {
+                  return units < 0 ? '0 이상의 값을 입력해주세요.' : null;
+                } else {
+                  return units < 1 ? '1 이상의 값을 입력해주세요.' : null;
+                }
+              },
             ),
             const SizedBox(height: 24),
             // 소유자 정보 섹션 (task134)

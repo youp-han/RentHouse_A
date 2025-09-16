@@ -59,6 +59,16 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
 
   void _findPropertyIdFromUnit() async {
     if (_selectedUnitId != null) {
+      // 가상 유닛 ID인 경우 propertyId 추출
+      if (_selectedUnitId!.startsWith('virtual-unit-')) {
+        final propertyId = _selectedUnitId!.replaceFirst('virtual-unit-', '');
+        setState(() {
+          _selectedPropertyId = propertyId;
+        });
+        return;
+      }
+
+      // 실제 유닛 ID인 경우 기존 로직 수행
       final allUnits = await ref.read(allUnitsProvider.future);
       final selectedUnit = allUnits.firstWhere((unit) => unit.id == _selectedUnitId, orElse: () => allUnits.first);
       setState(() {
@@ -107,19 +117,45 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedTenantId == null || _selectedUnitId == null || _startDate == null || _endDate == null) {
+      // 토지/주택인지 확인
+      Property? selectedProperty;
+      if (_selectedPropertyId != null) {
+        final properties = await ref.read(propertyRepositoryProvider).getProperties();
+        selectedProperty = properties.firstWhere((p) => p.id == _selectedPropertyId, orElse: () => properties.first);
+      }
+
+      final isLandOrHouse = selectedProperty?.propertyType == PropertyType.land ||
+                           selectedProperty?.propertyType == PropertyType.house;
+
+      // 토지/주택이 아닌 경우 유닛 선택 필수
+      if (_selectedTenantId == null || _startDate == null || _endDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('모든 필드를 채워주세요.')),
         );
         return;
       }
 
+      if (!isLandOrHouse && _selectedUnitId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('유닛을 선택해주세요.')),
+        );
+        return;
+      }
+
+      // 토지/주택의 경우 가상의 유닛 ID 생성
+      String unitId;
+      if (isLandOrHouse) {
+        unitId = _selectedUnitId ?? 'virtual-unit-${_selectedPropertyId}';
+      } else {
+        unitId = _selectedUnitId!;
+      }
+
       final lease = Lease(
         id: widget.lease?.id ?? const Uuid().v4(),
         tenantId: _selectedTenantId!,
-        unitId: _selectedUnitId!,
+        unitId: unitId,
         startDate: _startDate!,
         endDate: _endDate!,
         deposit: int.parse(_depositController.text),
@@ -233,8 +269,10 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                     ? units.where((unit) => unit.propertyId == _selectedPropertyId).toList()
                     : <Unit>[];
                   
-                  // Ensure _selectedUnitId is valid
-                  if (_selectedUnitId != null && !filteredUnits.any((u) => u.id == _selectedUnitId)) {
+                  // Ensure _selectedUnitId is valid (토지/주택의 가상 유닛 ID는 제외)
+                  if (_selectedUnitId != null &&
+                      !filteredUnits.any((u) => u.id == _selectedUnitId) &&
+                      !_selectedUnitId!.startsWith('virtual-unit-')) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       setState(() {
                         _selectedUnitId = null;
@@ -304,27 +342,54 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                     const SizedBox(height: 16),
                     
                     // 유닛 선택 (선택된 자산의 유닛만)
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedUnitId,
-                      decoration: InputDecoration(
-                        labelText: '유닛 (호실)',
-                        enabled: _selectedPropertyId != null && filteredUnits.isNotEmpty,
-                        helperText: _selectedPropertyId == null 
-                          ? '먼저 자산을 선택하세요'
-                          : filteredUnits.isEmpty 
-                            ? '선택된 자산에 등록된 유닛이 없습니다'
+                    Builder(
+                      builder: (context) {
+                        // 선택된 자산이 토지/주택인지 확인
+                        final selectedProperty = properties.where((p) => p.id == _selectedPropertyId).firstOrNull;
+                        final isLandOrHouse = selectedProperty?.propertyType == PropertyType.land ||
+                                             selectedProperty?.propertyType == PropertyType.house;
+
+                        // 토지/주택인 경우 가상 유닛 ID 처리
+                        String? dropdownValue = _selectedUnitId;
+                        if (isLandOrHouse && _selectedUnitId != null && _selectedUnitId!.startsWith('virtual-unit-')) {
+                          dropdownValue = null; // 가상 유닛 ID는 드롭다운에서 null로 처리
+                        } else if (_selectedUnitId != null && !filteredUnits.any((u) => u.id == _selectedUnitId)) {
+                          dropdownValue = null; // 존재하지 않는 유닛 ID도 null로 처리
+                        }
+
+                        return DropdownButtonFormField<String>(
+                          value: dropdownValue,
+                          decoration: InputDecoration(
+                            labelText: isLandOrHouse ? '유닛 (호실) - 선택사항' : '유닛 (호실)',
+                            enabled: _selectedPropertyId != null && (filteredUnits.isNotEmpty || isLandOrHouse),
+                            helperText: _selectedPropertyId == null
+                              ? '먼저 자산을 선택하세요'
+                              : isLandOrHouse
+                                ? '토지/주택은 유닛 선택이 선택사항입니다'
+                                : filteredUnits.isEmpty
+                                  ? '선택된 자산에 등록된 유닛이 없습니다'
+                                  : null,
+                          ),
+                          items: filteredUnits.map((Unit unit) {
+                            return DropdownMenuItem<String>(
+                              value: unit.id,
+                              child: Text('${unit.unitNumber} (${unit.rentStatus.displayName})'),
+                            );
+                          }).toList(),
+                          onChanged: _selectedPropertyId != null && (filteredUnits.isNotEmpty || isLandOrHouse)
+                            ? (value) => setState(() {
+                                _selectedUnitId = value;
+                              })
                             : null,
-                      ),
-                      items: filteredUnits.map((Unit unit) {
-                        return DropdownMenuItem<String>(
-                          value: unit.id,
-                          child: Text('${unit.unitNumber} (${unit.rentStatus.displayName})'),
+                          validator: (value) {
+                            // 토지/주택이 아닌 경우에만 유닛 선택 필수
+                            if (!isLandOrHouse && value == null) {
+                              return '유닛을 선택하세요';
+                            }
+                            return null;
+                          },
                         );
-                      }).toList(),
-                      onChanged: _selectedPropertyId != null && filteredUnits.isNotEmpty
-                        ? (value) => setState(() => _selectedUnitId = value)
-                        : null,
-                      validator: (value) => value == null ? '유닛을 선택하세요' : null,
+                      }
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
