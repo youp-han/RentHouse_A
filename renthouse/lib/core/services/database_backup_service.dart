@@ -47,6 +47,8 @@ class DatabaseBackupService {
   }
 
   /// 백업 파일을 현재 데이터베이스 위치로 복원
+  /// Windows에서는 실행 중인 DB 파일을 직접 교체할 수 없으므로
+  /// 복원 정보를 저장하고 사용자에게 앱 재시작을 요청
   static Future<bool> restoreDatabase(String backupFilePath) async {
     try {
       AppLogger.info('데이터베이스 복원 시작', tag: 'DatabaseRestore');
@@ -65,7 +67,7 @@ class DatabaseBackupService {
 
       final currentDbPath = await DatabasePathChecker.getCurrentDatabasePath();
 
-      // 현재 데이터베이스가 있다면 백업 생성
+      // 현재 데이터베이스 백업 생성
       final currentDbFile = File(currentDbPath);
       if (await currentDbFile.exists()) {
         final preRestoreBackupPath = '$currentDbPath.pre-restore-backup';
@@ -73,14 +75,61 @@ class DatabaseBackupService {
         AppLogger.info('복원 전 현재 DB 백업 생성: $preRestoreBackupPath', tag: 'DatabaseRestore');
       }
 
-      // 백업 파일을 현재 위치로 복사
-      await backupFile.copy(currentDbPath);
+      // 복원할 백업 파일을 임시 위치에 복사
+      final restoreFilePath = '$currentDbPath.pending-restore';
+      await backupFile.copy(restoreFilePath);
 
-      AppLogger.info('데이터베이스 복원 완료: $currentDbPath', tag: 'DatabaseRestore');
+      // 복원 요청 플래그 파일 생성
+      final flagFile = File('$currentDbPath.restore-flag');
+      await flagFile.writeAsString(restoreFilePath);
+
+      AppLogger.info('데이터베이스 복원 준비 완료. 앱 재시작 필요.', tag: 'DatabaseRestore');
       return true;
 
     } catch (e, stackTrace) {
       AppLogger.error('데이터베이스 복원 중 오류 발생',
+          tag: 'DatabaseRestore', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  /// 앱 시작 시 복원 요청이 있는지 확인하고 실행
+  static Future<bool> checkAndPerformPendingRestore() async {
+    try {
+      final currentDbPath = await DatabasePathChecker.getCurrentDatabasePath();
+      final flagFile = File('$currentDbPath.restore-flag');
+
+      if (!await flagFile.exists()) {
+        return false; // 복원 요청 없음
+      }
+
+      final restoreFilePath = await flagFile.readAsString();
+      final restoreFile = File(restoreFilePath);
+
+      if (!await restoreFile.exists()) {
+        await flagFile.delete(); // 잘못된 플래그 파일 삭제
+        return false;
+      }
+
+      AppLogger.info('보류 중인 데이터베이스 복원 시작', tag: 'DatabaseRestore');
+
+      // 현재 DB 파일이 있다면 삭제
+      final currentDbFile = File(currentDbPath);
+      if (await currentDbFile.exists()) {
+        await currentDbFile.delete();
+      }
+
+      // 복원 파일을 현재 위치로 이동
+      await restoreFile.rename(currentDbPath);
+
+      // 플래그 파일 삭제
+      await flagFile.delete();
+
+      AppLogger.info('보류 중인 데이터베이스 복원 완료', tag: 'DatabaseRestore');
+      return true;
+
+    } catch (e, stackTrace) {
+      AppLogger.error('보류 중인 데이터베이스 복원 중 오류 발생',
           tag: 'DatabaseRestore', error: e, stackTrace: stackTrace);
       return false;
     }

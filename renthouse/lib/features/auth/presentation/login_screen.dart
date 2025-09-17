@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
 import 'package:renthouse/core/auth/auth_repository.dart';
 import 'package:renthouse/core/services/database_backup_service.dart';
+import 'dart:io';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -151,16 +152,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('데이터베이스가 성공적으로 복원되었습니다.\n앱을 재시작하세요.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 4),
+          // 복원 성공 - 앱 재시작 필요 안내
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('복원 준비 완료'),
+              content: const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('데이터베이스 복원이 준비되었습니다.'),
+                  SizedBox(height: 8),
+                  Text(
+                    '복원을 완료하려면 앱을 재시작해주세요.',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    '• 앱을 완전히 종료 후 다시 실행\n'
+                    '• 복원 후 백업된 데이터로 로그인',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // 앱 강제 재시작
+                    _restartApp();
+                  },
+                  child: const Text('확인 및 재시작'),
+                ),
+              ],
             ),
           );
-
-          // 사용자 이메일 다시 로드
-          _loadUserEmail();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -198,26 +225,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('데이터베이스 복원'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '선택한 백업 파일로 현재 데이터베이스를 교체하시겠습니까?\n\n'
-              '⚠️ 현재 데이터는 백업됩니다만, 이 작업은 신중하게 진행해주세요.\n',
-              style: TextStyle(fontSize: 14),
-            ),
-            if (backupInfo.isNotEmpty) ...[
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               const Text(
-                '백업 파일 정보:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                '선택한 백업 파일로 현재 데이터베이스를 완전히 교체하시겠습니까?\n',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text('• 파일명: ${backupInfo['fileName'] ?? 'Unknown'}'),
-              Text('• 크기: ${backupInfo['sizeFormatted'] ?? 'Unknown'}'),
-              Text('• 수정일: ${backupInfo['modifiedFormatted'] ?? 'Unknown'}'),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  border: Border.all(color: Colors.orange[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ 주의사항:',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '• 현재 모든 데이터가 삭제됩니다\n'
+                      '• 백업 파일의 데이터로 완전 교체됩니다\n'
+                      '• 현재 데이터는 자동으로 백업됩니다\n'
+                      '• 복원 후 앱 재시작이 필요합니다',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (backupInfo.isNotEmpty) ...[
+                const Text(
+                  '백업 파일 정보:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    border: Border.all(color: Colors.blue[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('📁 파일명: ${backupInfo['fileName'] ?? 'Unknown'}'),
+                      const SizedBox(height: 4),
+                      Text('📏 크기: ${backupInfo['sizeFormatted'] ?? 'Unknown'}'),
+                      const SizedBox(height: 4),
+                      Text('📅 수정일: ${backupInfo['modifiedFormatted'] ?? 'Unknown'}'),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -229,13 +299,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.blue,
             ),
-            child: const Text('복원'),
+            child: const Text('복원하기'),
           ),
         ],
       ),
     );
 
     return confirmed ?? false;
+  }
+
+  void _restartApp() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      // 데스크톱 플랫폼에서는 앱 종료 후 사용자가 수동으로 재시작
+      exit(0);
+    } else if (Platform.isAndroid) {
+      // 안드로이드에서는 SystemNavigator.pop()으로 종료
+      SystemNavigator.pop();
+    }
   }
 
   @override
@@ -341,16 +421,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: const Text('계정이 없으신가요? 회원가입하기'),
                 ),
 
-              // 데이터베이스 복원 버튼 (등록된 사용자가 없을 때만 표시)
-              if (!_hasRegisteredUser)
-                TextButton.icon(
-                  onPressed: _handleDatabaseRestore,
-                  icon: const Icon(Icons.restore),
-                  label: const Text('백업에서 데이터 복원'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.blue[600],
-                  ),
+              // 데이터베이스 복원 버튼 (항상 표시)
+              TextButton.icon(
+                onPressed: _handleDatabaseRestore,
+                icon: const Icon(Icons.restore),
+                label: const Text('백업에서 데이터 복원'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue[600],
                 ),
+              ),
 
               const SizedBox(height: 16),
               const Divider(),
