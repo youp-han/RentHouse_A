@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:renthouse/core/utils/database_path_checker.dart';
 import 'package:renthouse/core/utils/platform_utils.dart';
 import 'package:renthouse/core/logging/app_logger.dart';
@@ -152,22 +153,107 @@ class DatabaseBackupService {
     }
   }
 
+  /// 안드로이드 권한 확인 및 요청
+  static Future<bool> _requestAndroidPermissions() async {
+    if (!PlatformUtils.isAndroid) {
+      return true;
+    }
+
+    try {
+      // Android 13+ (API 33+)에서는 새로운 권한 체계 사용
+      if (Platform.version.contains('33') || Platform.version.contains('34')) {
+        // Scoped Storage로 파일 접근 (별도 권한 불필요)
+        AppLogger.info('Android 13+ 감지 - Scoped Storage 사용', tag: 'DatabaseRestore');
+        return true;
+      }
+
+      // Android 11+ (API 30+)에서는 MANAGE_EXTERNAL_STORAGE 권한 필요
+      var status = await Permission.manageExternalStorage.status;
+      if (status.isDenied) {
+        AppLogger.info('외부 저장소 관리 권한 요청', tag: 'DatabaseRestore');
+        status = await Permission.manageExternalStorage.request();
+      }
+
+      if (status.isGranted) {
+        AppLogger.info('외부 저장소 관리 권한 허용됨', tag: 'DatabaseRestore');
+        return true;
+      }
+
+      // MANAGE_EXTERNAL_STORAGE가 거부되면 기본 저장소 권한 요청
+      var storageStatus = await Permission.storage.status;
+      if (storageStatus.isDenied) {
+        AppLogger.info('저장소 권한 요청', tag: 'DatabaseRestore');
+        storageStatus = await Permission.storage.request();
+      }
+
+      AppLogger.info('저장소 권한 상태: $storageStatus', tag: 'DatabaseRestore');
+      return storageStatus.isGranted;
+    } catch (e) {
+      AppLogger.error('권한 요청 중 오류', tag: 'DatabaseRestore', error: e);
+      return false;
+    }
+  }
+
   /// 백업 파일 선택 (복원용)
   static Future<String?> selectBackupFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['sqlite', 'db'],
-        dialogTitle: '복원할 데이터베이스 백업 파일을 선택하세요',
-      );
+      AppLogger.info('파일 선택 시작', tag: 'DatabaseRestore');
 
-      if (result != null && result.files.single.path != null) {
-        return result.files.single.path!;
+      // 안드로이드에서 권한 확인
+      if (PlatformUtils.isAndroid) {
+        final hasPermission = await _requestAndroidPermissions();
+        if (!hasPermission) {
+          AppLogger.warning('파일 접근 권한이 없음', tag: 'DatabaseRestore');
+          return null;
+        }
+      }
+
+      FilePickerResult? result;
+
+      if (PlatformUtils.isAndroid) {
+        // 안드로이드에서는 더 유연한 파일 선택
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.any,
+          allowMultiple: false,
+          dialogTitle: '복원할 데이터베이스 백업 파일을 선택하세요',
+          withData: false, // 대용량 파일 처리를 위해 false로 설정
+          withReadStream: false,
+          allowCompression: false,
+        );
+      } else {
+        // 데스크톱에서는 확장자 제한
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['sqlite', 'db'],
+          dialogTitle: '복원할 데이터베이스 백업 파일을 선택하세요',
+        );
+      }
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.path != null) {
+          AppLogger.info('파일 선택 성공: ${file.path}', tag: 'DatabaseRestore');
+
+          // 안드로이드에서 선택된 파일이 SQLite 파일인지 확인
+          if (PlatformUtils.isAndroid) {
+            final fileName = file.name.toLowerCase();
+            if (!fileName.endsWith('.sqlite') && !fileName.endsWith('.db') && !fileName.contains('renthouse_backup')) {
+              AppLogger.warning('선택된 파일이 데이터베이스 백업 파일이 아닐 수 있습니다: $fileName', tag: 'DatabaseRestore');
+              // 경고는 표시하지만 선택을 막지는 않음 (파일 확장자가 없을 수도 있음)
+            }
+          }
+
+          return file.path!;
+        } else {
+          AppLogger.warning('선택된 파일의 경로가 null입니다', tag: 'DatabaseRestore');
+        }
+      } else {
+        AppLogger.info('파일 선택이 취소되었습니다', tag: 'DatabaseRestore');
       }
 
       return null;
-    } catch (e) {
-      AppLogger.error('백업 파일 선택 중 오류 발생', tag: 'DatabaseRestore', error: e);
+    } catch (e, stackTrace) {
+      AppLogger.error('백업 파일 선택 중 오류 발생', tag: 'DatabaseRestore', error: e, stackTrace: stackTrace);
       return null;
     }
   }

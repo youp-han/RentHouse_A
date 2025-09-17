@@ -70,7 +70,7 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
       _loadExistingBillingItems(p.defaultBillingItems);
     }
   }
-  
+
   void _loadExistingBillingItems(List<BillingItem> existingItems) {
     for (final existing in existingItems) {
       for (final item in _billingItems) {
@@ -211,291 +211,315 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(_isEditMode ? '자산 수정' : '자산 등록')),
-      body: Form(
-        key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: '이름'),
-              validator: (v) => (v == null || v.isEmpty) ? '이름은 필수입니다.' : null,
-            ),
-            const SizedBox(height: 12),
-            // 주소 필드들 (task136) + 우편번호 검색 기능 (task137, task138)
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _zipCodeController,
-                    decoration: const InputDecoration(labelText: '우편번호'),
-                    readOnly: true,
-                  ),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: _searchAddress,
-                  icon: const Icon(Icons.search),
-                  label: const Text('주소 검색'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 32,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _address1Controller,
-              decoration: const InputDecoration(
-                labelText: '주소',
-                helperText: '위의 "주소 검색" 버튼을 클릭하여 자동 입력하세요',
-              ),
-              validator: (v) => (v == null || v.isEmpty) ? '주소는 필수입니다.' : null,
-              readOnly: true,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _address2Controller,
-              decoration: const InputDecoration(labelText: '상세주소'),
-            ),
-            const SizedBox(height: 12),
-            // 자산 유형 드롭다운 (task132)
-            DropdownButtonFormField<PropertyType>(
-              initialValue: _selectedPropertyType,
-              decoration: const InputDecoration(labelText: '자산 유형'),
-              items: PropertyType.values.map((type) =>
-                DropdownMenuItem(value: type, child: Text(type.displayName))
-              ).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedPropertyType = value!;
-                  // 토지/주택 외 자산의 경우 기본 unit 수를 1로 설정
-                  if (value != PropertyType.land && value != PropertyType.house) {
-                    if (_totalUnitsController.text.isEmpty || _totalUnitsController.text == '0') {
-                      _totalUnitsController.text = '1';
-                    }
-                  }
-                });
-              },
-              validator: (v) => v == null ? '자산 유형을 선택해주세요.' : null,
-            ),
-            const SizedBox(height: 12),
-            // 계약 종류 드롭다운 (task135)
-            DropdownButtonFormField<ContractType>(
-              initialValue: _selectedContractType,
-              decoration: const InputDecoration(labelText: '계약 종류'),
-              items: ContractType.values.map((type) => 
-                DropdownMenuItem(value: type, child: Text(type.displayName))
-              ).toList(),
-              onChanged: (value) => setState(() => _selectedContractType = value!),
-              validator: (v) => v == null ? '계약 종류를 선택해주세요.' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _totalUnitsController,
-              decoration: InputDecoration(
-                labelText: '총 유닛 수',
-                helperText: _selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house
-                    ? '토지/주택은 0으로 설정 가능합니다'
-                    : '일반 자산은 1 이상이어야 합니다',
-              ),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                if (v == null || v.isEmpty) return '총 유닛 수를 입력해주세요.';
-                final units = int.tryParse(v);
-                if (units == null) return '유효한 총 유닛 수를 입력해주세요.';
-
-                // 토지/주택은 0 허용, 다른 자산은 1 이상 필요
-                if (_selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house) {
-                  return units < 0 ? '0 이상의 값을 입력해주세요.' : null;
-                } else {
-                  return units < 1 ? '1 이상의 값을 입력해주세요.' : null;
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-            // 소유자 정보 섹션 (task134)
-            const Text('소유자 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            // 현재 사용자와 동일 체크박스
-            CheckboxListTile(
-              title: const Text('소유자 정보가 로그인 회원과 동일'),
-              subtitle: const Text('성명과 이메일이 자동으로 입력됩니다'),
-              value: _useCurrentUserAsOwner,
-              onChanged: (bool? value) {
-                setState(() {
-                  _useCurrentUserAsOwner = value ?? false;
-                });
-
-                if (_useCurrentUserAsOwner) {
-                  _loadCurrentUserInfo();
-                } else {
-                  // 체크 해제 시 필드 초기화
-                  setState(() {
-                    _ownerNameController.clear();
-                    _ownerEmailController.clear();
-                  });
-                }
-              },
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _ownerNameController,
-              decoration: const InputDecoration(labelText: '소유자 성명'),
-              readOnly: _useCurrentUserAsOwner,
-              style: TextStyle(
-                color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _ownerPhoneController,
-              decoration: const InputDecoration(
-                labelText: '소유자 연락처 *',
-                helperText: '필수 입력 항목입니다',
-              ),
-              keyboardType: TextInputType.phone,
-              validator: _useCurrentUserAsOwner
-                ? (v) => (v == null || v.isEmpty) ? '연락처는 필수입니다.' : null
-                : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _ownerEmailController,
-              decoration: const InputDecoration(labelText: '소유자 이메일'),
-              keyboardType: TextInputType.emailAddress,
-              readOnly: _useCurrentUserAsOwner,
-              style: TextStyle(
-                color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // 청구 항목 선택 섹션 (추가 요구사항)
-            const Text('기본 청구 항목', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Column(
-              children: _billingItems.map((item) => Card(
-                child: CheckboxListTile(
-                  title: Text(item['name'] as String),
-                  subtitle: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('금액: '),
-                      SizedBox(
-                        width: 120,
-                        child: TextFormField(
-                          controller: item['controller'] as TextEditingController,
-                          decoration: const InputDecoration(
-                            suffixText: '원',
-                            isDense: true,
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(labelText: '이름'),
+                        validator: (v) => (v == null || v.isEmpty) ? '이름은 필수입니다.' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      // 주소 필드들 (task136) + 우편번호 검색 기능 (task137, task138)
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: TextFormField(
+                              controller: _zipCodeController,
+                              decoration: const InputDecoration(labelText: '우편번호'),
+                              readOnly: true,
+                            ),
                           ),
-                          keyboardType: TextInputType.number,
-                          enabled: item['enabled'] as bool,
-                          onChanged: (value) {
-                            final amount = int.tryParse(value) ?? 0;
-                            item['amount'] = amount;
-                          },
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: _searchAddress,
+                            icon: const Icon(Icons.search),
+                            label: const Text('주소 검색'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _address1Controller,
+                        decoration: const InputDecoration(
+                          labelText: '주소',
+                          helperText: '위의 "주소 검색" 버튼을 클릭하여 자동 입력하세요',
                         ),
+                        validator: (v) => (v == null || v.isEmpty) ? '주소는 필수입니다.' : null,
+                        readOnly: true,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _address2Controller,
+                        decoration: const InputDecoration(labelText: '상세주소'),
+                      ),
+                      const SizedBox(height: 12),
+                      // 자산 유형 드롭다운 (task132)
+                      DropdownButtonFormField<PropertyType>(
+                        value: _selectedPropertyType,
+                        decoration: const InputDecoration(labelText: '자산 유형'),
+                        items: PropertyType.values.map((type) =>
+                          DropdownMenuItem(value: type, child: Text(type.displayName))
+                        ).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPropertyType = value!;
+                            // 토지/주택 외 자산의 경우 기본 unit 수를 1로 설정
+                            if (value != PropertyType.land && value != PropertyType.house) {
+                              if (_totalUnitsController.text.isEmpty || _totalUnitsController.text == '0') {
+                                _totalUnitsController.text = '1';
+                              }
+                            }
+                          });
+                        },
+                        validator: (v) => v == null ? '자산 유형을 선택해주세요.' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      // 계약 종류 드롭다운 (task135)
+                      DropdownButtonFormField<ContractType>(
+                        value: _selectedContractType,
+                        decoration: const InputDecoration(labelText: '계약 종류'),
+                        items: ContractType.values.map((type) =>
+                          DropdownMenuItem(value: type, child: Text(type.displayName))
+                        ).toList(),
+                        onChanged: (value) => setState(() => _selectedContractType = value!),
+                        validator: (v) => v == null ? '계약 종류를 선택해주세요.' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _totalUnitsController,
+                        decoration: InputDecoration(
+                          labelText: '총 유닛 수',
+                          helperText: _selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house
+                              ? '토지/주택은 0으로 설정 가능합니다'
+                              : '일반 자산은 1 이상이어야 합니다',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return '총 유닛 수를 입력해주세요.';
+                          final units = int.tryParse(v);
+                          if (units == null) return '유효한 총 유닛 수를 입력해주세요.';
+
+                          // 토지/주택은 0 허용, 다른 자산은 1 이상 필요
+                          if (_selectedPropertyType == PropertyType.land || _selectedPropertyType == PropertyType.house) {
+                            return units < 0 ? '0 이상의 값을 입력해주세요.' : null;
+                          } else {
+                            return units < 1 ? '1 이상의 값을 입력해주세요.' : null;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      // 소유자 정보 섹션 (task134)
+                      const Text('소유자 정보', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+
+                      // 현재 사용자와 동일 체크박스
+                      CheckboxListTile(
+                        title: const Text('소유자 정보가 로그인 회원과 동일'),
+                        subtitle: const Text('성명과 이메일이 자동으로 입력됩니다'),
+                        value: _useCurrentUserAsOwner,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _useCurrentUserAsOwner = value ?? false;
+                          });
+
+                          if (_useCurrentUserAsOwner) {
+                            _loadCurrentUserInfo();
+                          } else {
+                            // 체크 해제 시 필드 초기화
+                            setState(() {
+                              _ownerNameController.clear();
+                              _ownerEmailController.clear();
+                            });
+                          }
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _ownerNameController,
+                        decoration: const InputDecoration(labelText: '소유자 성명'),
+                        readOnly: _useCurrentUserAsOwner,
+                        style: TextStyle(
+                          color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _ownerPhoneController,
+                        decoration: const InputDecoration(
+                          labelText: '소유자 연락처 *',
+                          helperText: '필수 입력 항목입니다',
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: _useCurrentUserAsOwner
+                          ? (v) => (v == null || v.isEmpty) ? '연락처는 필수입니다.' : null
+                          : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _ownerEmailController,
+                        decoration: const InputDecoration(labelText: '소유자 이메일'),
+                        keyboardType: TextInputType.emailAddress,
+                        readOnly: _useCurrentUserAsOwner,
+                        style: TextStyle(
+                          color: _useCurrentUserAsOwner ? Colors.grey[600] : null,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // 청구 항목 선택 섹션 (추가 요구사항)
+                      const Text('기본 청구 항목', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Column(
+                        children: _billingItems.map((item) => Card(
+                          child: CheckboxListTile(
+                            title: Text(item['name'] as String),
+                            subtitle: Row(
+                              children: [
+                                const Text('금액: '),
+                                SizedBox(
+                                  width: 120,
+                                  child: TextFormField(
+                                    controller: item['controller'] as TextEditingController,
+                                    decoration: const InputDecoration(
+                                      suffixText: '원',
+                                      isDense: true,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    enabled: item['enabled'] as bool,
+                                    onChanged: (value) {
+                                      final amount = int.tryParse(value) ?? 0;
+                                      item['amount'] = amount;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            value: item['enabled'] as bool,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                item['enabled'] = value ?? false;
+                              });
+                            },
+                          ),
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          FilledButton(
+                            onPressed: () async {
+                              if (_formKey.currentState!.validate()) {
+                                try {
+                                  // 청구 항목 준비
+                                  final billingItems = _billingItems
+                                    .where((item) => item['enabled'] as bool)
+                                    .map((item) => BillingItem(
+                                      name: item['name'] as String,
+                                      amount: item['amount'] as int,
+                                      isEnabled: true,
+                                    ))
+                                    .toList();
+
+                                  String propertyId;
+                                  if (_isEditMode) {
+                                    propertyId = widget.property!.id;
+                                    final updatedProperty = widget.property!.copyWith(
+                                      name: _nameController.text,
+                                      zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
+                                      address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
+                                      address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
+                                      propertyType: _selectedPropertyType,
+                                      contractType: _selectedContractType,
+                                      totalUnits: int.parse(_totalUnitsController.text),
+                                      ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
+                                      ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
+                                      ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
+                                      defaultBillingItems: billingItems,
+                                    );
+                                    await propertyRepository.updateProperty(updatedProperty);
+                                  } else {
+                                    propertyId = _uuid.v4();
+                                    final newProperty = Property(
+                                      id: propertyId,
+                                      name: _nameController.text,
+                                      zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
+                                      address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
+                                      address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
+                                      propertyType: _selectedPropertyType,
+                                      contractType: _selectedContractType,
+                                      totalUnits: int.parse(_totalUnitsController.text),
+                                      ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
+                                      ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
+                                      ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
+                                      defaultBillingItems: billingItems,
+                                      units: [], // Always create with empty units
+                                    );
+                                    await propertyRepository.createProperty(newProperty);
+                                  }
+
+                                  await propertyListController.refreshProperties();
+
+                                  // 자산 상세 정보 캐시 무효화 - 편집 후 상세화면에서 최신 데이터 표시
+                                  if (_isEditMode) {
+                                    ref.invalidate(propertyDetailProvider(propertyId));
+                                  }
+
+                                  if (!mounted) return;
+                                  final totalUnits = int.tryParse(_totalUnitsController.text) ?? 0;
+                                  if (totalUnits > 0) {
+                                    await _showAddUnitsDialog(propertyId);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('자산이 성공적으로 저장되었습니다.')),
+                                    );
+                                    context.go('/property');
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('자산 저장 실패: ${e.toString()}')),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text('저장'),
+                          ),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed: () => context.go('/property'),
+                            child: const Text('취소'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  value: item['enabled'] as bool,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      item['enabled'] = value ?? false;
-                    });
-                  },
                 ),
-              )).toList(),
-            ),
-            const SizedBox(height: 24),
-            Row(children: [
-              FilledButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    try {
-                      // 청구 항목 준비
-                      final billingItems = _billingItems
-                        .where((item) => item['enabled'] as bool)
-                        .map((item) => BillingItem(
-                          name: item['name'] as String,
-                          amount: item['amount'] as int,
-                          isEnabled: true,
-                        ))
-                        .toList();
-
-                      String propertyId;
-                      if (_isEditMode) {
-                        propertyId = widget.property!.id;
-                        final updatedProperty = widget.property!.copyWith(
-                          name: _nameController.text,
-                          zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
-                          address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
-                          address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
-                          propertyType: _selectedPropertyType,
-                          contractType: _selectedContractType,
-                          totalUnits: int.parse(_totalUnitsController.text),
-                          ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
-                          ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
-                          ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
-                          defaultBillingItems: billingItems,
-                        );
-                        await propertyRepository.updateProperty(updatedProperty);
-                      } else {
-                        propertyId = _uuid.v4();
-                        final newProperty = Property(
-                          id: propertyId,
-                          name: _nameController.text,
-                          zipCode: _zipCodeController.text.isEmpty ? null : _zipCodeController.text,
-                          address1: _address1Controller.text.isEmpty ? null : _address1Controller.text,
-                          address2: _address2Controller.text.isEmpty ? null : _address2Controller.text,
-                          propertyType: _selectedPropertyType,
-                          contractType: _selectedContractType,
-                          totalUnits: int.parse(_totalUnitsController.text),
-                          ownerName: _ownerNameController.text.isEmpty ? null : _ownerNameController.text,
-                          ownerPhone: _ownerPhoneController.text.isEmpty ? null : _ownerPhoneController.text,
-                          ownerEmail: _ownerEmailController.text.isEmpty ? null : _ownerEmailController.text,
-                          defaultBillingItems: billingItems,
-                          units: [], // Always create with empty units
-                        );
-                        await propertyRepository.createProperty(newProperty);
-                      }
-
-                      await propertyListController.refreshProperties();
-
-                      // 자산 상세 정보 캐시 무효화 - 편집 후 상세화면에서 최신 데이터 표시
-                      if (_isEditMode) {
-                        ref.invalidate(propertyDetailProvider(propertyId));
-                      }
-
-                      if (!mounted) return;
-                      final totalUnits = int.tryParse(_totalUnitsController.text) ?? 0;
-                      if (totalUnits > 0) {
-                        await _showAddUnitsDialog(propertyId);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('자산이 성공적으로 저장되었습니다.')),
-                        );
-                        context.go('/property');
-                      }
-                    } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('자산 저장 실패: ${e.toString()}')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('저장'),
-              ),
-              const SizedBox(width: 12),
-              TextButton(onPressed: () => context.go('/property'), child: const Text('취소')),
-            ])
-          ],
+              );
+            },
+          ),
         ),
       ),
     );

@@ -48,13 +48,40 @@ class PostcodeService {
   /// 모바일/Android용 우편번호 검색
   static Future<PostcodeResult?> _searchAddressMobile(BuildContext context) async {
     try {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => daum.DaumPostcodeSearch(
-            onConsoleMessage: (controller, consoleMessage) {
-              AppLogger.debug('WebView 콘솔: ${consoleMessage.message}', tag: _tag);
-            },
+      final result = await showModalBottomSheet<daum.DaumPostcodeSearchResult>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('주소 검색'),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+            body: daum.DaumPostcodeSearch(
+              onConsoleMessage: (controller, consoleMessage) {
+                AppLogger.debug('WebView 콘솔: ${consoleMessage.message}', tag: _tag);
+              },
+              onLoadError: (controller, url, code, message) {
+                AppLogger.error('WebView 로드 오류: $message', tag: _tag);
+              },
+              onLoadStop: (controller, url) async {
+                // 모바일에서 검색창이 잘 보이도록 스타일 조정
+                await controller.evaluateJavascript(source: '''
+                  var style = document.createElement('style');
+                  style.innerHTML = `
+                    #wrap { padding-top: 10px !important; }
+                    #search { font-size: 16px !important; padding: 12px !important; }
+                    .desc_search { font-size: 14px !important; margin: 10px 0 !important; }
+                  `;
+                  document.head.appendChild(style);
+                ''');
+              },
+            ),
           ),
         ),
       );

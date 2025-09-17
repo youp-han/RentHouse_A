@@ -61,6 +61,7 @@ dependencies:
   printing: ^5.13.2
   # 파일 선택기
   file_picker: ^8.1.2
+  permission_handler: ^11.3.1
   # 우편번호 검색 API
   daum_postcode_search: ^0.0.4  # Android/iOS용 다음 우편번호
   webview_flutter: ^4.0.0       # 대체 WebView 패키지
