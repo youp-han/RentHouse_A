@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>우편번호 검색</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+        }
+        #postcode_layer {
+            width: 100%;
+            height: 100vh;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">주소 검색 서비스를 로딩하는 중...</div>
+    <div id="postcode_layer" style="display: none;"></div>
+
+
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        function initPostcode() {
+            try {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('postcode_layer').style.display = 'block';
+
+                console.log('Creating daum.Postcode with direct function binding...');
+
+                // 전역에서 접근 가능한 콜백 함수 정의
+                window.postcodeComplete = function(data) {
+                    console.log('★★★ 전역 postcodeComplete 함수 호출됨! ★★★');
+                    console.log('Received data:', data);
+
+                    const result = {
+                        zonecode: data.zonecode,
+                        address: data.address,
+                        roadAddress: data.roadAddress,
+                        jibunAddress: data.jibunAddress,
+                        buildingName: data.buildingName || ''
+                    };
+
+                    console.log('Sending to Flutter:', result);
+
+                    // Flutter로 전송
+                    try {
+                        if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+                            window.flutter_inappwebview.callHandler('addressSelected', result);
+                            console.log('✅ 주소 데이터 Flutter로 전송 성공');
+                        }
+                    } catch (e) {
+                        console.error('Flutter 전송 중 오류:', e);
+                    }
+                };
+
+                // Daum Postcode 생성 (전역 함수 사용)
+                new daum.Postcode({
+                    oncomplete: window.postcodeComplete,
+                    onComplete: window.postcodeComplete, // 대소문자 둘 다 시도
+                    width: '100%',
+                    height: '100%',
+                    animation: false,
+                    focusInput: true,
+                    focusContent: true
+                }).embed(document.getElementById('postcode_layer'));
+
+                console.log('Daum Postcode embedded with global callback');
+            } catch (error) {
+                console.error('Postcode initialization error:', error);
+                document.getElementById('loading').innerHTML = '주소 검색 서비스 로딩 실패<br>네트워크를 확인해주세요.';
+            }
+        }
+
+        // 스크립트 로딩 완료를 확인하고 초기화
+        function waitForDaumAPI() {
+            // Flutter WebView 환경 확인
+            console.log('Checking Flutter communication...');
+            console.log('window.flutter_inappwebview:', !!window.flutter_inappwebview);
+            console.log('flutter_inappwebview.callHandler:', !!(window.flutter_inappwebview && window.flutter_inappwebview.callHandler));
+
+            if (typeof daum !== 'undefined' && typeof daum.Postcode !== 'undefined') {
+                initPostcode();
+            } else {
+                console.log('Waiting for Daum API to load...');
+                setTimeout(waitForDaumAPI, 200);
+            }
+        }
+
+        // 페이지 로드 완료 후 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(waitForDaumAPI, 1000);
+            });
+        } else {
+            setTimeout(waitForDaumAPI, 1000);
+        }
+    </script>
+</body>
+</html>

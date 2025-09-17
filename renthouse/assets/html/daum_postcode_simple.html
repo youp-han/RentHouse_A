@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>우편번호 검색 (Simple WebView + LocalhostServer)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+        }
+        #postcode_layer {
+            width: 100%;
+            height: 100vh;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">우편번호 서비스를 로딩하는 중...</div>
+    <div id="postcode_layer" style="display: none;"></div>
+
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        console.log('🚀 Simple WebView (LocalhostServer): Script started');
+
+        // Daum Postcode 초기화
+        function initPostcode() {
+            try {
+                console.log('📍 Simple WebView: Daum Postcode 초기화 중...');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('postcode_layer').style.display = 'block';
+
+                new daum.Postcode({
+                    oncomplete: function(data) {
+                        console.log('🎯 ★★★ Simple WebView: Daum oncomplete 호출됨! ★★★');
+                        console.log('📋 Simple WebView: 수신된 데이터:', data);
+
+                        const result = {
+                            zonecode: data.zonecode,
+                            address: data.address,
+                            roadAddress: data.roadAddress || data.address,
+                            jibunAddress: data.jibunAddress,
+                            buildingName: data.buildingName || ''
+                        };
+
+                        try {
+                            console.log('📤 Simple WebView: Flutter로 데이터 전송 중...');
+                            console.log('📦 전송할 데이터:', result);
+
+                            // Flutter 핸들러 호출
+                            window.flutter_inappwebview.callHandler('addressSelected', result)
+                                .then(function(response) {
+                                    console.log('✅ Flutter 핸들러 응답:', response);
+                                    // 주소 선택 후 창 닫기
+                                    setTimeout(function() {
+                                        console.log('🔄 주소 선택 완료, 창 닫기 시도...');
+                                        window.flutter_inappwebview.callHandler('closeWindow');
+                                    }, 500);
+                                })
+                                .catch(function(error) {
+                                    console.error('❌ Flutter 핸들러 오류:', error);
+                                });
+
+                        } catch (e) {
+                            console.error('❌ Simple WebView: 핸들러 호출 실패', e);
+                            // 에러 발생시에도 창 닫기 시도
+                            try {
+                                window.flutter_inappwebview.callHandler('closeWindow');
+                            } catch (closeError) {
+                                console.error('❌ 창 닫기도 실패:', closeError);
+                            }
+                        }
+                    },
+                    onclose: function(state) {
+                        console.log('🚪 Simple WebView: Daum onclose 호출됨, state:', state);
+                        if (state === 'FORCE_CLOSE') {
+                            try {
+                                console.log('💪 강제 종료로 인한 창 닫기...');
+                                window.flutter_inappwebview.callHandler('closeWindow');
+                            } catch (e) {
+                                console.error('❌ onclose에서 창 닫기 실패:', e);
+                            }
+                        }
+                    },
+                    width: '100%',
+                    height: '100%',
+                    animation: false
+                }).embed(document.getElementById('postcode_layer'));
+
+                console.log('✅ Simple WebView: Daum Postcode 임베드 완료');
+            } catch (error) {
+                console.error('❌ Simple WebView: Postcode 초기화 오류:', error);
+                document.getElementById('loading').innerHTML = '주소 검색 서비스 로딩 실패<br>네트워크를 확인해주세요.';
+            }
+        }
+
+        // Daum API 로딩 대기
+        function waitForDaumAPI() {
+            console.log('⏳ Flutter 통신 환경 확인...');
+            console.log('🔍 window.flutter_inappwebview 존재:', !!window.flutter_inappwebview);
+            console.log('🔍 callHandler 함수 존재:', !!(window.flutter_inappwebview && window.flutter_inappwebview.callHandler));
+
+            if (typeof daum !== 'undefined' && typeof daum.Postcode !== 'undefined') {
+                console.log('✅ Daum API 로딩 완료, 초기화 시작');
+                initPostcode();
+            } else {
+                console.log('⏳ Daum API 로딩 대기 중...');
+                setTimeout(waitForDaumAPI, 200);
+            }
+        }
+
+        // 페이지 로드 완료 후 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('📄 DOMContentLoaded - 1초 후 초기화 시작');
+                setTimeout(waitForDaumAPI, 1000);
+            });
+        } else {
+            console.log('📄 Document already loaded - 1초 후 초기화 시작');
+            setTimeout(waitForDaumAPI, 1000);
+        }
+    </script>
+</body>
+</html>

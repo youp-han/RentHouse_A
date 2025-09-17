@@ -13,7 +13,18 @@
       "mcp__shrimp-task-manager__get_task_detail",
       "Bash(flutter run:*)",
       "Bash(flutter test:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "mcp__shrimp-task-manager__research_mode",
+      "Bash(flutter pub:*)",
+      "Bash(where nuget)",
+      "Bash(dir:*)",
+      "Bash(cmd /c:*)",
+      "Bash(powershell:*)",
+      "Bash(set PATH=%PATH%)",
+      "Bash(C:ToolsNuGet)",
+      "Bash(C:ToolsNuGetnuget.exe)",
+      "Bash(flutter clean:*)",
+      "Bash(C:ToolsNuGetnuget.exe sources list)"
     ],
     "deny": [],
     "ask": []

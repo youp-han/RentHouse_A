@@ -60,14 +60,7 @@ class PlatformUtils {
   /// 플랫폼별 스크롤 동작 반환
   static ScrollBehavior getScrollBehavior() {
     if (isDesktop) {
-      return const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.touch,
-          PointerDeviceKind.stylus,
-          PointerDeviceKind.unknown,
-        },
-      );
+      return WindowsScrollBehavior();
     } else {
       return const MaterialScrollBehavior();
     }
@@ -109,6 +102,34 @@ class PlatformUtils {
     if (Platform.isMacOS) return 'macOS';
     if (Platform.isLinux) return 'Linux';
     return 'Unknown';
+  }
+}
+
+/// Windows용 커스텀 스크롤 동작
+class WindowsScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics();
+  }
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return Scrollbar(
+      controller: details.controller,
+      child: child,
+    );
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:renthouse/features/property/application/property_controller.dart
 import 'package:renthouse/features/property/domain/property.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
 import 'package:renthouse/core/auth/auth_repository.dart';
+import 'package:renthouse/core/services/postcode_service.dart';
 import 'package:uuid/uuid.dart';
 
 class PropertyFormScreen extends ConsumerStatefulWidget {
@@ -106,6 +107,35 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
     }
   }
 
+  // 우편번호 검색 기능 (Task137, Task138)
+  Future<void> _searchAddress() async {
+    try {
+      final result = await PostcodeService.searchAddress(context);
+      if (result != null) {
+        setState(() {
+          _zipCodeController.text = result.zipCode;
+          _address1Controller.text = result.address1;
+          // 상세주소 필드에 포커스 이동
+          FocusScope.of(context).nextFocus();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('주소가 자동으로 입력되었습니다.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('주소 검색 중 오류가 발생했습니다: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -193,16 +223,37 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
               validator: (v) => (v == null || v.isEmpty) ? '이름은 필수입니다.' : null,
             ),
             const SizedBox(height: 12),
-            // 주소 필드들 (task136)
-            TextFormField(
-              controller: _zipCodeController,
-              decoration: const InputDecoration(labelText: '우편번호'),
+            // 주소 필드들 (task136) + 우편번호 검색 기능 (task137, task138)
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _zipCodeController,
+                    decoration: const InputDecoration(labelText: '우편번호'),
+                    readOnly: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _searchAddress,
+                  icon: const Icon(Icons.search),
+                  label: const Text('주소 검색'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _address1Controller,
-              decoration: const InputDecoration(labelText: '주소'),
+              decoration: const InputDecoration(
+                labelText: '주소',
+                helperText: '위의 "주소 검색" 버튼을 클릭하여 자동 입력하세요',
+              ),
               validator: (v) => (v == null || v.isEmpty) ? '주소는 필수입니다.' : null,
+              readOnly: true,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -415,6 +466,11 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                       }
 
                       await propertyListController.refreshProperties();
+
+                      // 자산 상세 정보 캐시 무효화 - 편집 후 상세화면에서 최신 데이터 표시
+                      if (_isEditMode) {
+                        ref.invalidate(propertyDetailProvider(propertyId));
+                      }
 
                       if (!mounted) return;
                       final totalUnits = int.tryParse(_totalUnitsController.text) ?? 0;
