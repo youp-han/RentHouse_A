@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "renthouse" "\0"
+            VALUE "FileDescription", "UniRent" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "renthouse" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "renthouse.exe" "\0"
-            VALUE "ProductName", "renthouse" "\0"
+            VALUE "ProductName", "UniRent" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

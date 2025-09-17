@@ -277,7 +277,7 @@
 
 ---
 
-## 2025-09-12 (그룹 1/3)
+## 2025-09-12
 
 ### **task101, 102, 104, 105, 106, 109: 사용자 인증 및 프로필 관리**
 
@@ -313,10 +313,6 @@
   - `updateUserProfile` 메서드가 이름과 비밀번호 변경을 모두 처리합니다.
   - 비밀번호 변경 시에는 현재 비밀번호의 정확성을 먼저 검증한 후에만 새 비밀번호 해시를 데이터베이스에 업데이트하여 보안을 강화했습니다.
 
----
-
-## 2025-09-12 (그룹 2/3)
-
 ### **task114, 115, 117, 118, 119, 121: 수납 및 자동 배분 워크플로우 구현**
 
 수납금 등록 시 미납 청구서에 자동으로 배분하고, 청구 상태를 업데이트하는 핵심 재무 워크플로우를 구현했습니다.
@@ -345,10 +341,6 @@
   - '수납 등록' 화면은 이 워크플로우를 기반으로 설계되었습니다.
   - 사용자가 미납 청구서를 선택하면, 해당 청구서의 미납액이 수납 금액으로 자동 입력됩니다.
   - '등록' 버튼을 누르면 `createPayment`가 호출되어, 선택된 청구서에 수납액을 할당하는 '수동 배분' 방식으로 워크플로우가 실행됩니다. 이는 복잡한 자동 배분 로직을 사용자에게는 단순한 인터페이스로 제공하는 효과적인 UX 설계입니다.
-
----
-
-## 2025-09-12 (그룹 3/3)
 
 ### **task127, 128, 129, 130: 보고서 기능 구현**
 
@@ -381,9 +373,27 @@
   - **연체 현황 탭**: 연체 금액이 가장 큰 임차인 순으로 목록을 정렬하고, `ExpansionTile`을 사용하여 각 임차인의 상세 연체 내역을 확인할 수 있도록 UX를 구성했습니다.
   - **점유율 탭**: 자산별 점유율을 `LinearProgressIndicator`로 시각화하고, 잠재 수익과 실제 수익, 그로 인한 '수익 손실'을 명확히 표시하여 직관적인 분석을 돕습니다.
 
+### **task141, 142, 143: 주민등록번호 처리 개선 (분리 저장 및 UI 마스킹)**
+
+개인정보 보호 강화를 위해 임차인의 주민등록번호 처리 방식을 변경했습니다. 전체 번호를 저장하지 않고, UI 상에서는 마스킹 처리하여 보안을 개선했습니다.
+
+#### **1. 데이터 모델 및 저장 방식 변경 (`task141`, `task142`)**
+
+- **위치**: `/lib/core/database/app_database.dart`, `/lib/features/tenant/domain/tenant.dart`
+- **분리 저장**: 기존의 `socialNo` 필드 대신, `Tenants` 테이블에 `bday` (생년월일 6자리, Text)와 `personalNo` (성별 및 식별번호 첫째 자리, Integer) 두 개의 칼럼을 새로 추가하여 주민등록번호를 분리해 저장합니다. 이를 통해 전체 주민등록번호가 데이터베이스에 평문으로 저장되는 것을 방지합니다.
+- **도메인 모델 반영**: `Tenant` 도메인 모델에도 `bday`와 `personalNo` 필드를 추가하여 분리된 데이터를 관리합니다.
+
+#### **2. UI 마스킹 처리 (`task143`)**
+
+- **계산된 속성 (`/lib/features/tenant/domain/tenant.dart`)**:
+  - `Tenant` 모델 내에 `maskedSocialNo`라는 `getter`를 구현했습니다. 이 `getter`는 저장된 `bday`와 `personalNo`를 조합하여 `750331-1******`와 같은 형태로 마스킹된 주민등록번호 문자열을 동적으로 생성합니다. UI에서는 이 `maskedSocialNo`를 호출하여 항상 마스킹된 정보만 표시하도록 보장합니다.
+- **입력 UI (`/lib/features/tenant/presentation/tenant_form_screen.dart`)**:
+  - 임차인 등록/수정 화면에서 주민등록번호를 입력받는 UI를 단일 텍스트 필드가 아닌, '생년월일' 6자리와 '성별' 1자리를 입력하는 두 개의 분리된 `TextFormField`로 변경했습니다.
+  - UI상에서 두 필드 사이에 하이픈(-)과 `******` 마스킹을 시각적으로 표시하여, 사용자에게 익숙한 입력 경험을 제공하면서도 데이터는 분리하여 처리합니다.
+
 ---
 
-## 2025-09-11 (그룹 1/2)
+## 2025-09-11
 
 ### **task139, 140, 144-152: 임대 계약 및 유닛 관리 워크플로우 개선**
 
@@ -414,26 +424,93 @@
   - `createBulkBillings` (일괄 청구 생성) 로직 내에서, 계약의 월세를 기본으로 추가한 후, 해당 계약이 속한 자산에 미리 설정된 '기본 청구 항목'들을 자동으로 불러와 청구서에 함께 추가합니다.
   - 이 기능은 매월 반복되는 청구서 생성 작업을 자동화하여 사용자의 수고를 크게 덜어줍니다.
 
+### **task153, 154: 반응형 내비게이션 개선**
+
+데스크톱, 태블릿, 모바일 등 다양한 화면 크기에서 최적의 사용자 경험을 제공하기 위해 반응형 내비게이션 시스템을 구축했습니다.
+
+- **위치**: `/lib/app/main_layout.dart`
+- **핵심 로직**: `MainLayout` 위젯이 모든 주요 화면을 감싸는 `ShellRoute`의 본문 역할을 합니다. 이 위젯은 `MediaQuery`를 사용하여 현재 화면의 너비와 방향을 감지하고, 이에 따라 적절한 내비게이션 UI를 동적으로 렌더링합니다.
+- **분기 기준 (Breakpoints)**:
+  - **데스크톱 (너비 ≥ 1024px)**: 넓은 화면에 최적화된 `NavigationRail`을 표시합니다. 공간이 충분하므로 모든 메뉴에 텍스트 레이블을 함께 보여줍니다 (`NavigationRailLabelType.all`).
+  - **태블릿 가로모드 (768px ≤ 너비 < 1024px)**: `NavigationRail`을 사용하되, 공간 효율성을 위해 선택된 메뉴의 레이블만 표시합니다 (`NavigationRailLabelType.selected`).
+  - **모바일 및 태블릿 세로모드**: 위 조건에 해당하지 않는 좁은 화면에서는 `BottomNavigationBar`를 사용합니다.
+- **UI 구현**:
+  - **사이드 내비게이션 (`task153`)**: `NavigationRail` 위젯을 사용하여 데스크톱 및 태블릿 환경에 적합한 세로형 내비게이션을 구현했습니다.
+  - **하단 내비게이션 (`task154`)**: `BottomNavigationBar` 위젯을 사용하여 모바일 환경에 친숙한 하단 탭 바를 구현했습니다.
+- **상태 동기화**: `_calculateSelectedIndex` 함수가 `GoRouter`의 현재 경로(`location`)를 기반으로 활성화된 메뉴를 계산하여, 라우터의 상태와 내비게이션 UI가 항상 동기화되도록 합니다.
+
+### **초기 프로젝트 설정 및 구조 (2025-09-05 ~ 2025-09-10)**
+
+- **의존성 관리 (`pubspec.yaml`)**:
+  - **상태 관리**: `flutter_riverpod`
+  - **라우팅**: `go_router`
+  - **데이터베이스**: `drift`, `sqlite` 관련 패키지
+  - **네트워킹**: `dio`
+  - **데이터 모델**: `freezed`, `json_serializable`
+  - **유틸리티**: `intl`, `uuid`, `crypto` 등 핵심 라이브러리를 사용하여 프로젝트의 기반을 구축했습니다.
+- **라우팅 (`/lib/app/router.dart`)**:
+  - `GoRouter`를 사용하여 앱의 모든 경로를 중앙에서 관리합니다.
+  - **인증 리디렉션**: `redirect` 로직을 구현하여, 로그인하지 않은 사용자가 보호된 페이지에 접근 시 `/login`으로 강제 이동시키고, 로그인된 사용자가 로그인 페이지 접근 시 대시보드로 이동시키는 등 인증 상태에 따른 경로를 효과적으로 제어합니다.
+  - **`ShellRoute`**: `MainLayout`을 `ShellRoute`로 사용하여, 하위 모든 화면에서 내비게이션 UI(사이드 레일 또는 하단 바)가 유지되도록 하여 일관된 사용자 경험을 제공합니다.
+- **앱 진입점 (`/lib/app/app.dart`)**:
+  - `MaterialApp.router`를 설정하고, `theme.dart`에서 정의한 라이트/다크 테마를 적용합니다.
+  - `builder` 속성을 사용하여 앱 전체를 `CrashConsentWrapper`로 감싸, 최상위 레벨에서 오류 보고 동의 로직이 처리되도록 구성했습니다.
+
 ---
 
-## 2025-09-12 (그룹 4/4)
+## 2025-09-13
 
-### **task141, 142, 143: 주민등록번호 처리 개선 (분리 저장 및 UI 마스킹)**
+### **task107, 120, 122, 160: 주요 기능 상세 구현**
 
-개인정보 보호 강화를 위해 임차인의 주민등록번호 처리 방식을 변경했습니다. 전체 번호를 저장하지 않고, UI 상에서는 마스킹 처리하여 보안을 개선했습니다.
+#### **`task107`: 회원 탈퇴 기능**
 
-#### **1. 데이터 모델 및 저장 방식 변경 (`task141`, `task142`)**
+- **UI 위치**: `/lib/features/settings/presentation/settings_screen.dart`
+- **핵심 로직**:
+  1. '설정' 화면의 '회원 탈퇴' 메뉴를 통해 `_showDeleteAccountDialog`가 호출됩니다.
+  2. 사용자는 데이터가 영구 삭제됨을 경고받고, 작업을 계속하려면 현재 비밀번호를 입력해야 합니다.
+  3. `AuthRepository`의 `deleteAccount` 메서드는 입력된 비밀번호가 정확한지 먼저 확인합니다.
+  4. 검증이 완료되면, `AppDatabase`의 `deleteAllUserData` 트랜잭션이 실행됩니다. 이 트랜잭션은 청구 항목, 수납 내역, 청구서, 계약, 유닛, 자산, 그리고 마지막으로 사용자 계정 순서로 모든 관련 데이터를 안전하게 삭제하여 데이터 무결성을 보장합니다.
+  5. 모든 데이터 삭제 후 `logout`을 호출하여 기기에 저장된 세션 정보도 완전히 제거합니다.
 
-- **위치**: `/lib/core/database/app_database.dart`, `/lib/features/tenant/domain/tenant.dart`
-- **분리 저장**: 기존의 `socialNo` 필드 대신, `Tenants` 테이블에 `bday` (생년월일 6자리, Text)와 `personalNo` (성별 및 식별번호 첫째 자리, Integer) 두 개의 칼럼을 새로 추가하여 주민등록번호를 분리해 저장합니다. 이를 통해 전체 주민등록번호가 데이터베이스에 평문으로 저장되는 것을 방지합니다.
-- **도메인 모델 반영**: `Tenant` 도메인 모델에도 `bday`와 `personalNo` 필드를 추가하여 분리된 데이터를 관리합니다.
+#### **`task120`: 반자동 청구 생성**
 
-#### **2. UI 마스킹 처리 (`task143`)**
+- **위치**: `/lib/features/billing/data/billing_repository.dart`의 `createBulkBillings` 메서드.
+- '반자동'인 이유는 사용자가 '청구 목록' 화면에서 '일괄 생성' 버튼을 눌러 직접 실행하기 때문입니다.
+- **실행 로직**:
+  1. 모든 '활성' 상태의 계약을 조회합니다.
+  2. 각 계약에 대해, 해당 월의 청구서가 이미 존재하는지 `billingExistsForLeaseAndMonth`로 확인하여 중복 생성을 방지합니다.
+  3. 청구서가 없으면, 계약에 명시된 `monthlyRent`(월세)와 자산에 미리 설정된 '기본 청구 항목'(관리비, 수도비 등)을 합산하여 새로운 청구서를 생성합니다.
 
-- **계산된 속성 (`/lib/features/tenant/domain/tenant.dart`)**:
-  - `Tenant` 모델 내에 `maskedSocialNo`라는 `getter`를 구현했습니다. 이 `getter`는 저장된 `bday`와 `personalNo`를 조합하여 `750331-1******`와 같은 형태로 마스킹된 주민등록번호 문자열을 동적으로 생성합니다. UI에서는 이 `maskedSocialNo`를 호출하여 항상 마스킹된 정보만 표시하도록 보장합니다.
-- **입력 UI (`/lib/features/tenant/presentation/tenant_form_screen.dart`)**:
-  - 임차인 등록/수정 화면에서 주민등록번호를 입력받는 UI를 단일 텍스트 필드가 아닌, '생년월일' 6자리와 '성별' 1자리를 입력하는 두 개의 분리된 `TextFormField`로 변경했습니다.
-  - UI상에서 두 필드 사이에 하이픈(-)과 `******` 마스킹을 시각적으로 표시하여, 사용자에게 익숙한 입력 경험을 제공하면서도 데이터는 분리하여 처리합니다.
+#### **`task122`: 영수증 발행 기능**
 
----
+- **데이터 조합 (`/lib/features/payment/services/receipt_service.dart`)**: `createReceiptFromPayment` 메서드가 `paymentId`를 받아, 관련된 수납, 배분, 청구, 임차인, 자산 정보를 모두 조회하여 PDF 생성에 필요한 `Receipt` 데이터 객체로 조합합니다.
+- **PDF 생성 (`/lib/features/payment/services/receipt_pdf_service.dart`)**: `generateReceiptPdf` 메서드가 `Receipt` 객체를 받아 `pdf` 및 `printing` 패키지를 사용하여 A4 형식의 영수증 PDF를 생성하고, 네이티브 인쇄 미리보기 화면을 띄웁니다. 한글 표시를 위해 `PdfGoogleFonts.nanumGothicRegular` 폰트를 사용합니다.
+
+#### **`task160`: 활동 로그 구현**
+
+- **위치**: `/lib/features/activity/application/activity_log_service.dart`
+- `logPropertyCreated`, `logUserLogin` 등 주요 이벤트가 발생할 때 호출되는 특정 메서드를 제공합니다.
+- 이 서비스는 `AuthRepository`, `PropertyRepository` 등 데이터 변경이 발생하는 다양한 위치에서 호출됩니다.
+- `ActivityLogBuilder`를 통해 정형화된 로그 메시지를 생성하고, `ActivityLogRepository`를 통해 `ActivityLogs` 테이블에 로그를 영구적으로 기록합니다.
+
+## 2025-09-11
+
+### **task103: 사용자 설정(Settings) 화면 구현**
+
+- **위치**: `/lib/features/settings/presentation/settings_screen.dart`
+- `ListView`와 `Card`를 사용하여 '프로필', '앱 설정' 등 관련 기능들을 그룹화하여 보여주는 설정의 메인 화면입니다.
+- 각 `ListTile`은 '프로필 관리', '통화 설정', '데이터베이스 백업' 등 세부 설정 화면으로 사용자를 안내하는 내비게이션 역할을 수행합니다.
+
+### **task113: 수익 관리 기능 상세 구현**
+
+- **위치**: `/lib/features/payment/presentation/revenue_screen.dart`
+- `TabBar`를 사용하여 '대시보드', '수납 관리', '청구 현황'의 세 가지 뷰를 제공하는 복합 화면입니다.
+  - **대시보드 탭**: 이번 달의 핵심 재무 지표(총 수납액, 결제 수단별 현황 등)를 요약하여 보여줍니다.
+  - **수납 관리 탭**: 전체 수납 내역을 목록 형태로 제공하며, 검색 기능을 포함합니다.
+  - **청구 현황 탭**: 모든 청구서를 상태별(발행, 연체 등)로 그룹화하고 `ExpansionTile`로 표시하여 상세 내역을 확인할 수 있게 합니다.
+
+### **task162: 로깅 및 크래시 보고 시스템 통합**
+
+- **위치**: `/lib/core/logging/crash_reporting_service.dart`
+- `task163`에서 분석한 내용과 이어지며, `main.dart`에서 `CrashReportingService.initialize()`를 호출하여 앱의 생명주기 초기에 시스템을 초기화합니다.
+- `FlutterError.onError`를 재정의하여 Flutter 프레임워크 단에서 발생하는 모든 오류를 감지하고, 이를 `CrashReportingService`로 전달하여 기록 및 보고할 수 있도록 통합 처리합니다.
