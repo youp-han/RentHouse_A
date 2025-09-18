@@ -109,10 +109,9 @@ class AuthController extends _$AuthController {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.deleteAccount(password);
 
-      // 기존 AuthState도 업데이트 (라우터 호환성을 위해)
-      AuthState.instance.logout();
+      // After deletion, the user is effectively logged out, but we don't change the state here.
+      // The UI will show a confirmation and then explicitly call logout().
 
-      state = const AsyncValue.data(null);
       CrashReportingService.logInfo('User account deleted successfully');
     } catch (e) {
       CrashReportingService.logWarning('User account deletion failed', e, StackTrace.current);

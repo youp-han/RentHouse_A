@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/auth/application/auth_controller.dart';
 import 'package:renthouse/core/logging/crash_reporting_service.dart';
 import 'package:renthouse/core/logging/crash_consent_dialog.dart';
 import 'package:renthouse/core/services/database_backup_service.dart';
+import 'dart:io';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -278,7 +280,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   style: FilledButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.error,
                   ),
-                  child: const Text('계정 삭제'),
+                  child: const Text('계정 삭제 및 재시작'),
                 ),
               ],
             );
@@ -406,96 +408,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref, String password) async {
-    // showDialog future를 저장해서 더 안전하게 관리
-    Future<void>? loadingDialog;
+    BuildContext? dialogContext;
 
     try {
-      // 로딩 다이얼로그 표시
+      // 1. 로딩 다이얼로그 표시
       if (context.mounted) {
-        loadingDialog = showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => const AlertDialog(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 16),
-                Text('계정을 삭제하는 중...'),
-              ],
-            ),
-          ),
-        );
-      }
-
-      // 회원 탈퇴 실행
-      await ref.read(authControllerProvider.notifier).deleteAccount(password);
-
-      // 로딩 다이얼로그 닫기 (try-catch로 안전하게)
-      if (loadingDialog != null && context.mounted) {
-        try {
-          Navigator.of(context, rootNavigator: true).pop();
-        } catch (e) {
-          print('다이얼로그 닫기 실패: $e');
-        }
-      }
-
-      // UI 안정화를 위한 대기
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (context.mounted) {
-        // 완료 다이얼로그 표시
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green),
-                SizedBox(width: 8),
-                Text('계정 삭제 완료'),
-              ],
-            ),
-            content: const Text(
-              '계정 및 모든 관련 데이터가 성공적으로 삭제되었습니다.\n\n'
-              '데이터베이스 정리가 완료되었습니다.\n'
-              '앱을 다시 시작하여 변경사항을 완전히 적용해주세요.'
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  if (context.mounted) {
-                    context.go('/login');
-                  }
-                },
-                child: const Text('확인'),
+          builder: (ctx) {
+            dialogContext = ctx;
+            return const AlertDialog(
+              content: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 16),
+                  Text('계정을 삭제하는 중...'),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       }
-    } catch (e) {
-      print('회원 탈퇴 처리 중 오류: $e');
 
-      // 로딩 다이얼로그가 있다면 닫기
-      if (loadingDialog != null && context.mounted) {
-        try {
-          Navigator.of(context, rootNavigator: true).pop();
-        } catch (dialogError) {
-          print('다이얼로그 닫기 실패: $dialogError');
-        }
+      // 2. 계정 데이터 삭제
+      await ref.read(authControllerProvider.notifier).deleteAccount(password);
+
+      // 3. 로그아웃하여 세션 정리
+      await ref.read(authControllerProvider.notifier).logout();
+
+      // 4. 로딩 다이얼로그 닫기
+      if (dialogContext != null && dialogContext!.mounted) {
+        Navigator.of(dialogContext!).pop();
+      }
+
+      // 5. 앱 종료
+      _restartApp();
+
+    } catch (e) {
+      // 오류 발생 시 로딩 다이얼로그 닫기
+      if (dialogContext != null && dialogContext!.mounted) {
+        Navigator.of(dialogContext!).pop();
       }
 
       // UI 안정화를 위한 대기
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('회원 탈퇴 실패: ${e.toString()}'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -601,6 +565,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       }
+    }
+  }
+
+  void _restartApp() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      // 데스크톱 플랫폼에서는 앱 종료 후 사용자가 수동으로 재시작
+      exit(0);
+    } else if (Platform.isAndroid) {
+      // 안드로이드에서는 SystemNavigator.pop()으로 종료
+      SystemNavigator.pop();
     }
   }
 }

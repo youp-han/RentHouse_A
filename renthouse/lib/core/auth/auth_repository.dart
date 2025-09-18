@@ -200,8 +200,8 @@ class AuthRepository {
       // 1. 사용자와 연관된 모든 데이터 삭제 (자산, 유닛, 계약, 청구서, 수납 등)
       await _database.deleteAllUserData(currentUser.id);
       
-      // 2. 로컬 저장소에서 인증 정보 삭제
-      await logout();
+      // 2. 로컬 저장소에서 인증 정보 삭제는 logout() 메서드에서 별도로 처리합니다.
+      // await logout();
       
       if (kDebugMode) {
         final maskedEmail = currentUser.email.length > 3 ? 
