@@ -190,18 +190,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) async {
     final passwordController = TextEditingController();
-    final scrollController = ScrollController();
     final focusNode = FocusNode();
+    final textFieldKey = GlobalKey();
 
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
-        // Delay to allow keyboard to animate and view to resize
+        // Use ensureVisible to make the TextField visible
         Future.delayed(const Duration(milliseconds: 300), () {
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
+          final context = textFieldKey.currentContext;
+          if (context != null) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: 0.5, // Center the field in the viewport
+            );
+          }
         });
       }
     });
@@ -214,41 +218,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             return AlertDialog(
               title: const Text('회원 탈퇴'),
               content: SingleChildScrollView(
-                controller: scrollController,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '정말로 계정을 삭제하시겠습니까?\n\n' 
-                        '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n' 
-                        '• 계정 정보\n' 
-                        '• 등록된 모든 자산과 유닛\n' 
-                        '• 임차인 계약 정보\n' 
-                        '• 청구서 및 수납 내역\n' 
-                        '• 기타 모든 관련 데이터\n',
-                        style: TextStyle(fontSize: 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '정말로 계정을 삭제하시겠습니까?\n\n'
+                      '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n'
+                      '• 계정 정보\n'
+                      '• 등록된 모든 자산과 유닛\n'
+                      '• 임차인 계약 정보\n'
+                      '• 청구서 및 수납 내역\n'
+                      '• 기타 모든 관련 데이터\n',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '비밀번호를 입력하여 본인 확인을 해주세요:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      key: textFieldKey,
+                      controller: passwordController,
+                      focusNode: focusNode,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: '현재 비밀번호',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock),
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '비밀번호를 입력하여 본인 확인을 해주세요:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: passwordController,
-                        focusNode: focusNode,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: '현재 비밀번호',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -288,7 +289,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Dispose controllers after the dialog is closed
     passwordController.dispose();
-    scrollController.dispose();
     focusNode.dispose();
   }
 
@@ -406,13 +406,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref, String password) async {
+    // showDialog future를 저장해서 더 안전하게 관리
+    Future<void>? loadingDialog;
+
     try {
       // 로딩 다이얼로그 표시
       if (context.mounted) {
-        showDialog(
+        loadingDialog = showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const AlertDialog(
+          builder: (dialogContext) => const AlertDialog(
             content: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -427,29 +430,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // 회원 탈퇴 실행
       await ref.read(authControllerProvider.notifier).deleteAccount(password);
-      
+
+      // 로딩 다이얼로그 닫기 (try-catch로 안전하게)
+      if (loadingDialog != null && context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (e) {
+          print('다이얼로그 닫기 실패: $e');
+        }
+      }
+
+      // UI 안정화를 위한 대기
+      await Future.delayed(const Duration(milliseconds: 500));
+
       if (context.mounted) {
-        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
-        
-        // 성공 메시지 표시
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('계정이 성공적으로 삭제되었습니다.'),
-            backgroundColor: Colors.green,
+        // 완료 다이얼로그 표시
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('계정 삭제 완료'),
+              ],
+            ),
+            content: const Text(
+              '계정 및 모든 관련 데이터가 성공적으로 삭제되었습니다.\n\n'
+              '데이터베이스 정리가 완료되었습니다.\n'
+              '앱을 다시 시작하여 변경사항을 완전히 적용해주세요.'
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                },
+                child: const Text('확인'),
+              ),
+            ],
           ),
         );
-        
-        // 로그인 화면으로 이동
-        context.go('/login');
       }
     } catch (e) {
+      print('회원 탈퇴 처리 중 오류: $e');
+
+      // 로딩 다이얼로그가 있다면 닫기
+      if (loadingDialog != null && context.mounted) {
+        try {
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (dialogError) {
+          print('다이얼로그 닫기 실패: $dialogError');
+        }
+      }
+
+      // UI 안정화를 위한 대기
+      await Future.delayed(const Duration(milliseconds: 500));
+
       if (context.mounted) {
-        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('회원 탈퇴 실패: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
