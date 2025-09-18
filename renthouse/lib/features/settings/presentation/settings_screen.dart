@@ -188,48 +188,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) async {
+    final passwordController = TextEditingController();
+    final scrollController = ScrollController();
+    final focusNode = FocusNode();
+
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        // Delay to allow keyboard to animate and view to resize
+        Future.delayed(const Duration(milliseconds: 300), () {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        });
+      }
+    });
+
+    await showDialog(
       context: context,
       builder: (BuildContext context) {
-        final passwordController = TextEditingController();
-        
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('회원 탈퇴'),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  const Text(
-                    '정말로 계정을 삭제하시겠습니까?\n\n'
-                    '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n'
-                    '• 계정 정보\n'
-                    '• 등록된 모든 자산과 유닛\n'
-                    '• 임차인 계약 정보\n'
-                    '• 청구서 및 수납 내역\n'
-                    '• 기타 모든 관련 데이터\n',
-                    style: TextStyle(fontSize: 14),
+                controller: scrollController,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '정말로 계정을 삭제하시겠습니까?\n\n' 
+                        '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n' 
+                        '• 계정 정보\n' 
+                        '• 등록된 모든 자산과 유닛\n' 
+                        '• 임차인 계약 정보\n' 
+                        '• 청구서 및 수납 내역\n' 
+                        '• 기타 모든 관련 데이터\n',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '비밀번호를 입력하여 본인 확인을 해주세요:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: passwordController,
+                        focusNode: focusNode,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: '현재 비밀번호',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.lock),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '비밀번호를 입력하여 본인 확인을 해주세요:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: '현재 비밀번호',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                  ),
-                ],
-              ),
+                ),
               ),
               actions: [
                 TextButton(
@@ -265,6 +285,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       },
     );
+
+    // Dispose controllers after the dialog is closed
+    passwordController.dispose();
+    scrollController.dispose();
+    focusNode.dispose();
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {

@@ -85,9 +85,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _nameFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             const SizedBox(height: 24),
             Text(
               '개인정보 수정',
@@ -160,6 +161,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -169,9 +171,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _passwordFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             const SizedBox(height: 24),
             Text(
               '비밀번호 변경',
@@ -286,6 +289,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
             ),
           ],
+        ),
         ),
       ),
     );
