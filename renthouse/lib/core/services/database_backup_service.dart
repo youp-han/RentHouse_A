@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -211,7 +210,8 @@ class DatabaseBackupService {
       FilePickerResult? result;
 
       if (PlatformUtils.isAndroid) {
-        // 안드로이드에서는 더 유연한 파일 선택
+        // 안드로이드에서는 모든 파일 타입으로 시작 (확장자 제한 문제로 인해)
+        AppLogger.info('안드로이드에서 모든 파일 타입으로 파일 선택 시작', tag: 'DatabaseRestore');
         result = await FilePicker.platform.pickFiles(
           type: FileType.any,
           allowMultiple: false,

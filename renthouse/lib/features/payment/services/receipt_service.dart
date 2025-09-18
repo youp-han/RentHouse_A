@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:renthouse/core/database/app_database.dart';
 import 'package:renthouse/core/database/database_provider.dart';
-import 'package:renthouse/features/payment/domain/payment.dart';
 import 'package:renthouse/features/payment/domain/receipt.dart';
 import 'package:renthouse/features/payment/data/payment_repository.dart';
 import 'package:uuid/uuid.dart';
@@ -41,13 +40,10 @@ class ReceiptService {
 
       // 계약 및 유닛, 자산 정보 조회
       final lease = await _database.getLeaseById(billing.leaseId);
-      if (lease == null) continue;
 
       final unit = await _database.getUnitById(lease.unitId);
-      if (unit == null) continue;
 
       final property = await _database.getPropertyById(unit.propertyId);
-      if (property == null) continue;
 
       // 청구 항목들 조회
       final billingItems = await _database.getBillingItemsForBilling(billing.id);
@@ -165,7 +161,7 @@ class ReceiptService {
 
     return createCombinedReceipt(
       monthlyPayments.map((p) => p.id).toList(),
-      customMemo: '${year}년 ${month}월 통합 영수증',
+      customMemo: '$year년 $month월 통합 영수증',
     );
   }
 }

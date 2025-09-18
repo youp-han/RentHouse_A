@@ -337,16 +337,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 top: 24.0,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24.0,
               ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 48.0,
-                ),
-                child: IntrinsicHeight(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               const SizedBox(height: 24),
               Icon(
                 Icons.home,
@@ -479,9 +474,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
             );

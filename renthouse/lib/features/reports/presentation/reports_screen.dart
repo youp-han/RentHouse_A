@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/reports/application/reports_controller.dart';
 import 'package:renthouse/core/utils/currency_formatter.dart';
 import 'package:renthouse/features/settings/domain/currency.dart';

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:renthouse/features/payment/application/payment_controller.dart';
 import 'package:renthouse/features/payment/domain/payment.dart';
 import 'package:renthouse/features/payment/data/payment_repository.dart';
-import 'package:renthouse/features/payment/domain/receipt.dart';
 import 'package:renthouse/features/payment/services/receipt_service.dart';
 import 'package:renthouse/features/payment/services/receipt_pdf_service.dart';
 import 'package:renthouse/core/utils/currency_formatter.dart';

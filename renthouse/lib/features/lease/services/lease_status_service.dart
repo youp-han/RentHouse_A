@@ -3,9 +3,6 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:drift/drift.dart';
 import 'package:renthouse/core/database/app_database.dart';
-import 'package:renthouse/core/database/connection.dart';
-import 'package:renthouse/features/lease/domain/lease.dart';
-import 'package:renthouse/features/property/domain/unit.dart';
 
 part 'lease_status_service.g.dart';
 

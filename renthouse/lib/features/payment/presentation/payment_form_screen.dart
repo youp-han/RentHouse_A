@@ -6,7 +6,6 @@ import 'package:renthouse/features/payment/application/payment_controller.dart';
 import 'package:renthouse/features/payment/domain/payment.dart';
 import 'package:renthouse/features/billing/application/billing_controller.dart';
 import 'package:renthouse/features/billing/domain/billing.dart';
-import 'package:renthouse/core/utils/currency_formatter.dart';
 import 'package:renthouse/features/lease/data/lease_repository.dart';
 import 'package:renthouse/features/tenant/data/tenant_repository.dart';
 import 'package:renthouse/features/property/data/property_repository.dart';
@@ -187,7 +186,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
                           }
 
                           return DropdownButtonFormField<Billing>(
-                            value: _selectedBilling,
+                            initialValue: _selectedBilling,
                             decoration: const InputDecoration(
                               labelText: '청구서를 선택하세요',
                               border: OutlineInputBorder(),
@@ -271,7 +270,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
 
                       // 수납 방법
                       DropdownButtonFormField<PaymentMethod>(
-                        value: _selectedMethod,
+                        initialValue: _selectedMethod,
                         decoration: const InputDecoration(
                           labelText: '수납 방법',
                           border: OutlineInputBorder(),

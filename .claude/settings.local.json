@@ -29,7 +29,8 @@
       "Bash(flutter:*)",
       "Bash(set JAVA_HOME=C:Program FilesJAVAjdk-17)",
       "Bash(set PATH=%JAVA_HOME%bin)",
-      "Bash(%PATH%)"
+      "Bash(%PATH%)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

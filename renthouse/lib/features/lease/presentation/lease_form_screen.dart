@@ -147,7 +147,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
       // 토지/주택의 경우 가상의 유닛 ID 생성
       String unitId;
       if (isLandOrHouse) {
-        unitId = _selectedUnitId ?? 'virtual-unit-${_selectedPropertyId}';
+        unitId = _selectedUnitId ?? 'virtual-unit-$_selectedPropertyId';
       } else {
         unitId = _selectedUnitId!;
       }
@@ -358,7 +358,7 @@ class _LeaseFormScreenState extends ConsumerState<LeaseFormScreen> {
                         }
 
                         return DropdownButtonFormField<String>(
-                          value: dropdownValue,
+                          initialValue: dropdownValue,
                           decoration: InputDecoration(
                             labelText: isLandOrHouse ? '유닛 (호실) - 선택사항' : '유닛 (호실)',
                             enabled: _selectedPropertyId != null && (filteredUnits.isNotEmpty || isLandOrHouse),

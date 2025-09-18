@@ -221,7 +221,7 @@ class ActivityLogBuilder {
       id: '',
       userId: userId,
       activityType: ActivityType.billing,
-      description: '$yearMonth ${count}건의 청구서가 일괄 생성되었습니다',
+      description: '$yearMonth $count건의 청구서가 일괄 생성되었습니다',
       entityType: EntityType.billing.value,
       entityId: 'bulk_$yearMonth',
       entityName: '일괄 청구',

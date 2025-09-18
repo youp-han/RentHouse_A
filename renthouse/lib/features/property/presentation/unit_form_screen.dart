@@ -126,7 +126,7 @@ class _UnitFormScreenState extends ConsumerState<UnitFormScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<RentStatus>(
-              value: _selectedRentStatus,
+              initialValue: _selectedRentStatus,
               decoration: const InputDecoration(
                 labelText: '임대 상태',
                 border: OutlineInputBorder(),

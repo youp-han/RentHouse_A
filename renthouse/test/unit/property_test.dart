@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:renthouse/features/property/domain/property.dart';
-import 'package:renthouse/features/property/domain/unit.dart';
 
 void main() {
   group('Property Domain Model Tests', () {

@@ -16,6 +16,15 @@ class PlatformUtils {
   /// 현재 플랫폼이 웹인지 확인
   static bool get isWeb => kIsWeb;
 
+  /// 현재 플랫폼이 안드로이드인지 확인
+  static bool get isAndroid => !kIsWeb && Platform.isAndroid;
+
+  /// 현재 플랫폼이 iOS인지 확인
+  static bool get isIOS => !kIsWeb && Platform.isIOS;
+
+  /// 현재 플랫폼이 Windows인지 확인
+  static bool get isWindows => !kIsWeb && Platform.isWindows;
+
   /// 안드로이드/Windows 타겟 플랫폼인지 확인
   static bool get isTargetPlatform =>
       !kIsWeb && (Platform.isAndroid || Platform.isWindows);

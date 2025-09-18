@@ -277,7 +277,7 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                       const SizedBox(height: 12),
                       // 자산 유형 드롭다운 (task132)
                       DropdownButtonFormField<PropertyType>(
-                        value: _selectedPropertyType,
+                        initialValue: _selectedPropertyType,
                         decoration: const InputDecoration(labelText: '자산 유형'),
                         items: PropertyType.values.map((type) =>
                           DropdownMenuItem(value: type, child: Text(type.displayName))
@@ -298,7 +298,7 @@ class _PropertyFormScreenState extends ConsumerState<PropertyFormScreen> {
                       const SizedBox(height: 12),
                       // 계약 종류 드롭다운 (task135)
                       DropdownButtonFormField<ContractType>(
-                        value: _selectedContractType,
+                        initialValue: _selectedContractType,
                         decoration: const InputDecoration(labelText: '계약 종류'),
                         items: ContractType.values.map((type) =>
                           DropdownMenuItem(value: type, child: Text(type.displayName))

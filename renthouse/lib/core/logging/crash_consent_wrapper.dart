@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'crash_consent_dialog.dart';
 
 /// 앱 전체를 감싸서 최초 1회 동의 요청을 처리하는 Wrapper
 class CrashConsentWrapper extends ConsumerStatefulWidget {

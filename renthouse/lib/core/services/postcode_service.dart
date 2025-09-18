@@ -48,12 +48,15 @@ class PostcodeService {
   /// 모바일/Android용 우편번호 검색
   static Future<PostcodeResult?> _searchAddressMobile(BuildContext context) async {
     try {
-      final result = await showModalBottomSheet<daum.DaumPostcodeSearchResult>(
+      final result = await showModalBottomSheet<dynamic>(
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (context) => SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
+        builder: (context) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+          ),
           child: Scaffold(
             appBar: AppBar(
               title: const Text('주소 검색'),
@@ -61,26 +64,15 @@ class PostcodeService {
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
               ),
+              toolbarHeight: 56, // 표준 높이로 고정
             ),
-            body: daum.DaumPostcodeSearch(
-              onConsoleMessage: (controller, consoleMessage) {
-                AppLogger.debug('WebView 콘솔: ${consoleMessage.message}', tag: _tag);
-              },
-              onLoadError: (controller, url, code, message) {
-                AppLogger.error('WebView 로드 오류: $message', tag: _tag);
-              },
-              onLoadStop: (controller, url) async {
-                // 모바일에서 검색창이 잘 보이도록 스타일 조정
-                await controller.evaluateJavascript(source: '''
-                  var style = document.createElement('style');
-                  style.innerHTML = `
-                    #wrap { padding-top: 10px !important; }
-                    #search { font-size: 16px !important; padding: 12px !important; }
-                    .desc_search { font-size: 14px !important; margin: 10px 0 !important; }
-                  `;
-                  document.head.appendChild(style);
-                ''');
-              },
+            body: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: daum.DaumPostcodeSearch(
+                onConsoleMessage: (controller, consoleMessage) {
+                  AppLogger.debug('WebView 콘솔: ${consoleMessage.message}', tag: _tag);
+                },
+              ),
             ),
           ),
         ),
@@ -114,7 +106,7 @@ class PostcodeService {
         barrierDismissible: true,
         builder: (BuildContext dialogContext) {
           return Dialog(
-            child: Container(
+            child: SizedBox(
               width: 600,
               height: 500,
               child: _SimplePostcodeWidget(

@@ -16,7 +16,7 @@ class PasswordValidator {
     
     // 길이 검증
     if (password.length < minLength) {
-      return '비밀번호는 ${minLength}자 이상이어야 합니다';
+      return '비밀번호는 $minLength자 이상이어야 합니다';
     }
     
     // 영문자와 숫자만 허용 (한글, 특수문자 제외)

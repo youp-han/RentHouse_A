@@ -109,6 +109,8 @@ void main() {
 
 // Test screens for integration testing
 class TestHomeScreen extends StatelessWidget {
+  const TestHomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,6 +133,8 @@ class TestHomeScreen extends StatelessWidget {
 }
 
 class TestLoginScreen extends StatelessWidget {
+  const TestLoginScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,6 +160,8 @@ class TestLoginScreen extends StatelessWidget {
 }
 
 class TestDashboardScreen extends StatelessWidget {
+  const TestDashboardScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,6 +191,8 @@ class TestDashboardScreen extends StatelessWidget {
 }
 
 class TestPropertyListScreen extends StatelessWidget {
+  const TestPropertyListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,6 +209,8 @@ class TestPropertyListScreen extends StatelessWidget {
 }
 
 class NavigationTestScreen extends StatefulWidget {
+  const NavigationTestScreen({super.key});
+
   @override
   _NavigationTestScreenState createState() => _NavigationTestScreenState();
 }
@@ -236,6 +246,8 @@ class _NavigationTestScreenState extends State<NavigationTestScreen> {
 }
 
 class FormTestScreen extends StatefulWidget {
+  const FormTestScreen({super.key});
+
   @override
   _FormTestScreenState createState() => _FormTestScreenState();
 }

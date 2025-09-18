@@ -80,7 +80,7 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,8 +91,8 @@ class DashboardScreen extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: isDesktop ? 4 : (isTablet ? 3 : 2),
                 childAspectRatio: isDesktop ? 1.5 : (isMobile ? 1.1 : 1.3),
-                crossAxisSpacing: isMobile ? 8 : 16,
-                mainAxisSpacing: isMobile ? 8 : 16,
+                crossAxisSpacing: isMobile ? 6 : 16,
+                mainAxisSpacing: isMobile ? 6 : 16,
                 children: [
                   const _KPI(title: '이번 달 청구 합계', value: '로딩 중...', isLoading: true),
                   const _KPI(title: '이번 달 수납 합계', value: '로딩 중...', isLoading: true),
@@ -111,8 +111,8 @@ class DashboardScreen extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: isDesktop ? 4 : (isTablet ? 3 : 2),
                 childAspectRatio: isDesktop ? 1.5 : (isMobile ? 1.1 : 1.3),
-                crossAxisSpacing: isMobile ? 8 : 16,
-                mainAxisSpacing: isMobile ? 8 : 16,
+                crossAxisSpacing: isMobile ? 6 : 16,
+                mainAxisSpacing: isMobile ? 6 : 16,
                 children: [
                   _KPI(
                     title: '이번 달 청구 합계',

@@ -536,7 +536,7 @@ class _BillingFormScreenState extends ConsumerState<BillingFormScreen> {
                 data: (availableLeases) => Form(
                   key: _formKey,
                   child: ListView(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(8.0),
                     children: [
                       DropdownButtonFormField<String>(
                         initialValue: _selectedLeaseId,
