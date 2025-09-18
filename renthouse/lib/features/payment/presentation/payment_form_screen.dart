@@ -143,8 +143,13 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 청구서 선택 섹션
-              Card(
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 청구서 선택 섹션
+                      Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -186,6 +191,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
                           }
 
                           return DropdownButtonFormField<Billing>(
+                            isExpanded: true,
                             initialValue: _selectedBilling,
                             decoration: const InputDecoration(
                               labelText: '청구서를 선택하세요',
@@ -332,21 +338,22 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
                   ),
                 ),
               ),
-
-              const Spacer(),
-
-              // 등록 버튼
-              ElevatedButton(
-                onPressed: _submitPayment,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text(
-                  '수납 등록',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 8),
+      ElevatedButton(
+        onPressed: _submitPayment,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          '수납 등록',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    ],
           ),
         ),
       ),
