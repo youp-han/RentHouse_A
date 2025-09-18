@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:drift/drift.dart';
 import 'package:renthouse/core/database/app_database.dart';
+import 'package:renthouse/core/database/database_provider.dart';
 
 part 'lease_status_service.g.dart';
 
@@ -172,6 +173,6 @@ class LeaseStatusService {
 
 @riverpod
 LeaseStatusService leaseStatusService(LeaseStatusServiceRef ref) {
-  final database = AppDatabase();
+  final database = ref.watch(appDatabaseProvider);
   return LeaseStatusService(database);
 }
