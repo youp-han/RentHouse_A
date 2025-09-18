@@ -198,10 +198,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('회원 탈퇴'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const Text(
                     '정말로 계정을 삭제하시겠습니까?\n\n'
                     '⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:\n'
@@ -228,6 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                 ],
+              ),
               ),
               actions: [
                 TextButton(

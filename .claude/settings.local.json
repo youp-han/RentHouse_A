@@ -30,7 +30,8 @@
       "Bash(set JAVA_HOME=C:Program FilesJAVAjdk-17)",
       "Bash(set PATH=%JAVA_HOME%bin)",
       "Bash(%PATH%)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
