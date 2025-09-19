@@ -6,7 +6,7 @@ part of 'billing_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$billingControllerHash() => r'1feb7e9a2280c8c998bfae82800160c6cf5b4dd1';
+String _$billingControllerHash() => r'5abf4e537fff30b1d46ca7e1a86742ae1f170a5b';
 
 /// Copied from Dart SDK
 class _SystemHash {

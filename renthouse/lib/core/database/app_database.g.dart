@@ -3585,16 +3585,13 @@ class $BillingItemsTable extends BillingItems
   late final GeneratedColumn<String> billTemplateId = GeneratedColumn<String>(
     'bill_template_id',
     aliasedName,
-    false,
+    true,
     additionalChecks: GeneratedColumn.checkTextLength(
       minTextLength: 1,
       maxTextLength: 50,
     ),
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES bill_templates (id) ON DELETE RESTRICT',
-    ),
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _amountMeta = const VerificationMeta('amount');
   @override
@@ -3620,6 +3617,49 @@ class $BillingItemsTable extends BillingItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _unitPriceMeta = const VerificationMeta(
+    'unitPrice',
+  );
+  @override
+  late final GeneratedColumn<int> unitPrice = GeneratedColumn<int>(
+    'unit_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _taxMeta = const VerificationMeta('tax');
+  @override
+  late final GeneratedColumn<int> tax = GeneratedColumn<int>(
+    'tax',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _memoMeta = const VerificationMeta('memo');
+  @override
+  late final GeneratedColumn<String> memo = GeneratedColumn<String>(
+    'memo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3627,6 +3667,10 @@ class $BillingItemsTable extends BillingItems
     billTemplateId,
     amount,
     itemName,
+    quantity,
+    unitPrice,
+    tax,
+    memo,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3661,8 +3705,6 @@ class $BillingItemsTable extends BillingItems
           _billTemplateIdMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_billTemplateIdMeta);
     }
     if (data.containsKey('amount')) {
       context.handle(
@@ -3676,6 +3718,30 @@ class $BillingItemsTable extends BillingItems
       context.handle(
         _itemNameMeta,
         itemName.isAcceptableOrUnknown(data['item_name']!, _itemNameMeta),
+      );
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    }
+    if (data.containsKey('unit_price')) {
+      context.handle(
+        _unitPriceMeta,
+        unitPrice.isAcceptableOrUnknown(data['unit_price']!, _unitPriceMeta),
+      );
+    }
+    if (data.containsKey('tax')) {
+      context.handle(
+        _taxMeta,
+        tax.isAcceptableOrUnknown(data['tax']!, _taxMeta),
+      );
+    }
+    if (data.containsKey('memo')) {
+      context.handle(
+        _memoMeta,
+        memo.isAcceptableOrUnknown(data['memo']!, _memoMeta),
       );
     }
     return context;
@@ -3698,7 +3764,7 @@ class $BillingItemsTable extends BillingItems
       billTemplateId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}bill_template_id'],
-      )!,
+      ),
       amount: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}amount'],
@@ -3706,6 +3772,22 @@ class $BillingItemsTable extends BillingItems
       itemName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}item_name'],
+      ),
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
+      unitPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unit_price'],
+      )!,
+      tax: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tax'],
+      )!,
+      memo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}memo'],
       ),
     );
   }
@@ -3719,25 +3801,41 @@ class $BillingItemsTable extends BillingItems
 class BillingItem extends DataClass implements Insertable<BillingItem> {
   final String id;
   final String billingId;
-  final String billTemplateId;
+  final String? billTemplateId;
   final int amount;
   final String? itemName;
+  final int quantity;
+  final int unitPrice;
+  final int tax;
+  final String? memo;
   const BillingItem({
     required this.id,
     required this.billingId,
-    required this.billTemplateId,
+    this.billTemplateId,
     required this.amount,
     this.itemName,
+    required this.quantity,
+    required this.unitPrice,
+    required this.tax,
+    this.memo,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['billing_id'] = Variable<String>(billingId);
-    map['bill_template_id'] = Variable<String>(billTemplateId);
+    if (!nullToAbsent || billTemplateId != null) {
+      map['bill_template_id'] = Variable<String>(billTemplateId);
+    }
     map['amount'] = Variable<int>(amount);
     if (!nullToAbsent || itemName != null) {
       map['item_name'] = Variable<String>(itemName);
+    }
+    map['quantity'] = Variable<int>(quantity);
+    map['unit_price'] = Variable<int>(unitPrice);
+    map['tax'] = Variable<int>(tax);
+    if (!nullToAbsent || memo != null) {
+      map['memo'] = Variable<String>(memo);
     }
     return map;
   }
@@ -3746,11 +3844,17 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
     return BillingItemsCompanion(
       id: Value(id),
       billingId: Value(billingId),
-      billTemplateId: Value(billTemplateId),
+      billTemplateId: billTemplateId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(billTemplateId),
       amount: Value(amount),
       itemName: itemName == null && nullToAbsent
           ? const Value.absent()
           : Value(itemName),
+      quantity: Value(quantity),
+      unitPrice: Value(unitPrice),
+      tax: Value(tax),
+      memo: memo == null && nullToAbsent ? const Value.absent() : Value(memo),
     );
   }
 
@@ -3762,9 +3866,13 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
     return BillingItem(
       id: serializer.fromJson<String>(json['id']),
       billingId: serializer.fromJson<String>(json['billingId']),
-      billTemplateId: serializer.fromJson<String>(json['billTemplateId']),
+      billTemplateId: serializer.fromJson<String?>(json['billTemplateId']),
       amount: serializer.fromJson<int>(json['amount']),
       itemName: serializer.fromJson<String?>(json['itemName']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      unitPrice: serializer.fromJson<int>(json['unitPrice']),
+      tax: serializer.fromJson<int>(json['tax']),
+      memo: serializer.fromJson<String?>(json['memo']),
     );
   }
   @override
@@ -3773,24 +3881,38 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'billingId': serializer.toJson<String>(billingId),
-      'billTemplateId': serializer.toJson<String>(billTemplateId),
+      'billTemplateId': serializer.toJson<String?>(billTemplateId),
       'amount': serializer.toJson<int>(amount),
       'itemName': serializer.toJson<String?>(itemName),
+      'quantity': serializer.toJson<int>(quantity),
+      'unitPrice': serializer.toJson<int>(unitPrice),
+      'tax': serializer.toJson<int>(tax),
+      'memo': serializer.toJson<String?>(memo),
     };
   }
 
   BillingItem copyWith({
     String? id,
     String? billingId,
-    String? billTemplateId,
+    Value<String?> billTemplateId = const Value.absent(),
     int? amount,
     Value<String?> itemName = const Value.absent(),
+    int? quantity,
+    int? unitPrice,
+    int? tax,
+    Value<String?> memo = const Value.absent(),
   }) => BillingItem(
     id: id ?? this.id,
     billingId: billingId ?? this.billingId,
-    billTemplateId: billTemplateId ?? this.billTemplateId,
+    billTemplateId: billTemplateId.present
+        ? billTemplateId.value
+        : this.billTemplateId,
     amount: amount ?? this.amount,
     itemName: itemName.present ? itemName.value : this.itemName,
+    quantity: quantity ?? this.quantity,
+    unitPrice: unitPrice ?? this.unitPrice,
+    tax: tax ?? this.tax,
+    memo: memo.present ? memo.value : this.memo,
   );
   BillingItem copyWithCompanion(BillingItemsCompanion data) {
     return BillingItem(
@@ -3801,6 +3923,10 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           : this.billTemplateId,
       amount: data.amount.present ? data.amount.value : this.amount,
       itemName: data.itemName.present ? data.itemName.value : this.itemName,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
+      tax: data.tax.present ? data.tax.value : this.tax,
+      memo: data.memo.present ? data.memo.value : this.memo,
     );
   }
 
@@ -3811,14 +3937,27 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           ..write('billingId: $billingId, ')
           ..write('billTemplateId: $billTemplateId, ')
           ..write('amount: $amount, ')
-          ..write('itemName: $itemName')
+          ..write('itemName: $itemName, ')
+          ..write('quantity: $quantity, ')
+          ..write('unitPrice: $unitPrice, ')
+          ..write('tax: $tax, ')
+          ..write('memo: $memo')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, billingId, billTemplateId, amount, itemName);
+  int get hashCode => Object.hash(
+    id,
+    billingId,
+    billTemplateId,
+    amount,
+    itemName,
+    quantity,
+    unitPrice,
+    tax,
+    memo,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3827,15 +3966,23 @@ class BillingItem extends DataClass implements Insertable<BillingItem> {
           other.billingId == this.billingId &&
           other.billTemplateId == this.billTemplateId &&
           other.amount == this.amount &&
-          other.itemName == this.itemName);
+          other.itemName == this.itemName &&
+          other.quantity == this.quantity &&
+          other.unitPrice == this.unitPrice &&
+          other.tax == this.tax &&
+          other.memo == this.memo);
 }
 
 class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
   final Value<String> id;
   final Value<String> billingId;
-  final Value<String> billTemplateId;
+  final Value<String?> billTemplateId;
   final Value<int> amount;
   final Value<String?> itemName;
+  final Value<int> quantity;
+  final Value<int> unitPrice;
+  final Value<int> tax;
+  final Value<String?> memo;
   final Value<int> rowid;
   const BillingItemsCompanion({
     this.id = const Value.absent(),
@@ -3843,18 +3990,25 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     this.billTemplateId = const Value.absent(),
     this.amount = const Value.absent(),
     this.itemName = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.unitPrice = const Value.absent(),
+    this.tax = const Value.absent(),
+    this.memo = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BillingItemsCompanion.insert({
     required String id,
     required String billingId,
-    required String billTemplateId,
+    this.billTemplateId = const Value.absent(),
     required int amount,
     this.itemName = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.unitPrice = const Value.absent(),
+    this.tax = const Value.absent(),
+    this.memo = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        billingId = Value(billingId),
-       billTemplateId = Value(billTemplateId),
        amount = Value(amount);
   static Insertable<BillingItem> custom({
     Expression<String>? id,
@@ -3862,6 +4016,10 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     Expression<String>? billTemplateId,
     Expression<int>? amount,
     Expression<String>? itemName,
+    Expression<int>? quantity,
+    Expression<int>? unitPrice,
+    Expression<int>? tax,
+    Expression<String>? memo,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3870,6 +4028,10 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
       if (billTemplateId != null) 'bill_template_id': billTemplateId,
       if (amount != null) 'amount': amount,
       if (itemName != null) 'item_name': itemName,
+      if (quantity != null) 'quantity': quantity,
+      if (unitPrice != null) 'unit_price': unitPrice,
+      if (tax != null) 'tax': tax,
+      if (memo != null) 'memo': memo,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3877,9 +4039,13 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
   BillingItemsCompanion copyWith({
     Value<String>? id,
     Value<String>? billingId,
-    Value<String>? billTemplateId,
+    Value<String?>? billTemplateId,
     Value<int>? amount,
     Value<String?>? itemName,
+    Value<int>? quantity,
+    Value<int>? unitPrice,
+    Value<int>? tax,
+    Value<String?>? memo,
     Value<int>? rowid,
   }) {
     return BillingItemsCompanion(
@@ -3888,6 +4054,10 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
       billTemplateId: billTemplateId ?? this.billTemplateId,
       amount: amount ?? this.amount,
       itemName: itemName ?? this.itemName,
+      quantity: quantity ?? this.quantity,
+      unitPrice: unitPrice ?? this.unitPrice,
+      tax: tax ?? this.tax,
+      memo: memo ?? this.memo,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3910,6 +4080,18 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
     if (itemName.present) {
       map['item_name'] = Variable<String>(itemName.value);
     }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (unitPrice.present) {
+      map['unit_price'] = Variable<int>(unitPrice.value);
+    }
+    if (tax.present) {
+      map['tax'] = Variable<int>(tax.value);
+    }
+    if (memo.present) {
+      map['memo'] = Variable<String>(memo.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3924,6 +4106,10 @@ class BillingItemsCompanion extends UpdateCompanion<BillingItem> {
           ..write('billTemplateId: $billTemplateId, ')
           ..write('amount: $amount, ')
           ..write('itemName: $itemName, ')
+          ..write('quantity: $quantity, ')
+          ..write('unitPrice: $unitPrice, ')
+          ..write('tax: $tax, ')
+          ..write('memo: $memo, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8374,36 +8560,6 @@ typedef $$BillTemplatesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$BillTemplatesTableReferences
-    extends BaseReferences<_$AppDatabase, $BillTemplatesTable, BillTemplate> {
-  $$BillTemplatesTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static MultiTypedResultKey<$BillingItemsTable, List<BillingItem>>
-  _billingItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.billingItems,
-    aliasName: $_aliasNameGenerator(
-      db.billTemplates.id,
-      db.billingItems.billTemplateId,
-    ),
-  );
-
-  $$BillingItemsTableProcessedTableManager get billingItemsRefs {
-    final manager = $$BillingItemsTableTableManager(
-      $_db,
-      $_db.billingItems,
-    ).filter((f) => f.billTemplateId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_billingItemsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
 class $$BillTemplatesTableFilterComposer
     extends Composer<_$AppDatabase, $BillTemplatesTable> {
   $$BillTemplatesTableFilterComposer({
@@ -8437,31 +8593,6 @@ class $$BillTemplatesTableFilterComposer
     column: $table.description,
     builder: (column) => ColumnFilters(column),
   );
-
-  Expression<bool> billingItemsRefs(
-    Expression<bool> Function($$BillingItemsTableFilterComposer f) f,
-  ) {
-    final $$BillingItemsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.billingItems,
-      getReferencedColumn: (t) => t.billTemplateId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BillingItemsTableFilterComposer(
-            $db: $db,
-            $table: $db.billingItems,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$BillTemplatesTableOrderingComposer
@@ -8524,31 +8655,6 @@ class $$BillTemplatesTableAnnotationComposer
     column: $table.description,
     builder: (column) => column,
   );
-
-  Expression<T> billingItemsRefs<T extends Object>(
-    Expression<T> Function($$BillingItemsTableAnnotationComposer a) f,
-  ) {
-    final $$BillingItemsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.billingItems,
-      getReferencedColumn: (t) => t.billTemplateId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BillingItemsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.billingItems,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$BillTemplatesTableTableManager
@@ -8562,9 +8668,12 @@ class $$BillTemplatesTableTableManager
           $$BillTemplatesTableAnnotationComposer,
           $$BillTemplatesTableCreateCompanionBuilder,
           $$BillTemplatesTableUpdateCompanionBuilder,
-          (BillTemplate, $$BillTemplatesTableReferences),
+          (
+            BillTemplate,
+            BaseReferences<_$AppDatabase, $BillTemplatesTable, BillTemplate>,
+          ),
           BillTemplate,
-          PrefetchHooks Function({bool billingItemsRefs})
+          PrefetchHooks Function()
         > {
   $$BillTemplatesTableTableManager(_$AppDatabase db, $BillTemplatesTable table)
     : super(
@@ -8610,45 +8719,9 @@ class $$BillTemplatesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$BillTemplatesTableReferences(db, table, e),
-                ),
-              )
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
-          prefetchHooksCallback: ({billingItemsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (billingItemsRefs) db.billingItems],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (billingItemsRefs)
-                    await $_getPrefetchedData<
-                      BillTemplate,
-                      $BillTemplatesTable,
-                      BillingItem
-                    >(
-                      currentTable: table,
-                      referencedTable: $$BillTemplatesTableReferences
-                          ._billingItemsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BillTemplatesTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).billingItemsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.billTemplateId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
+          prefetchHooksCallback: null,
         ),
       );
 }
@@ -8663,9 +8736,12 @@ typedef $$BillTemplatesTableProcessedTableManager =
       $$BillTemplatesTableAnnotationComposer,
       $$BillTemplatesTableCreateCompanionBuilder,
       $$BillTemplatesTableUpdateCompanionBuilder,
-      (BillTemplate, $$BillTemplatesTableReferences),
+      (
+        BillTemplate,
+        BaseReferences<_$AppDatabase, $BillTemplatesTable, BillTemplate>,
+      ),
       BillTemplate,
-      PrefetchHooks Function({bool billingItemsRefs})
+      PrefetchHooks Function()
     >;
 typedef $$BillingsTableCreateCompanionBuilder =
     BillingsCompanion Function({
@@ -9269,18 +9345,26 @@ typedef $$BillingItemsTableCreateCompanionBuilder =
     BillingItemsCompanion Function({
       required String id,
       required String billingId,
-      required String billTemplateId,
+      Value<String?> billTemplateId,
       required int amount,
       Value<String?> itemName,
+      Value<int> quantity,
+      Value<int> unitPrice,
+      Value<int> tax,
+      Value<String?> memo,
       Value<int> rowid,
     });
 typedef $$BillingItemsTableUpdateCompanionBuilder =
     BillingItemsCompanion Function({
       Value<String> id,
       Value<String> billingId,
-      Value<String> billTemplateId,
+      Value<String?> billTemplateId,
       Value<int> amount,
       Value<String?> itemName,
+      Value<int> quantity,
+      Value<int> unitPrice,
+      Value<int> tax,
+      Value<String?> memo,
       Value<int> rowid,
     });
 
@@ -9306,28 +9390,6 @@ final class $$BillingItemsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
-
-  static $BillTemplatesTable _billTemplateIdTable(_$AppDatabase db) =>
-      db.billTemplates.createAlias(
-        $_aliasNameGenerator(
-          db.billingItems.billTemplateId,
-          db.billTemplates.id,
-        ),
-      );
-
-  $$BillTemplatesTableProcessedTableManager get billTemplateId {
-    final $_column = $_itemColumn<String>('bill_template_id')!;
-
-    final manager = $$BillTemplatesTableTableManager(
-      $_db,
-      $_db.billTemplates,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_billTemplateIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
 }
 
 class $$BillingItemsTableFilterComposer
@@ -9344,6 +9406,11 @@ class $$BillingItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get billTemplateId => $composableBuilder(
+    column: $table.billTemplateId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get amount => $composableBuilder(
     column: $table.amount,
     builder: (column) => ColumnFilters(column),
@@ -9351,6 +9418,26 @@ class $$BillingItemsTableFilterComposer
 
   ColumnFilters<String> get itemName => $composableBuilder(
     column: $table.itemName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unitPrice => $composableBuilder(
+    column: $table.unitPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tax => $composableBuilder(
+    column: $table.tax,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get memo => $composableBuilder(
+    column: $table.memo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9376,29 +9463,6 @@ class $$BillingItemsTableFilterComposer
     );
     return composer;
   }
-
-  $$BillTemplatesTableFilterComposer get billTemplateId {
-    final $$BillTemplatesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.billTemplateId,
-      referencedTable: $db.billTemplates,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BillTemplatesTableFilterComposer(
-            $db: $db,
-            $table: $db.billTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$BillingItemsTableOrderingComposer
@@ -9415,6 +9479,11 @@ class $$BillingItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get billTemplateId => $composableBuilder(
+    column: $table.billTemplateId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get amount => $composableBuilder(
     column: $table.amount,
     builder: (column) => ColumnOrderings(column),
@@ -9422,6 +9491,26 @@ class $$BillingItemsTableOrderingComposer
 
   ColumnOrderings<String> get itemName => $composableBuilder(
     column: $table.itemName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unitPrice => $composableBuilder(
+    column: $table.unitPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tax => $composableBuilder(
+    column: $table.tax,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get memo => $composableBuilder(
+    column: $table.memo,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9447,29 +9536,6 @@ class $$BillingItemsTableOrderingComposer
     );
     return composer;
   }
-
-  $$BillTemplatesTableOrderingComposer get billTemplateId {
-    final $$BillTemplatesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.billTemplateId,
-      referencedTable: $db.billTemplates,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BillTemplatesTableOrderingComposer(
-            $db: $db,
-            $table: $db.billTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$BillingItemsTableAnnotationComposer
@@ -9484,11 +9550,28 @@ class $$BillingItemsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get billTemplateId => $composableBuilder(
+    column: $table.billTemplateId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
 
   GeneratedColumn<String> get itemName =>
       $composableBuilder(column: $table.itemName, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<int> get unitPrice =>
+      $composableBuilder(column: $table.unitPrice, builder: (column) => column);
+
+  GeneratedColumn<int> get tax =>
+      $composableBuilder(column: $table.tax, builder: (column) => column);
+
+  GeneratedColumn<String> get memo =>
+      $composableBuilder(column: $table.memo, builder: (column) => column);
 
   $$BillingsTableAnnotationComposer get billingId {
     final $$BillingsTableAnnotationComposer composer = $composerBuilder(
@@ -9512,29 +9595,6 @@ class $$BillingItemsTableAnnotationComposer
     );
     return composer;
   }
-
-  $$BillTemplatesTableAnnotationComposer get billTemplateId {
-    final $$BillTemplatesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.billTemplateId,
-      referencedTable: $db.billTemplates,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$BillTemplatesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.billTemplates,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$BillingItemsTableTableManager
@@ -9550,7 +9610,7 @@ class $$BillingItemsTableTableManager
           $$BillingItemsTableUpdateCompanionBuilder,
           (BillingItem, $$BillingItemsTableReferences),
           BillingItem,
-          PrefetchHooks Function({bool billingId, bool billTemplateId})
+          PrefetchHooks Function({bool billingId})
         > {
   $$BillingItemsTableTableManager(_$AppDatabase db, $BillingItemsTable table)
     : super(
@@ -9567,9 +9627,13 @@ class $$BillingItemsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> billingId = const Value.absent(),
-                Value<String> billTemplateId = const Value.absent(),
+                Value<String?> billTemplateId = const Value.absent(),
                 Value<int> amount = const Value.absent(),
                 Value<String?> itemName = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+                Value<int> unitPrice = const Value.absent(),
+                Value<int> tax = const Value.absent(),
+                Value<String?> memo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillingItemsCompanion(
                 id: id,
@@ -9577,15 +9641,23 @@ class $$BillingItemsTableTableManager
                 billTemplateId: billTemplateId,
                 amount: amount,
                 itemName: itemName,
+                quantity: quantity,
+                unitPrice: unitPrice,
+                tax: tax,
+                memo: memo,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 required String billingId,
-                required String billTemplateId,
+                Value<String?> billTemplateId = const Value.absent(),
                 required int amount,
                 Value<String?> itemName = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+                Value<int> unitPrice = const Value.absent(),
+                Value<int> tax = const Value.absent(),
+                Value<String?> memo = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BillingItemsCompanion.insert(
                 id: id,
@@ -9593,6 +9665,10 @@ class $$BillingItemsTableTableManager
                 billTemplateId: billTemplateId,
                 amount: amount,
                 itemName: itemName,
+                quantity: quantity,
+                unitPrice: unitPrice,
+                tax: tax,
+                memo: memo,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -9603,7 +9679,7 @@ class $$BillingItemsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({billingId = false, billTemplateId = false}) {
+          prefetchHooksCallback: ({billingId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -9636,19 +9712,6 @@ class $$BillingItemsTableTableManager
                               )
                               as T;
                     }
-                    if (billTemplateId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.billTemplateId,
-                                referencedTable: $$BillingItemsTableReferences
-                                    ._billTemplateIdTable(db),
-                                referencedColumn: $$BillingItemsTableReferences
-                                    ._billTemplateIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
 
                     return state;
                   },
@@ -9673,7 +9736,7 @@ typedef $$BillingItemsTableProcessedTableManager =
       $$BillingItemsTableUpdateCompanionBuilder,
       (BillingItem, $$BillingItemsTableReferences),
       BillingItem,
-      PrefetchHooks Function({bool billingId, bool billTemplateId})
+      PrefetchHooks Function({bool billingId})
     >;
 typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({

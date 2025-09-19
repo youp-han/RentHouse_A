@@ -118,9 +118,13 @@ class Billings extends Table {
 class BillingItems extends Table {
   TextColumn get id => text().withLength(min: 1, max: 50)();
   TextColumn get billingId => text().withLength(min: 1, max: 50).references(Billings, #id, onDelete: KeyAction.cascade)();
-  TextColumn get billTemplateId => text().withLength(min: 1, max: 50).references(BillTemplates, #id, onDelete: KeyAction.restrict)();
+  TextColumn get billTemplateId => text().withLength(min: 1, max: 50).nullable()(); // Foreign Key 제거 - nullable로 변경
   IntColumn get amount => integer()();
   TextColumn get itemName => text().withLength(min: 1, max: 100).nullable()(); // 템플릿 이름 직접 저장
+  IntColumn get quantity => integer().withDefault(const Constant(1))(); // 수량
+  IntColumn get unitPrice => integer().withDefault(const Constant(0))(); // 단가
+  IntColumn get tax => integer().withDefault(const Constant(0))(); // 세금
+  TextColumn get memo => text().nullable()(); // 메모
 
   @override
   Set<Column> get primaryKey => {id};
@@ -183,7 +187,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? connect());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -232,6 +236,37 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         // BillingItems 테이블에 itemName 컬럼 추가 (청구 항목 이름 직접 저장)
         await m.addColumn(billingItems, billingItems.itemName);
+      }
+
+      if (from < 9) {
+        // task116: BillingItems 테이블에 상세 필드 추가
+        await m.addColumn(billingItems, billingItems.quantity);
+        await m.addColumn(billingItems, billingItems.unitPrice);
+        await m.addColumn(billingItems, billingItems.tax);
+        await m.addColumn(billingItems, billingItems.memo);
+      }
+
+      if (from < 10) {
+        // task168: Foreign Key 제약조건 제거를 위한 테이블 재생성
+        // SQLite에서는 Foreign Key 제약조건을 직접 제거할 수 없으므로
+        // 임시 테이블을 만들고 데이터를 복사한 후 기존 테이블을 교체
+        await customStatement('''
+          CREATE TABLE billing_items_temp AS SELECT * FROM billing_items;
+          DROP TABLE billing_items;
+          CREATE TABLE billing_items (
+            id TEXT NOT NULL PRIMARY KEY,
+            billing_id TEXT NOT NULL REFERENCES billings(id) ON DELETE CASCADE,
+            bill_template_id TEXT,
+            amount INTEGER NOT NULL,
+            item_name TEXT,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            unit_price INTEGER NOT NULL DEFAULT 0,
+            tax INTEGER NOT NULL DEFAULT 0,
+            memo TEXT
+          );
+          INSERT INTO billing_items SELECT * FROM billing_items_temp;
+          DROP TABLE billing_items_temp;
+        ''');
       }
     },
   );

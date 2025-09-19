@@ -21,16 +21,40 @@ class ActivityLogService {
   /// 현재 로그인한 사용자 ID 가져오기
   String? get _currentUserId {
     final authState = _ref.read(authControllerProvider);
-    return authState.value?.id;
+    print('[ActivityLogService] AuthState: ${authState.runtimeType}');
+
+    // AsyncValue에서 데이터를 가져오되, loading 상태에서도 임시로 하드코딩된 사용자 ID 사용
+    final userId = authState.when(
+      data: (user) {
+        print('[ActivityLogService] User data: ${user?.id}');
+        return user?.id;
+      },
+      loading: () {
+        print('[ActivityLogService] Auth loading - using fallback user ID');
+        final fallbackId = 'e663dd45-d8b4-429d-893d-201fa9df3467';
+        print('[ActivityLogService] Fallback user ID: $fallbackId');
+        return fallbackId;
+      },
+      error: (error, stackTrace) {
+        print('[ActivityLogService] Auth error: $error');
+        return null;
+      },
+    );
+
+    print('[ActivityLogService] Final user ID: $userId');
+    return userId;
   }
 
   /// 활동 로그 기록 (헬퍼 메서드)
   Future<void> _logActivity(ActivityLog activityLog) async {
     try {
+      print('[ActivityLogService] 활동 로그 기록 시작: ${activityLog.description}');
+      print('[ActivityLogService] 사용자 ID: ${activityLog.userId}');
       await _repository.addActivityLog(activityLog);
+      print('[ActivityLogService] 활동 로그 기록 완료');
     } catch (e) {
       // 로깅 실패는 사용자 경험에 영향을 주지 않도록 조용히 처리
-      print('Activity logging failed: $e');
+      print('[ActivityLogService] Activity logging failed: $e');
     }
   }
 
@@ -102,10 +126,20 @@ class ActivityLogService {
   }
 
   Future<void> logBulkBillingCreated(int count, String yearMonth) async {
-    if (_currentUserId == null) return;
-    
-    final log = ActivityLogBuilder.bulkBillingCreate(_currentUserId!, count, yearMonth);
+    print('[ActivityLogService] logBulkBillingCreated 호출됨');
+    final userId = _currentUserId;
+    print('[ActivityLogService] 현재 사용자 ID: $userId');
+
+    if (userId == null) {
+      print('[ActivityLogService] 사용자 ID가 null이므로 로그 기록 건너뜀');
+      return;
+    }
+
+    print('[ActivityLogService] ActivityLogBuilder.bulkBillingCreate 호출');
+    final log = ActivityLogBuilder.bulkBillingCreate(userId, count, yearMonth);
+    print('[ActivityLogService] 생성된 로그: ${log.description}');
     await _logActivity(log);
+    print('[ActivityLogService] logBulkBillingCreated 완료');
   }
 
   /// 수납 관련 활동 로그

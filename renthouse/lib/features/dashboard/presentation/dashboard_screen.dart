@@ -7,6 +7,7 @@ import 'package:renthouse/features/dashboard/application/dashboard_controller.da
 import 'package:renthouse/features/activity/application/activity_log_service.dart';
 import 'package:renthouse/features/activity/domain/activity_log.dart';
 import 'package:renthouse/features/lease/services/lease_status_service.dart';
+import 'package:renthouse/features/billing/application/billing_controller.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -202,6 +203,49 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   _QuickActionButton(
+                    icon: Icons.auto_awesome,
+                    label: '청구서일괄발행',
+                    onPressed: () async {
+                      try {
+                        print('=== 청구서 일괄발행 시작 ===');
+                        final controller = ref.read(billingControllerProvider().notifier);
+                        final createdIds = await controller.autoGenerateInvoices();
+                        print('=== 청구서 일괄발행 완료: ${createdIds.length}개 생성 ===');
+
+                        if (context.mounted) {
+                          final message = createdIds.isEmpty
+                              ? '모든 청구서가 이미 발행되었습니다.'
+                              : '${createdIds.length}개의 청구서가 자동 발행되었습니다.';
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor: createdIds.isEmpty ? Colors.orange : Colors.green,
+                            ),
+                          );
+
+                          // 대시보드 새로고침
+                          ref.invalidate(dashboardControllerProvider);
+                        }
+                      } catch (e, stackTrace) {
+                        print('=== 청구서 일괄발행 오류 ===');
+                        print('오류: $e');
+                        print('스택트레이스: $stackTrace');
+                        print('=========================');
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('자동 발행 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _QuickActionButton(
                     icon: Icons.picture_as_pdf,
                     label: '보고서 다운로드',
                     onPressed: () {},
@@ -234,6 +278,48 @@ class DashboardScreen extends ConsumerWidget {
                     },
                     icon: const Icon(Icons.receipt_long),
                     label: const Text('월 청구 생성'),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      try {
+                        print('=== 청구서 일괄발행 시작 ===');
+                        final controller = ref.read(billingControllerProvider().notifier);
+                        final createdIds = await controller.autoGenerateInvoices();
+                        print('=== 청구서 일괄발행 완료: ${createdIds.length}개 생성 ===');
+
+                        if (context.mounted) {
+                          final message = createdIds.isEmpty
+                              ? '모든 청구서가 이미 발행되었습니다.'
+                              : '${createdIds.length}개의 청구서가 자동 발행되었습니다.';
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor: createdIds.isEmpty ? Colors.orange : Colors.green,
+                            ),
+                          );
+
+                          // 대시보드 새로고침
+                          ref.invalidate(dashboardControllerProvider);
+                        }
+                      } catch (e, stackTrace) {
+                        print('=== 청구서 일괄발행 오류 ===');
+                        print('오류: $e');
+                        print('스택트레이스: $stackTrace');
+                        print('=========================');
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('자동 발행 실패: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('청구서일괄발행'),
                   ),
                   ElevatedButton.icon(
                     onPressed: () {},

@@ -7,7 +7,7 @@ part of 'lease_status_service.dart';
 // **************************************************************************
 
 String _$leaseStatusServiceHash() =>
-    r'7168eb3d7f19d3b444ccc02531f7b90816cb8c65';
+    r'f344490687514931da1b9159e053bd6a34f256cf';
 
 /// See also [leaseStatusService].
 @ProviderFor(leaseStatusService)

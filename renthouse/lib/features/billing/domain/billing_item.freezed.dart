@@ -25,7 +25,12 @@ mixin _$BillingItem {
   String get billingId => throw _privateConstructorUsedError;
   String get billTemplateId => throw _privateConstructorUsedError;
   int get amount => throw _privateConstructorUsedError;
-  String? get itemName => throw _privateConstructorUsedError;
+  String? get itemName =>
+      throw _privateConstructorUsedError; // 템플릿 이름을 직접 저장 (템플릿을 찾을 수 없을 때 사용)
+  int get quantity => throw _privateConstructorUsedError; // 수량
+  int get unitPrice => throw _privateConstructorUsedError; // 단가
+  int get tax => throw _privateConstructorUsedError; // 세금
+  String? get memo => throw _privateConstructorUsedError;
 
   /// Serializes this BillingItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,6 +55,10 @@ abstract class $BillingItemCopyWith<$Res> {
     String billTemplateId,
     int amount,
     String? itemName,
+    int quantity,
+    int unitPrice,
+    int tax,
+    String? memo,
   });
 }
 
@@ -73,6 +82,10 @@ class _$BillingItemCopyWithImpl<$Res, $Val extends BillingItem>
     Object? billTemplateId = null,
     Object? amount = null,
     Object? itemName = freezed,
+    Object? quantity = null,
+    Object? unitPrice = null,
+    Object? tax = null,
+    Object? memo = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -96,6 +109,22 @@ class _$BillingItemCopyWithImpl<$Res, $Val extends BillingItem>
                 ? _value.itemName
                 : itemName // ignore: cast_nullable_to_non_nullable
                       as String?,
+            quantity: null == quantity
+                ? _value.quantity
+                : quantity // ignore: cast_nullable_to_non_nullable
+                      as int,
+            unitPrice: null == unitPrice
+                ? _value.unitPrice
+                : unitPrice // ignore: cast_nullable_to_non_nullable
+                      as int,
+            tax: null == tax
+                ? _value.tax
+                : tax // ignore: cast_nullable_to_non_nullable
+                      as int,
+            memo: freezed == memo
+                ? _value.memo
+                : memo // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -117,6 +146,10 @@ abstract class _$$BillingItemImplCopyWith<$Res>
     String billTemplateId,
     int amount,
     String? itemName,
+    int quantity,
+    int unitPrice,
+    int tax,
+    String? memo,
   });
 }
 
@@ -139,6 +172,10 @@ class __$$BillingItemImplCopyWithImpl<$Res>
     Object? billTemplateId = null,
     Object? amount = null,
     Object? itemName = freezed,
+    Object? quantity = null,
+    Object? unitPrice = null,
+    Object? tax = null,
+    Object? memo = freezed,
   }) {
     return _then(
       _$BillingItemImpl(
@@ -162,6 +199,22 @@ class __$$BillingItemImplCopyWithImpl<$Res>
             ? _value.itemName
             : itemName // ignore: cast_nullable_to_non_nullable
                   as String?,
+        quantity: null == quantity
+            ? _value.quantity
+            : quantity // ignore: cast_nullable_to_non_nullable
+                  as int,
+        unitPrice: null == unitPrice
+            ? _value.unitPrice
+            : unitPrice // ignore: cast_nullable_to_non_nullable
+                  as int,
+        tax: null == tax
+            ? _value.tax
+            : tax // ignore: cast_nullable_to_non_nullable
+                  as int,
+        memo: freezed == memo
+            ? _value.memo
+            : memo // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -176,6 +229,10 @@ class _$BillingItemImpl implements _BillingItem {
     required this.billTemplateId,
     required this.amount,
     this.itemName,
+    this.quantity = 1,
+    this.unitPrice = 0,
+    this.tax = 0,
+    this.memo,
   });
 
   factory _$BillingItemImpl.fromJson(Map<String, dynamic> json) =>
@@ -191,10 +248,25 @@ class _$BillingItemImpl implements _BillingItem {
   final int amount;
   @override
   final String? itemName;
+  // 템플릿 이름을 직접 저장 (템플릿을 찾을 수 없을 때 사용)
+  @override
+  @JsonKey()
+  final int quantity;
+  // 수량
+  @override
+  @JsonKey()
+  final int unitPrice;
+  // 단가
+  @override
+  @JsonKey()
+  final int tax;
+  // 세금
+  @override
+  final String? memo;
 
   @override
   String toString() {
-    return 'BillingItem(id: $id, billingId: $billingId, billTemplateId: $billTemplateId, amount: $amount, itemName: $itemName)';
+    return 'BillingItem(id: $id, billingId: $billingId, billTemplateId: $billTemplateId, amount: $amount, itemName: $itemName, quantity: $quantity, unitPrice: $unitPrice, tax: $tax, memo: $memo)';
   }
 
   @override
@@ -209,13 +281,29 @@ class _$BillingItemImpl implements _BillingItem {
                 other.billTemplateId == billTemplateId) &&
             (identical(other.amount, amount) || other.amount == amount) &&
             (identical(other.itemName, itemName) ||
-                other.itemName == itemName));
+                other.itemName == itemName) &&
+            (identical(other.quantity, quantity) ||
+                other.quantity == quantity) &&
+            (identical(other.unitPrice, unitPrice) ||
+                other.unitPrice == unitPrice) &&
+            (identical(other.tax, tax) || other.tax == tax) &&
+            (identical(other.memo, memo) || other.memo == memo));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, billingId, billTemplateId, amount, itemName);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    billingId,
+    billTemplateId,
+    amount,
+    itemName,
+    quantity,
+    unitPrice,
+    tax,
+    memo,
+  );
 
   /// Create a copy of BillingItem
   /// with the given fields replaced by the non-null parameter values.
@@ -238,6 +326,10 @@ abstract class _BillingItem implements BillingItem {
     required final String billTemplateId,
     required final int amount,
     final String? itemName,
+    final int quantity,
+    final int unitPrice,
+    final int tax,
+    final String? memo,
   }) = _$BillingItemImpl;
 
   factory _BillingItem.fromJson(Map<String, dynamic> json) =
@@ -252,7 +344,15 @@ abstract class _BillingItem implements BillingItem {
   @override
   int get amount;
   @override
-  String? get itemName;
+  String? get itemName; // 템플릿 이름을 직접 저장 (템플릿을 찾을 수 없을 때 사용)
+  @override
+  int get quantity; // 수량
+  @override
+  int get unitPrice; // 단가
+  @override
+  int get tax; // 세금
+  @override
+  String? get memo;
 
   /// Create a copy of BillingItem
   /// with the given fields replaced by the non-null parameter values.

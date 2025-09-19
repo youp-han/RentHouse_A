@@ -51,13 +51,17 @@ class ReceiptService {
       String description;
       if (billingItems.length == 1) {
         // 단일 항목인 경우 해당 항목명 사용 (예: 월세, 관리비 등)
-        final billTemplate = await _database.getBillTemplateById(billingItems.first.billTemplateId);
+        final billTemplate = billingItems.first.billTemplateId != null
+            ? await _database.getBillTemplateById(billingItems.first.billTemplateId!)
+            : null;
         description = billTemplate?.name ?? '수납금';
       } else if (billingItems.length > 1) {
         // 여러 항목인 경우 "월세+관리비 등" 형태로 표시
         final itemNames = <String>[];
         for (final item in billingItems.take(2)) {
-          final template = await _database.getBillTemplateById(item.billTemplateId);
+          final template = item.billTemplateId != null
+              ? await _database.getBillTemplateById(item.billTemplateId!)
+              : null;
           if (template != null) {
             itemNames.add(template.name);
           }

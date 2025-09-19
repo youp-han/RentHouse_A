@@ -11,6 +11,10 @@ class BillingItem with _$BillingItem {
     required String billTemplateId,
     required int amount,
     String? itemName, // 템플릿 이름을 직접 저장 (템플릿을 찾을 수 없을 때 사용)
+    @Default(1) int quantity, // 수량
+    @Default(0) int unitPrice, // 단가
+    @Default(0) int tax, // 세금
+    String? memo, // 메모
   }) = _BillingItem;
 
   factory BillingItem.fromJson(Map<String, dynamic> json) => _$BillingItemFromJson(json);
