@@ -32,7 +32,10 @@
       "Bash(%PATH%)",
       "Bash(git restore:*)",
       "Bash(taskkill:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(./gradlew --stop)",
+      "Bash(.gradlew --stop)",
+      "Bash(./gradlew:*)"
     ],
     "deny": [],
     "ask": []
