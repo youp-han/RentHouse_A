@@ -11,22 +11,14 @@ import 'package:renthouse/core/utils/database_path_checker.dart';
 
 LazyDatabase connect() {
   return LazyDatabase(() async {
-    // Windows에서 SQLite FFI 초기화
+    // Windows에서 SQLite FFI 초기화 (한 번만 실행)
     if (Platform.isWindows || Platform.isLinux) {
       // SQLite 라이브러리 초기화
       await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
       sqfliteFfiInit();
     }
 
-    // 디버깅 정보 출력 (개발 모드에서만)
-    if (Platform.isWindows) {
-      await DatabasePathChecker.printDatabaseInfo();
-    }
-
-    // 기존 데이터베이스 마이그레이션 시도
-    await DatabasePathChecker.migrateDatabaseIfNeeded();
-
-    // 현재 데이터베이스 경로 가져오기
+    // 현재 데이터베이스 경로 가져오기 (캐시된 값 사용)
     final dbPath = await DatabasePathChecker.getCurrentDatabasePath();
     final file = File(dbPath);
 
@@ -50,4 +42,19 @@ LazyDatabase connect() {
       return NativeDatabase.createInBackground(file);
     }
   });
+}
+
+// 백그라운드에서 실행할 비필수 초기화 작업
+Future<void> performBackgroundDatabaseTasks() async {
+  try {
+    // 디버깅 정보 출력 (개발 모드에서만)
+    if (Platform.isWindows) {
+      await DatabasePathChecker.printDatabaseInfo();
+    }
+
+    // 기존 데이터베이스 마이그레이션 시도
+    await DatabasePathChecker.migrateDatabaseIfNeeded();
+  } catch (e) {
+    print('백그라운드 데이터베이스 작업 오류: $e');
+  }
 }

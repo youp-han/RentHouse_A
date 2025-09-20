@@ -33,6 +33,7 @@ import 'package:renthouse/features/payment/presentation/revenue_screen.dart';
 import 'package:renthouse/features/payment/presentation/payment_form_screen.dart';
 import 'package:renthouse/features/payment/presentation/payment_list_screen.dart';
 import 'package:renthouse/features/reports/presentation/reports_screen.dart';
+import 'package:renthouse/features/splash/presentation/splash_screen.dart';
 
 final authState = AuthState.instance;
 
@@ -42,12 +43,20 @@ final router = GoRouter(
     final loggedIn = authState.isLoggedIn;
     final loggingIn = state.matchedLocation == '/login';
     final registering = state.matchedLocation == '/register';
-    
+    final splashing = state.matchedLocation == '/';
+
+    // 스플래시 화면은 항상 허용
+    if (splashing) return null;
+
     if (!loggedIn && !loggingIn && !registering) return '/login';
     if (loggedIn && (loggingIn || registering)) return '/admin/dashboard';
     return null;
   },
   routes: [
+    // 스플래시 화면
+    GoRoute(path: '/', builder: (c, s) => const SplashScreen()),
+
+    // 인증 화면들
     GoRoute(path: '/login', builder: (c, s) => const new_login.LoginScreen()),
     GoRoute(path: '/register', builder: (c, s) => const RegisterScreen()),
     ShellRoute(

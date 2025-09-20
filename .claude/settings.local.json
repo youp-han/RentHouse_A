@@ -31,7 +31,8 @@
       "Bash(set PATH=%JAVA_HOME%bin)",
       "Bash(%PATH%)",
       "Bash(git restore:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
